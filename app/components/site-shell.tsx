@@ -45,7 +45,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <Link href="/servers">Servers</Link>
           <Link href="/projects">Projects</Link>
           <Link href="/about">About</Link>
-          <Link href="/status">Status</Link>
         </nav>
         <Link className="login-link" href="/admin"><span className="status-dot" /> Owner login</Link>
       </header>

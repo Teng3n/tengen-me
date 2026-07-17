@@ -73,6 +73,9 @@ The current design direction was chosen by the owner:
 - Avoid a nearly black background; the red should remain visually apparent.
 - The `T` mark at the upper left is the light/dark theme control.
 - Theme choice is stored in browser local storage under `tengen-theme`.
+- Inner-page headlines use a smaller desktop scale intended to keep titles such as Servers, Projects, About, and Status on one line at normal desktop widths; wrapping remains available on tablet and mobile layouts.
+- Status is linked from the footer rather than duplicated in the primary header navigation.
+- The About monogram staggers the second `GEN` line, and Active project badges use a green status light.
 
 Requested removals that have already been implemented:
 

@@ -44,6 +44,8 @@ test("server-renders the tengen.me home page", async () => {
   assert.match(html, /class="wordmark-block theme-toggle"/);
   assert.match(html, /Switch to dark mode/);
   assert.match(html, /data-theme="light"/);
+  const primaryNav = html.match(/<nav class="primary-nav"[^>]*>(.*?)<\/nav>/)?.[1] ?? "";
+  assert.doesNotMatch(primaryNav, /href="\/status"/);
   assert.doesNotMatch(html, /Now building|Pacific Northwest|Public status|Owner access|Built to grow|A graceful status layer/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|ChatGPT/i);
 });
@@ -63,6 +65,18 @@ test("status page reads as a visitor-facing availability summary", async () => {
   const html = await response.text();
   assert.match(html, /A quick look at what/);
   assert.doesNotMatch(html, /status bridge|status API|integration|paired/i);
+});
+
+test("about and projects pages render their presentation details", async () => {
+  const aboutResponse = await render("/about");
+  assert.equal(aboutResponse.status, 200);
+  const aboutHtml = await aboutResponse.text();
+  assert.match(aboutHtml, /class="about-monogram">TEN<br\/><span>GEN<\/span>/);
+
+  const projectsResponse = await render("/projects");
+  assert.equal(projectsResponse.status, 200);
+  const projectsHtml = await projectsResponse.text();
+  assert.match(projectsHtml, /project-status project-status-active/);
 });
 
 test("admin route reveals no private surface without Cloudflare Access", async () => {
