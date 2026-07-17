@@ -66,18 +66,6 @@ export default function Home() {
           </Link>
         </section>
 
-        <section className="section-shell build-note">
-          <div className="build-mark">T<span>/</span>M</div>
-          <div>
-            <p className="section-kicker">Now building</p>
-            <h2>The public shell is live. The private bridge comes next.</h2>
-          </div>
-          <p>
-            A small agent on the home network will query Palworld locally and
-            publish only a safe status snapshot—never private addresses,
-            credentials, or raw logs.
-          </p>
-        </section>
       </main>
     </SiteShell>
   );

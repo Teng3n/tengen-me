@@ -27,6 +27,9 @@ test("server-renders the tengen.me home page", async () => {
   assert.match(html, /A home for the things I run, build, and keep online/);
   assert.match(html, /Palworld/);
   assert.match(html, /Bridge pending/);
+  assert.match(html, /class="wordmark-block theme-toggle"/);
+  assert.match(html, /Switch to light mode/);
+  assert.doesNotMatch(html, /Now building|Pacific Northwest/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|ChatGPT/i);
 });
 
