@@ -6,11 +6,11 @@ import { useEffect, useState, type ReactNode } from "react";
 type Theme = "dark" | "light";
 
 export function SiteShell({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("tengen-theme");
-    const initialTheme: Theme = savedTheme === "light" ? "light" : "dark";
+    const initialTheme: Theme = savedTheme === "dark" ? "dark" : "light";
     document.documentElement.dataset.theme = initialTheme;
     const frame = window.requestAnimationFrame(() => setTheme(initialTheme));
     return () => window.cancelAnimationFrame(frame);
@@ -32,7 +32,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             type="button"
             onClick={toggleTheme}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            aria-pressed={theme === "light"}
+            aria-pressed={theme === "dark"}
             title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
           >
             T

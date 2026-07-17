@@ -4,8 +4,8 @@ export const metadata = { title: "Projects · tengen.me", description: "Projects
 
 const projects = [
   { number: "01", label: "Guild operations", title: "Vitality Guild Tools", text: "A static-first operations site for raid planning, roster data, loot history, progression, and officer workflows.", status: "Active" },
-  { number: "02", label: "Home infrastructure", title: "Game Server Status Bridge", text: "A safe way to publish live availability and player presence from servers inside a private home network.", status: "Building" },
-  { number: "03", label: "Personal web", title: "tengen.me", text: "The connective tissue for projects, hosted services, notes, and owner-only operational views.", status: "Building" },
+  { number: "02", label: "Shared worlds", title: "Palworld Server", text: "A dedicated home for friends to explore, build, and keep the adventure going together.", status: "Active" },
+  { number: "03", label: "Personal web", title: "tengen.me", text: "My home on the web for game servers, current projects, notes, and whatever comes next.", status: "Active" },
 ];
 
 export default function ProjectsPage() {

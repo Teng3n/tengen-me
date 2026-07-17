@@ -40,11 +40,29 @@ test("server-renders the tengen.me home page", async () => {
   assert.match(html, /<title>tengen\.me · Servers, systems, and projects<\/title>/i);
   assert.match(html, /A home for the things I run, build, and keep online/);
   assert.match(html, /Palworld/);
-  assert.match(html, /Bridge pending/);
+  assert.match(html, /Checking status/);
   assert.match(html, /class="wordmark-block theme-toggle"/);
-  assert.match(html, /Switch to light mode/);
-  assert.doesNotMatch(html, /Now building|Pacific Northwest/);
+  assert.match(html, /Switch to dark mode/);
+  assert.match(html, /data-theme="light"/);
+  assert.doesNotMatch(html, /Now building|Pacific Northwest|Public status|Owner access|Built to grow|A graceful status layer/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|ChatGPT/i);
+});
+
+test("servers page presents the Palworld card without implementation notes", async () => {
+  const response = await render("/servers");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /The machines behind the worlds/);
+  assert.match(html, /palworld-logo\.png/);
+  assert.doesNotMatch(html, /Connection plan|Public data boundary|Public-safe availability|control plane/i);
+});
+
+test("status page reads as a visitor-facing availability summary", async () => {
+  const response = await render("/status");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /A quick look at what/);
+  assert.doesNotMatch(html, /status bridge|status API|integration|paired/i);
 });
 
 test("admin route reveals no private surface without Cloudflare Access", async () => {

@@ -66,6 +66,7 @@ Do not invent a large feature roadmap without asking. Add reusable building bloc
 The current design direction was chosen by the owner:
 
 - Primary palette: a deep Roman-style maroon/red and white.
+- Light mode is the default for new visitors. A saved dark-mode choice still loads before the page becomes visible.
 - Dark mode: deep red background with white text, borders, and interface details.
 - Light mode: the colors are reversed—white background with deep red text, borders, and interface details.
 - Avoid gradient page backgrounds.
@@ -77,8 +78,13 @@ Requested removals that have already been implemented:
 
 - The homepage's “Now building” section was removed.
 - The footer copy referring to “personal assistance, game services, and projects in the Pacific Northwest” was removed.
+- The homepage's internal-facing “Public status,” “Owner access,” and “Built to grow” strip was removed.
+- The Servers page's connection-plan and public-data-boundary explanations were removed.
+- Public copy on Home, Servers, Status, Projects, and About was rewritten to read as a visitor-facing personal site rather than an implementation handoff.
 
 Do not restore those elements unless the owner asks.
+
+The shared Palworld status card now uses a locally hosted Palworld logo banner on the homepage and Servers page. The asset is `public/palworld-logo.png`; its source and trademark note are recorded in `docs/ASSET-SOURCES.md`.
 
 The current shared shell and theme toggle are implemented in:
 
@@ -230,7 +236,7 @@ npm run lint
 npm test
 ```
 
-`npm test` runs the production build and the Node test suite. At the time of this context consolidation, the build passes and all five tests pass.
+`npm test` runs the production build and the Node test suite. At the time of this context consolidation, the build passes and all seven tests pass.
 
 The tests cover:
 
