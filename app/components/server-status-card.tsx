@@ -46,7 +46,6 @@ export function ServerStatusCard({ server, featured = false }: { server: PublicS
           width={1280}
           height={720}
         />
-        <span className="palworld-banner-label">Tengen&apos;s server</span>
       </div>
       <div className="server-card-body">
         <div className="server-card-topline">
