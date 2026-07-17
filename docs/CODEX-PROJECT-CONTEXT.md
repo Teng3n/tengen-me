@@ -84,7 +84,7 @@ Requested removals that have already been implemented:
 
 Do not restore those elements unless the owner asks.
 
-The shared Palworld status card now uses a locally hosted Palworld logo banner on the homepage and Servers page. The asset is `public/palworld-logo.png`; its source and trademark note are recorded in `docs/ASSET-SOURCES.md`.
+The shared Palworld status card now uses a locally hosted, tightly cropped white Palworld logo on the homepage and Servers page. The banner asset is `public/palworld-logo-banner.png` on the site's existing Roman-red background; the uncropped source, crop details, and trademark note are recorded in `docs/ASSET-SOURCES.md`.
 
 The current shared shell and theme toggle are implemented in:
 

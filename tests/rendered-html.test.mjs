@@ -53,7 +53,7 @@ test("servers page presents the Palworld card without implementation notes", asy
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /The machines behind the worlds/);
-  assert.match(html, /palworld-logo\.png/);
+  assert.match(html, /palworld-logo-banner\.png/);
   assert.doesNotMatch(html, /Connection plan|Public data boundary|Public-safe availability|control plane/i);
 });
 

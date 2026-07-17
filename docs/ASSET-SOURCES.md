@@ -3,6 +3,7 @@
 ## Palworld logo
 
 - File: `public/palworld-logo.png`
+- Cropped website banner: `public/palworld-logo-banner.png` (1280×340; 170px removed from the top and 210px from the bottom)
 - Source: `https://images.igdb.com/igdb/image/upload/t_720p/ar4ncw.png`
 - Context: Palworld logo listed in the IGDB press kit for Pocketpair's Palworld.
 - Press-kit page: `https://www.igdb.com/games/palworld/presskit`

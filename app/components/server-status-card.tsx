@@ -40,11 +40,11 @@ export function ServerStatusCard({ server, featured = false }: { server: PublicS
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="palworld-logo"
-          src="/palworld-logo.png"
+          src="/palworld-logo-banner.png"
           alt=""
           aria-hidden="true"
           width={1280}
-          height={720}
+          height={340}
         />
       </div>
       <div className="server-card-body">
