@@ -17,6 +17,20 @@ async function render(path = "/", headers = {}) {
   );
 }
 
+async function callWorker(path, init = {}, env = {}) {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("api-test", `${process.pid}-${Date.now()}-${Math.random()}`);
+  const { default: worker } = await import(workerUrl.href);
+  return worker.fetch(
+    new Request(`http://localhost${path}`, init),
+    {
+      ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+      ...env,
+    },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+}
+
 test("server-renders the tengen.me home page", async () => {
   const response = await render();
   assert.equal(response.status, 200);
@@ -49,4 +63,52 @@ test("admin route recognizes a Cloudflare Access identity", async () => {
   const html = await response.text();
   assert.match(html, /owner@example\.com/);
   assert.match(html, /Welcome back/);
+});
+
+test("public status endpoint falls back safely before the first bridge update", async () => {
+  const response = await callWorker("/api/server-status");
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.servers[0].status, "pending");
+  assert.equal(payload.servers[0].connectAddress, null);
+});
+
+test("bridge ingestion requires its secret and stores only the public snapshot", async () => {
+  const values = new Map();
+  const kv = {
+    async get(key) { return values.get(key) ?? null; },
+    async put(key, value) { values.set(key, value); },
+  };
+  const body = JSON.stringify({
+    slug: "palworld-home",
+    status: "online",
+    currentPlayers: 2,
+    maximumPlayers: 32,
+    playerNames: ["Tengen", "Friend"],
+    observedAt: new Date().toISOString(),
+    privateIp: "192.168.1.20",
+    adminPassword: "must-not-be-stored",
+  });
+
+  const denied = await callWorker("/api/server-status/ingest", {
+    method: "POST", headers: { "content-type": "application/json" }, body,
+  }, { STATUS_KV: kv, PALWORLD_BRIDGE_TOKEN: "correct-token" });
+  assert.equal(denied.status, 401);
+
+  const accepted = await callWorker("/api/server-status/ingest", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: "Bearer correct-token" },
+    body,
+  }, { STATUS_KV: kv, PALWORLD_BRIDGE_TOKEN: "correct-token" });
+  assert.equal(accepted.status, 204);
+
+  const stored = values.get("server:palworld-home");
+  assert.match(stored, /Tengen/);
+  assert.doesNotMatch(stored, /192\.168|must-not-be-stored/);
+
+  const publicResponse = await callWorker("/api/server-status", {}, { STATUS_KV: kv });
+  const publicPayload = await publicResponse.json();
+  assert.equal(publicPayload.servers[0].status, "online");
+  assert.equal(publicPayload.servers[0].players.current, 2);
+  assert.deepEqual(publicPayload.servers[0].playerNames, ["Tengen", "Friend"]);
 });

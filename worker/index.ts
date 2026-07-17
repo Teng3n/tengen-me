@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { handleServerStatusGet, handleServerStatusIngest, type StatusKV } from "./server-status-api";
 
 interface Env {
   ASSETS: Fetcher;
@@ -11,6 +12,8 @@ interface Env {
       };
     };
   };
+  STATUS_KV?: StatusKV;
+  PALWORLD_BRIDGE_TOKEN?: string;
 }
 
 interface ExecutionContext {
@@ -27,6 +30,14 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.pathname === "/api/server-status" && request.method === "GET") {
+      return handleServerStatusGet(env);
+    }
+
+    if (url.pathname === "/api/server-status/ingest" && request.method === "POST") {
+      return handleServerStatusIngest(request, env);
+    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
