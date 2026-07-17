@@ -42,3 +42,4 @@ next-env.d.ts
 bridge/bridge-config.local.json
 /outputs/
 /work/
+/archive/*.tar.gz
