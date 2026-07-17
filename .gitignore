@@ -43,3 +43,4 @@ bridge/bridge-config.local.json
 /outputs/
 /work/
 /archive/*.tar.gz
+/archive/project-migration-backups/
