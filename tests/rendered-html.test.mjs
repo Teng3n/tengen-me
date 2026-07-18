@@ -107,9 +107,10 @@ test("public status endpoint falls back safely before the first bridge update", 
 
 test("bridge ingestion requires its secret and stores only the public snapshot", async () => {
   const values = new Map();
+  let putCount = 0;
   const kv = {
     async get(key) { return values.get(key) ?? null; },
-    async put(key, value) { values.set(key, value); },
+    async put(key, value) { putCount += 1; values.set(key, value); },
   };
   const body = JSON.stringify({
     slug: "palworld-home",
@@ -133,6 +134,7 @@ test("bridge ingestion requires its secret and stores only the public snapshot",
     body,
   }, { STATUS_KV: kv, PALWORLD_BRIDGE_TOKEN: "correct-token" });
   assert.equal(accepted.status, 204);
+  assert.equal(putCount, 1);
 
   const stored = values.get("server:palworld-home");
   assert.match(stored, /Tengen/);
@@ -143,4 +145,94 @@ test("bridge ingestion requires its secret and stores only the public snapshot",
   assert.equal(publicPayload.servers[0].status, "online");
   assert.equal(publicPayload.servers[0].players.current, 2);
   assert.deepEqual(publicPayload.servers[0].playerNames, ["Tengen", "Friend"]);
+});
+
+test("unchanged bridge snapshots do not create repeated KV writes", async () => {
+  const values = new Map();
+  let putCount = 0;
+  const kv = {
+    async get(key) { return values.get(key) ?? null; },
+    async put(key, value) { putCount += 1; values.set(key, value); },
+  };
+  const ingest = (overrides = {}) => callWorker("/api/server-status/ingest", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: "Bearer correct-token" },
+    body: JSON.stringify({
+      slug: "palworld-home",
+      status: "online",
+      currentPlayers: 2,
+      maximumPlayers: 32,
+      playerNames: ["Tengen", "Friend"],
+      observedAt: new Date().toISOString(),
+      ...overrides,
+    }),
+  }, { STATUS_KV: kv, PALWORLD_BRIDGE_TOKEN: "correct-token" });
+
+  assert.equal((await ingest()).status, 204);
+  assert.equal((await ingest()).status, 204);
+  assert.equal((await ingest()).status, 204);
+  assert.equal(putCount, 1);
+
+  assert.equal((await ingest({ currentPlayers: 3 })).status, 204);
+  assert.equal(putCount, 2);
+
+  assert.equal((await ingest({ currentPlayers: 3, playerNames: ["Tengen", "Friend", "New Player"] })).status, 204);
+  assert.equal(putCount, 3);
+});
+
+test("unchanged bridge snapshots write a heartbeat after ten minutes", async () => {
+  const statusKey = "server:palworld-home";
+  const values = new Map([[statusKey, JSON.stringify({
+    status: "online",
+    currentPlayers: 2,
+    maximumPlayers: 32,
+    playerNames: ["Tengen", "Friend"],
+    observedAt: new Date(Date.now() - 11 * 60 * 1000).toISOString(),
+    receivedAt: new Date(Date.now() - 11 * 60 * 1000).toISOString(),
+  })]]);
+  let putCount = 0;
+  const kv = {
+    async get(key) { return values.get(key) ?? null; },
+    async put(key, value) { putCount += 1; values.set(key, value); },
+  };
+  const response = await callWorker("/api/server-status/ingest", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: "Bearer correct-token" },
+    body: JSON.stringify({
+      slug: "palworld-home",
+      status: "online",
+      currentPlayers: 2,
+      maximumPlayers: 32,
+      playerNames: ["Tengen", "Friend"],
+      observedAt: new Date().toISOString(),
+    }),
+  }, { STATUS_KV: kv, PALWORLD_BRIDGE_TOKEN: "correct-token" });
+
+  assert.equal(response.status, 204);
+  assert.equal(putCount, 1);
+  assert.ok(Date.parse(JSON.parse(values.get(statusKey)).receivedAt) > Date.now() - 60_000);
+});
+
+test("status feed remains live between heartbeats and times out after fifteen minutes", async () => {
+  const makeKv = (ageMinutes) => ({
+    async get() {
+      return JSON.stringify({
+        status: "online",
+        currentPlayers: 2,
+        maximumPlayers: 32,
+        playerNames: ["Tengen", "Friend"],
+        observedAt: new Date(Date.now() - ageMinutes * 60 * 1000).toISOString(),
+        receivedAt: new Date(Date.now() - ageMinutes * 60 * 1000).toISOString(),
+      });
+    },
+    async put() {},
+  });
+
+  const livePayload = await (await callWorker("/api/server-status", {}, { STATUS_KV: makeKv(11) })).json();
+  assert.equal(livePayload.servers[0].status, "online");
+  assert.equal(livePayload.servers[0].sourceLabel, "Live feed");
+
+  const stalePayload = await (await callWorker("/api/server-status", {}, { STATUS_KV: makeKv(16) })).json();
+  assert.equal(stalePayload.servers[0].status, "offline");
+  assert.equal(stalePayload.servers[0].sourceLabel, "Feed timed out");
 });

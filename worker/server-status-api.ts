@@ -1,5 +1,6 @@
 const STATUS_KEY = "server:palworld-home";
-const STALE_AFTER_MS = 3 * 60 * 1000;
+const HEARTBEAT_AFTER_MS = 10 * 60 * 1000;
+const STALE_AFTER_MS = 15 * 60 * 1000;
 const MAX_PLAYER_NAMES = 32;
 
 export interface StatusKV {
@@ -130,6 +131,18 @@ function safeTokenEqual(provided: string, expected: string): boolean {
   return difference === 0;
 }
 
+function statusChanged(previous: StoredStatus, next: StoredStatus): boolean {
+  if (
+    previous.status !== next.status
+    || previous.currentPlayers !== next.currentPlayers
+    || previous.maximumPlayers !== next.maximumPlayers
+    || previous.playerNames.length !== next.playerNames.length
+  ) {
+    return true;
+  }
+  return previous.playerNames.some((name, index) => name !== next.playerNames[index]);
+}
+
 export async function handleServerStatusGet(env: ServerStatusEnv): Promise<Response> {
   if (!env.STATUS_KV) return json({ servers: [pendingStatus()], generatedAt: new Date().toISOString() });
   const stored = parseStoredStatus(await env.STATUS_KV.get(STATUS_KEY));
@@ -178,6 +191,10 @@ export async function handleServerStatusIngest(request: Request, env: ServerStat
     observedAt: new Date(observedTime).toISOString(),
     receivedAt: new Date().toISOString(),
   };
-  await env.STATUS_KV.put(STATUS_KEY, JSON.stringify(stored), { expirationTtl: 86_400 });
+  const previous = parseStoredStatus(await env.STATUS_KV.get(STATUS_KEY));
+  const heartbeatDue = !previous || Date.now() - Date.parse(previous.receivedAt) >= HEARTBEAT_AFTER_MS;
+  if (!previous || statusChanged(previous, stored) || heartbeatDue) {
+    await env.STATUS_KV.put(STATUS_KEY, JSON.stringify(stored), { expirationTtl: 86_400 });
+  }
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }
