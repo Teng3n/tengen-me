@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Office Room Diagram — Revision 01</title>
+  <title>Office Room Diagram — Revision 02</title>
 
   <!--
     ================================================================
@@ -14,7 +14,7 @@
   -->
   <script>
     const DRAWING_CONFIG = Object.freeze({
-      revision: "01",
+      revision: "02",
       drawingDate: "2026-07-27",
       units: "inches",
       room: {
@@ -34,7 +34,7 @@
         thickness: 1.5,
         undersideHeight: 28,
         bathroomRun: { length: 88, x1: 0, x2: 25, y1: 0, y2: 88 },
-        sideyardRun: { length: 80, x1: 0, x2: 80, y1: 0, y2: 25 },
+        sideyardRun: { length: 80, x1: 25, x2: 105, y1: 0, y2: 25 },
         status: "confirmed"
       },
       monitor: {
@@ -45,6 +45,16 @@
         height: 18,
         bottomAboveDesktop: 5,
         status: "provisional"
+      },
+      window: {
+        wall: "Window wall",
+        widthAlongWall: 72,
+        centerAlongWall: 66,
+        y1: 30,
+        y2: 102,
+        sillHeight: 41,
+        headHeight: 81,
+        status: "confirmed"
       },
       fan: {
         manufacturer: "Big Ass Fans",
@@ -81,6 +91,7 @@
         orientationStatus: "confirmed"
       },
       analysisPlanes: {
+        floorHeight: 0,
         desktopHeight: 29.5,
         fanBladePlane: "calculated"
       }
@@ -198,8 +209,10 @@
     .grid12 { stroke: var(--grid-12); stroke-width: .34; }
     .wall { fill: none; stroke: var(--wall); stroke-width: 1.35; vector-effect: non-scaling-stroke; }
     .desk { fill: var(--desk); fill-opacity: .69; stroke: var(--desk-line); stroke-width: .65; vector-effect: non-scaling-stroke; }
-    .overlap { fill: #c58a3d; fill-opacity: .45; stroke: var(--desk-line); stroke-width: .35; }
     .monitor { fill: #4b5966; stroke: #17212b; stroke-width: .45; vector-effect: non-scaling-stroke; }
+    .window-cut { stroke: #fff; stroke-width: 4.2; vector-effect: non-scaling-stroke; }
+    .window-glass { stroke: #16738f; stroke-width: 1.15; vector-effect: non-scaling-stroke; }
+    .window-frame { stroke: #285d70; stroke-width: .55; vector-effect: non-scaling-stroke; }
     .centerline { stroke: #7f3f98; stroke-width: .45; stroke-dasharray: 2 1.5; vector-effect: non-scaling-stroke; }
     .fan-sweep { fill: #67489a; fill-opacity: .045; stroke: var(--fan); stroke-width: 1.35; stroke-dasharray: 5 1.5; vector-effect: non-scaling-stroke; }
     .fan-blade { fill: #6c5791; fill-opacity: .38; stroke: var(--fan); stroke-width: .38; vector-effect: non-scaling-stroke; }
@@ -210,11 +223,13 @@
     .light-core { fill: var(--light); }
     .dimension { fill: none; stroke: #33414d; stroke-width: .42; vector-effect: non-scaling-stroke; marker-start: url(#arrow); marker-end: url(#arrow); }
     .extension { stroke: #7b8790; stroke-width: .3; vector-effect: non-scaling-stroke; }
+    .leader { fill: none; stroke: #52616d; stroke-width: .35; vector-effect: non-scaling-stroke; }
     .reference { stroke: #64737f; stroke-width: .38; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
     .ceiling { stroke: #111b24; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
     .floor { stroke: #111b24; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
     .wall-elev { stroke: #111b24; stroke-width: 1; vector-effect: non-scaling-stroke; }
     .desk-elev { fill: var(--desk); stroke: var(--desk-line); stroke-width: .6; vector-effect: non-scaling-stroke; }
+    .desk-floor-projection { fill: var(--desk); fill-opacity: .22; stroke: var(--desk-line); stroke-width: .55; stroke-dasharray: 2 1.5; vector-effect: non-scaling-stroke; }
     .cone-main { fill: #f1b84a; fill-opacity: .07; stroke: var(--beam); stroke-width: .6; vector-effect: non-scaling-stroke; }
     .cone-field { fill: #55a9b9; fill-opacity: .035; stroke: var(--field); stroke-width: .55; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
     .svg-title { font-size: 4px; font-weight: 700; }
@@ -225,6 +240,31 @@
     .svg-dim { font-size: 2.65px; font-weight: 700; }
     .svg-provisional { fill: var(--provisional); font-weight: 700; }
     .halo { paint-order: stroke; stroke: #fff; stroke-width: 1.3px; stroke-linejoin: round; }
+    .coverage-gap { fill: #b42318; stroke: #fff; stroke-width: .6; vector-effect: non-scaling-stroke; }
+
+    .coverage-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0 0 10px;
+    }
+    .coverage-metric {
+      min-height: 74px;
+      padding: 11px 12px;
+      border: 1px solid #d7dde2;
+      background: var(--panel);
+    }
+    .coverage-metric span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .coverage-metric strong { display: block; font-size: 15px; line-height: 1.25; }
+    .coverage-metric small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.35; }
 
     .analysis-section { margin-top: 22px; break-inside: avoid; page-break-inside: avoid; }
     .analysis-intro { margin: -5px 0 10px; color: var(--muted); font-size: 12px; }
@@ -276,7 +316,7 @@
     @media (max-width: 760px) {
       body { padding: 0; }
       main { padding: 18px 12px 24px; box-shadow: none; }
-      .summary-grid, .notes-grid, .legend { grid-template-columns: 1fr; }
+      .summary-grid, .notes-grid, .legend, .coverage-summary { grid-template-columns: 1fr; }
       .legend h2 { grid-column: 1; }
     }
 
@@ -290,6 +330,7 @@
       .drawing-card, .analysis-section, .legend, .notes-grid { break-inside: avoid; page-break-inside: avoid; }
       .drawing-card { padding: 8px; margin-top: 14px; }
       #plan-svg { max-height: 6.9in; }
+      #floor-svg { max-height: 6.9in; }
       #elevation-svg { max-height: 6.6in; }
       h1 { font-size: 20px; }
       .summary-card li, .note-card li { font-size: 10.5px; }
@@ -302,7 +343,7 @@
 <main>
   <header>
     <h1>Office Room — 2D Planning Diagram</h1>
-    <p class="subtitle">Drawing revision 01 · 27 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
+    <p class="subtitle">Drawing revision 02 · 27 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
   </header>
 
   <section aria-labelledby="measurement-summary">
@@ -312,8 +353,9 @@
         <h3 class="confirmed">Confirmed measurements</h3>
         <ul>
           <li>Interior room: 144″ × 132″ (12′-0″ × 11′-0″).</li>
-          <li>Desk: 88″ Bathroom-wall run, 80″ Sideyard-wall run, 25″ depth.</li>
+          <li>Desk: 88″ Bathroom-wall run and 80″ Sideyard-wall run, edge-joined at X = 25″ with no overlap; 25″ depth.</li>
           <li>Desktop: 29.5″ high, 1.5″ thick, 28″ underside.</li>
+          <li>Window: 72″ (6′-0″) wide, centered on Window wall; sill 41″ (3′-5″), head 81″ (6′-9″) AFF.</li>
           <li>Ceiling endpoints: 144″ high and 96.5″ low.</li>
           <li>Ceiling slopes from the Bathroom/high wall to the Window/low wall.</li>
           <li>Fan: Haiku L, 60″ diameter, centered at (72, 66).</li>
@@ -334,8 +376,8 @@
 
   <section class="drawing-card" aria-labelledby="plan-heading">
     <div class="drawing-header">
-      <h2 id="plan-heading">A · Top-down room plan</h2>
-      <div class="drawing-meta">Scale: 1 SVG unit = 1 inch · Coordinate origin at upper-left interior corner</div>
+      <h2 id="plan-heading">A1 · Fan-plane interference map — top view</h2>
+      <div class="drawing-meta">Horizontal slice at 98.25″ AFF · Scale: 1 SVG unit = 1 inch</div>
     </div>
     <svg id="plan-svg" viewBox="0 0 220 194" role="img" aria-labelledby="plan-title plan-desc">
       <title id="plan-title">Top-down office room plan</title>
@@ -353,11 +395,11 @@
       <g id="plan-grid" aria-hidden="true"></g>
       <g id="plan-beams" clip-path="url(#room-clip)"></g>
 
-      <!-- L-shaped desk: union of 25 × 88 and 80 × 25 inch rectangles -->
-      <path class="desk" d="M40 30 H120 V55 H65 V118 H40 Z"/>
-      <rect class="overlap" x="40" y="30" width="25" height="25"/>
-      <text class="svg-small halo" x="52.5" y="42.5" text-anchor="middle">25″ × 25″ overlap</text>
-      <text class="svg-label halo" x="92" y="47" text-anchor="middle">L-shaped butcher-block desk</text>
+      <!-- L-shaped desk: edge-joined 25 × 88 and 80 × 25 inch rectangles, with no overlap -->
+      <path class="desk" d="M40 30 H145 V55 H65 V118 H40 Z"/>
+      <line x1="65" y1="30" x2="65" y2="55" stroke="#785225" stroke-width=".4" stroke-dasharray="1.5 1"/>
+      <text class="svg-small halo" x="65" y="42.5" text-anchor="middle">edge joint</text>
+      <text class="svg-label halo" x="105" y="47" text-anchor="middle">L-shaped butcher-block desk</text>
 
       <!-- Monitor on Bathroom wall -->
       <rect class="monitor" x="40" y="47.85" width="2.5" height="52.3"/>
@@ -385,6 +427,18 @@
       <!-- Room perimeter, drawn over clipped analysis graphics -->
       <rect class="wall" x="40" y="30" width="144" height="132"/>
 
+      <!-- Window projection on Window wall: centered 72-inch opening, above this horizontal slice -->
+      <line class="window-cut" x1="184" y1="60" x2="184" y2="132"/>
+      <line class="window-glass" x1="184" y1="60" x2="184" y2="132"/>
+      <line class="window-frame" x1="181.5" y1="60" x2="181.5" y2="132"/>
+      <line class="window-frame" x1="180" y1="60" x2="186" y2="60"/>
+      <line class="window-frame" x1="180" y1="132" x2="186" y2="132"/>
+      <line class="extension" x1="184" y1="60" x2="194" y2="60"/>
+      <line class="extension" x1="184" y1="132" x2="194" y2="132"/>
+      <line class="dimension" x1="194" y1="60" x2="194" y2="132"/>
+      <text class="svg-small halo" x="198" y="96" text-anchor="middle" transform="rotate(90 198 96)">WINDOW 72″ = 6′-0″ · centered</text>
+      <text class="svg-tiny halo" x="178" y="96" text-anchor="middle" transform="rotate(-90 178 96)">sill 41″ · head 81″ AFF</text>
+
       <!-- Overall dimensions -->
       <line class="extension" x1="40" y1="30" x2="40" y2="17"/>
       <line class="extension" x1="184" y1="30" x2="184" y2="17"/>
@@ -400,10 +454,10 @@
       <line class="extension" x1="40" y1="118" x2="34" y2="118"/>
       <line class="dimension" x1="36.5" y1="30" x2="36.5" y2="118"/>
       <text class="svg-dim halo" x="33" y="74" text-anchor="middle" transform="rotate(-90 33 74)">88″ run</text>
-      <line class="dimension" x1="40" y1="33.5" x2="120" y2="33.5"/>
-      <text class="svg-dim halo" x="80" y="37" text-anchor="middle">80″ run</text>
-      <line class="dimension" x1="124" y1="30" x2="124" y2="55"/>
-      <text class="svg-dim halo" x="128" y="42.5" transform="rotate(90 128 42.5)" text-anchor="middle">25″ depth</text>
+      <line class="dimension" x1="65" y1="33.5" x2="145" y2="33.5"/>
+      <text class="svg-dim halo" x="105" y="37" text-anchor="middle">80″ run · starts at X=25″</text>
+      <line class="dimension" x1="149" y1="30" x2="149" y2="55"/>
+      <text class="svg-dim halo" x="153" y="42.5" transform="rotate(90 153 42.5)" text-anchor="middle">25″ depth</text>
 
       <!-- Monitor width dimension -->
       <line class="extension" x1="40" y1="47.85" x2="31.5" y2="47.85"/>
@@ -419,7 +473,7 @@
       <text class="svg-wall-label halo" x="112" y="25" text-anchor="middle">SIDEYARD WALL</text>
       <text class="svg-wall-label halo" x="112" y="168" text-anchor="middle">CLOSET WALL</text>
       <text class="svg-wall-label halo" x="16.5" y="96" text-anchor="middle" transform="rotate(-90 16.5 96)">BATHROOM WALL · HIGH SIDE</text>
-      <text class="svg-wall-label halo" x="190" y="96" text-anchor="middle" transform="rotate(90 190 96)">WINDOW WALL · LOW SIDE</text>
+      <text class="svg-wall-label halo" x="210" y="96" text-anchor="middle" transform="rotate(90 210 96)">WINDOW WALL · LOW SIDE</text>
 
       <!-- Coordinate convention and scale legend -->
       <g transform="translate(40 177)">
@@ -439,14 +493,106 @@
     </svg>
   </section>
 
+  <section class="drawing-card" aria-labelledby="floor-heading">
+    <div class="drawing-header">
+      <h2 id="floor-heading">A2 · Floor-plane light coverage — top view</h2>
+      <div class="drawing-meta">Horizontal slice at 0″ AFF · Same room and fixture positions as A1</div>
+    </div>
+    <div class="coverage-summary" aria-label="Floor coverage summary">
+      <div class="coverage-metric">
+        <span>Installed output</span>
+        <strong id="floor-output-value">6,520 lumens</strong>
+        <small>Four fixtures at approximately 1,630 lumens each.</small>
+      </div>
+      <div class="coverage-metric">
+        <span>Raw output density</span>
+        <strong id="floor-density-value">49.4 lm/ft²</strong>
+        <small>Before optical, reflectance, obstruction, and maintenance losses; not measured foot-candles.</small>
+      </div>
+      <div class="coverage-metric">
+        <span>Geometric coverage</span>
+        <strong>70° field reaches the entire floor</strong>
+        <small>The 45° main-beam footprints leave a small central transition zone.</small>
+      </div>
+    </div>
+    <svg id="floor-svg" viewBox="0 0 220 194" role="img" aria-labelledby="floor-title floor-desc">
+      <title id="floor-title">Top-down floor-plane light coverage</title>
+      <desc id="floor-desc">The same 144 by 132 inch room showing calculated 45 degree main-beam and 70 degree outer-field footprints where the four recessed lights reach floor level.</desc>
+      <defs>
+        <marker id="floor-arrow" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto-start-reverse" markerUnits="strokeWidth">
+          <path d="M 5 0 L 0 2.5 L 5 5 z" fill="#33414d"/>
+        </marker>
+        <clipPath id="floor-room-clip">
+          <rect x="40" y="30" width="144" height="132"/>
+        </clipPath>
+      </defs>
+
+      <rect class="room-fill" x="40" y="30" width="144" height="132"/>
+      <g id="floor-grid" aria-hidden="true"></g>
+      <g id="floor-beams" clip-path="url(#floor-room-clip)"></g>
+
+      <!-- Desktop projection: overhead surface blocks direct light from reaching the floor below it. -->
+      <path class="desk-floor-projection" d="M40 30 H145 V55 H65 V118 H40 Z"/>
+      <line x1="65" y1="30" x2="65" y2="55" stroke="#785225" stroke-width=".4" stroke-dasharray="1.5 1"/>
+      <text class="svg-small halo" x="105" y="47" text-anchor="middle">Desktop projection above floor · no overlap at joint</text>
+
+      <g id="floor-lights"></g>
+      <g id="floor-coverage-marker"></g>
+      <rect class="wall" x="40" y="30" width="144" height="132"/>
+
+      <!-- Window projection: the physical opening begins 41 inches above this floor slice. -->
+      <line class="window-cut" x1="184" y1="60" x2="184" y2="132"/>
+      <line class="window-glass" x1="184" y1="60" x2="184" y2="132"/>
+      <line class="window-frame" x1="181.5" y1="60" x2="181.5" y2="132"/>
+      <line class="window-frame" x1="180" y1="60" x2="186" y2="60"/>
+      <line class="window-frame" x1="180" y1="132" x2="186" y2="132"/>
+      <line class="extension" x1="184" y1="60" x2="194" y2="60"/>
+      <line class="extension" x1="184" y1="132" x2="194" y2="132"/>
+      <line x1="194" y1="60" x2="194" y2="132" class="dimension" style="marker-start:url(#floor-arrow); marker-end:url(#floor-arrow)"/>
+      <text class="svg-small halo" x="198" y="96" text-anchor="middle" transform="rotate(90 198 96)">WINDOW 72″ = 6′-0″ · centered</text>
+      <text class="svg-tiny halo" x="178" y="96" text-anchor="middle" transform="rotate(-90 178 96)">projection above floor · sill 41″ · head 81″</text>
+
+      <!-- Overall dimensions -->
+      <line class="extension" x1="40" y1="30" x2="40" y2="17"/>
+      <line class="extension" x1="184" y1="30" x2="184" y2="17"/>
+      <line x1="40" y1="20" x2="184" y2="20" class="dimension" style="marker-start:url(#floor-arrow); marker-end:url(#floor-arrow)"/>
+      <text class="svg-dim halo" x="112" y="15.8" text-anchor="middle">144″ = 12′-0″</text>
+      <line class="extension" x1="40" y1="30" x2="24" y2="30"/>
+      <line class="extension" x1="40" y1="162" x2="24" y2="162"/>
+      <line x1="27" y1="30" x2="27" y2="162" class="dimension" style="marker-start:url(#floor-arrow); marker-end:url(#floor-arrow)"/>
+      <text class="svg-dim halo" x="21" y="96" text-anchor="middle" transform="rotate(-90 21 96)">132″ = 11′-0″</text>
+
+      <!-- Wall labels -->
+      <text class="svg-wall-label halo" x="112" y="25" text-anchor="middle">SIDEYARD WALL</text>
+      <text class="svg-wall-label halo" x="112" y="168" text-anchor="middle">CLOSET WALL</text>
+      <text class="svg-wall-label halo" x="16.5" y="96" text-anchor="middle" transform="rotate(-90 16.5 96)">BATHROOM WALL · HIGH SIDE</text>
+      <text class="svg-wall-label halo" x="210" y="96" text-anchor="middle" transform="rotate(90 210 96)">WINDOW WALL · LOW SIDE</text>
+
+      <g transform="translate(40 177)">
+        <text class="svg-title" x="0" y="0">FLOOR-PLANE FOOTPRINTS</text>
+        <text class="svg-small" x="0" y="4">Yellow = 45° main beam · dashed blue = 70° outer field · circles clipped at walls</text>
+      </g>
+      <g transform="translate(155 175)">
+        <text class="svg-title" x="0" y="0">SCALE</text>
+        <line x1="0" y1="5" x2="24" y2="5" stroke="#17212b" stroke-width=".7"/>
+        <line x1="0" y1="3.5" x2="0" y2="6.5" stroke="#17212b" stroke-width=".7"/>
+        <line x1="12" y1="3.5" x2="12" y2="6.5" stroke="#17212b" stroke-width=".7"/>
+        <line x1="24" y1="3.5" x2="24" y2="6.5" stroke="#17212b" stroke-width=".7"/>
+        <text class="svg-small" x="0" y="9">0</text>
+        <text class="svg-small" x="12" y="9" text-anchor="middle">12″</text>
+        <text class="svg-small" x="24" y="9" text-anchor="end">24″</text>
+      </g>
+    </svg>
+  </section>
+
   <section class="drawing-card" aria-labelledby="elevation-heading">
     <div class="drawing-header">
-      <h2 id="elevation-heading">B · Side elevation — ceiling slope direction</h2>
-      <div class="drawing-meta">Bathroom/high wall at left · Window/low wall at right · Confirmed slope direction</div>
+      <h2 id="elevation-heading">B · Projected side elevation — heights and beam spread</h2>
+      <div class="drawing-meta">Bathroom/high wall at left · Window/low wall at right · Projected Y positions; not an overlap test</div>
     </div>
-    <svg id="elevation-svg" viewBox="0 0 208 176" role="img" aria-labelledby="elevation-title elevation-desc">
+    <svg id="elevation-svg" viewBox="0 0 230 176" role="img" aria-labelledby="elevation-title elevation-desc">
       <title id="elevation-title">Office side elevation along the ceiling slope</title>
-      <desc id="elevation-desc">A Bathroom-wall-to-Window-wall side elevation showing the 144 inch high wall, 96.5 inch low wall, sloped ceiling, desk, fan drop and blade plane, and representative vertical light cones.</desc>
+      <desc id="elevation-desc">A Bathroom-wall-to-Window-wall side elevation showing the 144 inch high wall, 96.5 inch low wall, centered Window-wall window with a 41 inch sill and 81 inch head, sloped ceiling, desk, fan drop and blade plane, and representative vertical light cones.</desc>
       <defs>
         <marker id="elev-arrow" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto-start-reverse" markerUnits="strokeWidth">
           <path d="M 5 0 L 0 2.5 L 5 5 z" fill="#33414d"/>
@@ -471,12 +617,25 @@
       <line class="wall-elev" x1="174" y1="160" x2="174" y2="63.5"/>
       <line class="ceiling" x1="30" y1="16" x2="174" y2="63.5"/>
 
-      <!-- Desk in slope direction: Sideyard run projects 80 inches -->
-      <rect class="desk-elev" x="30" y="130.5" width="80" height="1.5"/>
+      <!-- Window shown edge-on in this slope elevation; its 72-inch width runs along Y, out of plane. -->
+      <line class="window-cut" x1="174" y1="79" x2="174" y2="119"/>
+      <line class="window-glass" x1="174" y1="79" x2="174" y2="119"/>
+      <line class="window-frame" x1="171" y1="79" x2="177" y2="79"/>
+      <line class="window-frame" x1="171" y1="119" x2="177" y2="119"/>
+      <line class="extension" x1="174" y1="79" x2="184" y2="79"/>
+      <line class="extension" x1="174" y1="119" x2="184" y2="119"/>
+      <line class="dimension" x1="184" y1="79" x2="184" y2="119" style="marker-start:url(#elev-arrow); marker-end:url(#elev-arrow)"/>
+      <text class="svg-small halo" x="188.5" y="99" text-anchor="middle" transform="rotate(90 188.5 99)">WINDOW · 40″ high</text>
+      <text class="svg-tiny halo" x="192" y="123">sill 41″ · head 81″ AFF</text>
+      <text class="svg-tiny halo" x="192" y="127">72″ wide and centered along wall (out of plane)</text>
+
+      <!-- Desk projection in slope direction: 25-inch Bathroom segment plus edge-joined 80-inch Sideyard run -->
+      <rect class="desk-elev" x="30" y="130.5" width="105" height="1.5"/>
+      <line x1="55" y1="130.5" x2="55" y2="132" stroke="#785225" stroke-width=".7"/>
       <line x1="35" y1="132" x2="35" y2="160" stroke="#785225" stroke-width=".65"/>
-      <line x1="105" y1="132" x2="105" y2="160" stroke="#785225" stroke-width=".65"/>
-      <text class="svg-small halo" x="70" y="126.5" text-anchor="middle">Desktop 29.5″ AFF · 1.5″ thick · underside 28″</text>
-      <text class="svg-tiny halo" x="70" y="136" text-anchor="middle">80″ Sideyard-wall run projected in this elevation</text>
+      <line x1="130" y1="132" x2="130" y2="160" stroke="#785225" stroke-width=".65"/>
+      <text class="svg-small halo" x="82.5" y="126.5" text-anchor="middle">Desktop 29.5″ AFF · 1.5″ thick · underside 28″</text>
+      <text class="svg-tiny halo" x="82.5" y="136" text-anchor="middle">25″ Bathroom segment + 80″ Sideyard run · edge-joined, no overlap</text>
 
       <!-- Monitor elevation -->
       <rect class="monitor" x="31" y="107.5" width="2.5" height="18"/>
@@ -500,8 +659,8 @@
       <!-- Wall height dimensions -->
       <line class="dimension" x1="22" y1="16" x2="22" y2="160" style="marker-start:url(#elev-arrow); marker-end:url(#elev-arrow)"/>
       <text class="svg-dim halo" x="17.5" y="88" text-anchor="middle" transform="rotate(-90 17.5 88)">144″ = 12′-0″ high</text>
-      <line class="dimension" x1="181" y1="63.5" x2="181" y2="160" style="marker-start:url(#elev-arrow); marker-end:url(#elev-arrow)"/>
-      <text class="svg-dim halo" x="185.5" y="111.75" text-anchor="middle" transform="rotate(90 185.5 111.75)">96.5″ = 8′-0.5″ low</text>
+      <line class="dimension" x1="213" y1="63.5" x2="213" y2="160" style="marker-start:url(#elev-arrow); marker-end:url(#elev-arrow)"/>
+      <text class="svg-dim halo" x="217.5" y="111.75" text-anchor="middle" transform="rotate(90 217.5 111.75)">96.5″ = 8′-0.5″ low</text>
 
       <!-- Overall horizontal dimension -->
       <line class="extension" x1="30" y1="160" x2="30" y2="170"/>
@@ -569,7 +728,9 @@
         <li class="formula">radius = verticalDistance × tan(angle / 2)</li>
         <li>At desktop: L1/L3 main radius 43.06″ (86.11″ Ø), field radius 72.78″ (145.57″ Ø).</li>
         <li>At desktop: L2/L4 main radius 32.13″ (64.25″ Ø), field radius 54.31″ (108.61″ Ø).</li>
-        <li>Plan footprints are calculated at the fan blade plane; the elevation continues the cones to desktop height.</li>
+        <li>At floor: L1/L3 main radius 55.27″, field radius 93.44″; L2/L4 main radius 44.34″, field radius 74.96″.</li>
+        <li>A1 shows footprints at the fan blade plane; A2 shows footprints at floor level; B continues the cones to desktop height.</li>
+        <li>The floor’s 70° geometric field coverage is complete, but this alone does not establish illuminance or uniformity.</li>
       </ul>
     </article>
     <article class="note-card">
@@ -578,6 +739,7 @@
         <li>Plan and elevation geometry use a one-inch coordinate basis.</li>
         <li>Plan grid: 12″ major spacing with lighter 6″ subdivisions.</li>
         <li>Beam circles and cones are clipped to the interior room boundary.</li>
+        <li>The projected side elevation collapses Y positions and must not be used for fan-overlap analysis.</li>
         <li>Dimensions govern; do not scale from a print unless print scaling is 100%.</li>
       </ul>
     </article>
@@ -591,7 +753,7 @@
     </article>
   </section>
 
-  <footer>OFFICE ROOM DIAGRAM · REV 01 · SELF-CONTAINED HTML / INLINE SVG</footer>
+  <footer>OFFICE ROOM DIAGRAM · REV 02 · SELF-CONTAINED HTML / INLINE SVG</footer>
 </main>
 
 <script>
@@ -607,7 +769,7 @@
       ((cfg.ceiling.highHeight - cfg.ceiling.lowHeight) * x / cfg.ceiling.slopeAcross);
     const radiusAt = (verticalDistance, fullAngleDegrees) =>
       Math.max(0, verticalDistance) * Math.tan(degToRad(fullAngleDegrees / 2));
-    const format = value => Number(value).toFixed(2);
+    const format = (value, decimals = 2) => Number(value).toFixed(decimals);
     const svgElement = (name, attributes = {}, text = "") => {
       const node = document.createElementNS(NS, name);
       for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
@@ -626,21 +788,24 @@
     document.getElementById("slope-angle-value").textContent = `${format(slopeAngle)}°`;
 
     // 6-inch grid, with every 12-inch line emphasized.
-    const grid = document.getElementById("plan-grid");
-    for (let x = 6; x < cfg.room.width; x += 6) {
-      grid.appendChild(svgElement("line", {
-        x1: roomOffset.x + x, y1: roomOffset.y,
-        x2: roomOffset.x + x, y2: roomOffset.y + cfg.room.length,
-        class: x % 12 === 0 ? "grid12" : "grid6"
-      }));
-    }
-    for (let y = 6; y < cfg.room.length; y += 6) {
-      grid.appendChild(svgElement("line", {
-        x1: roomOffset.x, y1: roomOffset.y + y,
-        x2: roomOffset.x + cfg.room.width, y2: roomOffset.y + y,
-        class: y % 12 === 0 ? "grid12" : "grid6"
-      }));
-    }
+    const renderPlanGrid = grid => {
+      for (let x = 6; x < cfg.room.width; x += 6) {
+        grid.appendChild(svgElement("line", {
+          x1: roomOffset.x + x, y1: roomOffset.y,
+          x2: roomOffset.x + x, y2: roomOffset.y + cfg.room.length,
+          class: x % 12 === 0 ? "grid12" : "grid6"
+        }));
+      }
+      for (let y = 6; y < cfg.room.length; y += 6) {
+        grid.appendChild(svgElement("line", {
+          x1: roomOffset.x, y1: roomOffset.y + y,
+          x2: roomOffset.x + cfg.room.width, y2: roomOffset.y + y,
+          class: y % 12 === 0 ? "grid12" : "grid6"
+        }));
+      }
+    };
+    renderPlanGrid(document.getElementById("plan-grid"));
+    renderPlanGrid(document.getElementById("floor-grid"));
 
     const beams = document.getElementById("plan-beams");
     const lights = document.getElementById("plan-lights");
@@ -655,6 +820,9 @@
       const verticalToDesktop = lightCeilingHeight - cfg.desk.finishedHeight;
       const mainRadiusDesktop = radiusAt(verticalToDesktop, cfg.lights.beamAngleDegrees);
       const fieldRadiusDesktop = radiusAt(verticalToDesktop, cfg.lights.fieldAngleDegrees);
+      const verticalToFloor = lightCeilingHeight - cfg.analysisPlanes.floorHeight;
+      const mainRadiusFloor = radiusAt(verticalToFloor, cfg.lights.beamAngleDegrees);
+      const fieldRadiusFloor = radiusAt(verticalToFloor, cfg.lights.fieldAngleDegrees);
       const dx = light.x - cfg.fan.center.x;
       const dy = light.y - cfg.fan.center.y;
       const centerDistance = Math.hypot(dx, dy);
@@ -669,7 +837,8 @@
       results.push({
         ...light,
         lightCeilingHeight, verticalToFan, mainRadiusFan, fieldRadiusFan,
-        mainRadiusDesktop, fieldRadiusDesktop, centerDistance,
+        mainRadiusDesktop, fieldRadiusDesktop, verticalToFloor,
+        mainRadiusFloor, fieldRadiusFloor, centerDistance,
         mainClearance, fieldClearance, risk
       });
 
@@ -718,6 +887,71 @@
       `;
       tableBody.appendChild(tr);
     });
+
+    // Floor-plane footprints and a sampled geometric coverage check.
+    const floorBeams = document.getElementById("floor-beams");
+    const floorLights = document.getElementById("floor-lights");
+    results.forEach(light => {
+      const cx = roomOffset.x + light.x;
+      const cy = roomOffset.y + light.y;
+      floorBeams.appendChild(svgElement("circle", {
+        cx, cy, r: light.fieldRadiusFloor, class: "beam-field"
+      }));
+      floorBeams.appendChild(svgElement("circle", {
+        cx, cy, r: light.mainRadiusFloor, class: "beam-main"
+      }));
+
+      floorLights.appendChild(svgElement("circle", { cx, cy, r: 2.2, class: "light-symbol" }));
+      floorLights.appendChild(svgElement("circle", { cx, cy, r: .72, class: "light-core" }));
+      floorLights.appendChild(svgElement("text", {
+        x: cx, y: cy - 4.2, class: "svg-small halo", "text-anchor": "middle"
+      }, `L${light.number} (${light.x},${light.y})`));
+      const radiusLabelY = light.y < cfg.room.length / 2 ? cy + 4.1 : cy - 4.1;
+      floorLights.appendChild(svgElement("text", {
+        x: cx, y: radiusLabelY, class: "svg-tiny halo", "text-anchor": "middle"
+      }, `floor radii: ${format(light.mainRadiusFloor)}″ main · ${format(light.fieldRadiusFloor)}″ field`));
+    });
+
+    let worstMainPoint = { x: 0, y: 0, gap: -Infinity };
+    let worstFieldGap = -Infinity;
+    for (let y = 0; y <= cfg.room.length; y += .5) {
+      for (let x = 0; x <= cfg.room.width; x += .5) {
+        const mainGap = Math.min(...results.map(light =>
+          Math.hypot(x - light.x, y - light.y) - light.mainRadiusFloor
+        ));
+        const fieldGap = Math.min(...results.map(light =>
+          Math.hypot(x - light.x, y - light.y) - light.fieldRadiusFloor
+        ));
+        if (mainGap > worstMainPoint.gap) worstMainPoint = { x, y, gap: mainGap };
+        if (fieldGap > worstFieldGap) worstFieldGap = fieldGap;
+      }
+    }
+
+    const coverageMarker = document.getElementById("floor-coverage-marker");
+    if (worstMainPoint.gap > 0) {
+      const gapX = roomOffset.x + worstMainPoint.x;
+      const gapY = roomOffset.y + worstMainPoint.y;
+      coverageMarker.appendChild(svgElement("circle", {
+        cx: gapX, cy: gapY, r: 1.6, class: "coverage-gap"
+      }));
+      coverageMarker.appendChild(svgElement("path", {
+        d: `M${gapX + 2} ${gapY - 1} L${gapX + 10} ${gapY - 8} H${gapX + 24}`,
+        class: "leader"
+      }));
+      coverageMarker.appendChild(svgElement("text", {
+        x: gapX + 25, y: gapY - 8, class: "svg-small halo"
+      }, "Approx. center of main-beam transition zone"));
+      coverageMarker.appendChild(svgElement("text", {
+        x: gapX + 25, y: gapY - 4.8, class: "svg-tiny halo"
+      }, `${format(worstMainPoint.gap)}″ beyond nearest 45° boundary; still within overlapping outer fields`));
+    }
+
+    const totalLumens = cfg.lights.centers.length * cfg.lights.lumensApprox;
+    const roomAreaSquareFeet = cfg.room.width * cfg.room.length / 144;
+    document.getElementById("floor-output-value").textContent =
+      `${totalLumens.toLocaleString("en-US")} lumens`;
+    document.getElementById("floor-density-value").textContent =
+      `${format(totalLumens / roomAreaSquareFeet, 1)} lm/ft²`;
 
     // Side elevation: two X positions represent two top-down fixtures each.
     const elevationCones = document.getElementById("elevation-cones");
@@ -776,8 +1010,16 @@
     );
     console.assert(
       cfg.desk.sideyardRun.x2 - cfg.desk.sideyardRun.x1 === 80 &&
-      cfg.desk.sideyardRun.y2 - cfg.desk.sideyardRun.y1 === 25,
-      "Sideyard-wall desk rectangle must be 80 × 25 inches."
+      cfg.desk.sideyardRun.y2 - cfg.desk.sideyardRun.y1 === 25 &&
+      cfg.desk.sideyardRun.x1 === cfg.desk.bathroomRun.x2,
+      "Sideyard-wall desk must be 80 × 25 inches and edge-join the Bathroom run at X = 25."
+    );
+    console.assert(
+      cfg.window.y2 - cfg.window.y1 === 72 &&
+      (cfg.window.y1 + cfg.window.y2) / 2 === cfg.window.centerAlongWall &&
+      cfg.window.sillHeight === 41 &&
+      cfg.window.headHeight === 81,
+      "Window must be 72 inches wide, centered at Y = 66, with sill 41 and head 81 inches AFF."
     );
     console.assert(cfg.fan.radius === 30 && cfg.fan.diameter === 60, "Fan radius must be 30 inches.");
     console.assert(
@@ -787,6 +1029,8 @@
     );
     console.assert(Math.abs(fanCeilingHeight - 120.25) < 1e-9, "Ceiling formula check failed.");
     console.assert(Math.abs(radiusAt(1, 45) - Math.tan(Math.PI / 8)) < 1e-12, "Degree-to-radian beam conversion failed.");
+    console.assert(worstFieldGap <= 0, "The 70-degree floor fields should cover the full room.");
+    console.assert(worstMainPoint.gap > 0, "The floor plan should identify the central main-beam transition zone.");
   })();
 </script>
 </body>
