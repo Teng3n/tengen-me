@@ -122,6 +122,98 @@ function sampledWindowWallCoverage(config, fixture, axis, cell = 2) {
   };
 }
 
+function sampledBathroomWallCoverage(config, fixture, axis, cell = 2) {
+  const slope = (config.ceiling.highHeight - config.ceiling.lowHeight) / config.ceiling.slopeAcross;
+  const ceilingHeight = (x) => config.ceiling.highHeight - slope * x;
+  const monitorY1 = config.monitor.centerAlongWall - config.monitor.widthAlongWall / 2;
+  const monitorY2 = config.monitor.centerAlongWall + config.monitor.widthAlongWall / 2;
+  const monitorZ1 = config.desk.finishedHeight + config.monitor.bottomAboveDesktop;
+  const monitorZ2 = monitorZ1 + config.monitor.height;
+  let samples = 0;
+  let mainSamples = 0;
+  let fieldSamples = 0;
+
+  for (let y = 0; y < config.room.length; y += cell) {
+    for (let z = 0; z < config.ceiling.highHeight; z += cell) {
+      const point = { x: 0, y: y + cell / 2, z: z + cell / 2 };
+      const insideMonitor =
+        point.y >= monitorY1 && point.y <= monitorY2 &&
+        point.z >= monitorZ1 && point.z <= monitorZ2;
+      if (insideMonitor) continue;
+
+      samples += 1;
+      let main = 0;
+      let field = 0;
+      for (const light of config.lights.centers) {
+        const dx = point.x - light.x;
+        const dy = point.y - light.y;
+        const dz = point.z - ceilingHeight(light.x);
+        const length = Math.hypot(dx, dy, dz);
+        const angle = Math.acos(
+          (dx * axis.x + dy * axis.y + dz * axis.z) / length,
+        ) * 180 / Math.PI;
+        if (angle <= fixture.beamAngleDegrees / 2) main += 1;
+        if (angle <= fixture.fieldAngleDegrees / 2) field += 1;
+      }
+      if (main > 0) mainSamples += 1;
+      if (field > 0) fieldSamples += 1;
+    }
+  }
+
+  return {
+    mainPercent: 100 * mainSamples / samples,
+    fieldPercent: 100 * fieldSamples / samples,
+  };
+}
+
+function sampledMonitorCoverage(config, fixture, axis, cell = 1) {
+  const slope = (config.ceiling.highHeight - config.ceiling.lowHeight) / config.ceiling.slopeAcross;
+  const ceilingHeight = (x) => config.ceiling.highHeight - slope * x;
+  const y1 = config.monitor.centerAlongWall - config.monitor.widthAlongWall / 2;
+  const y2 = config.monitor.centerAlongWall + config.monitor.widthAlongWall / 2;
+  const z1 = config.desk.finishedHeight + config.monitor.bottomAboveDesktop;
+  const z2 = z1 + config.monitor.height;
+  let samples = 0;
+  let mainSamples = 0;
+  let fieldSamples = 0;
+
+  for (let y = y1; y < y2; y += cell) {
+    for (let z = z1; z < z2; z += cell) {
+      const width = Math.min(cell, y2 - y);
+      const height = Math.min(cell, z2 - z);
+      const sampleY = y + width / 2;
+      const localY = sampleY - config.monitor.centerAlongWall;
+      const radius = config.monitor.curveRadius;
+      const point = {
+        x: radius - Math.sqrt(Math.max(0, radius ** 2 - localY ** 2)),
+        y: sampleY,
+        z: z + height / 2,
+      };
+      samples += 1;
+      let main = 0;
+      let field = 0;
+      for (const light of config.lights.centers) {
+        const dx = point.x - light.x;
+        const dy = point.y - light.y;
+        const dz = point.z - ceilingHeight(light.x);
+        const length = Math.hypot(dx, dy, dz);
+        const angle = Math.acos(
+          (dx * axis.x + dy * axis.y + dz * axis.z) / length,
+        ) * 180 / Math.PI;
+        if (angle <= fixture.beamAngleDegrees / 2) main += 1;
+        if (angle <= fixture.fieldAngleDegrees / 2) field += 1;
+      }
+      if (main > 0) mainSamples += 1;
+      if (field > 0) fieldSamples += 1;
+    }
+  }
+
+  return {
+    mainPercent: 100 * mainSamples / samples,
+    fieldPercent: 100 * fieldSamples / samples,
+  };
+}
+
 async function render(path = "/", headers = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${path}`);
@@ -200,13 +292,13 @@ test("about and projects pages render their presentation details", async () => {
   assert.match(projectsHtml, /project-status project-status-active/);
 });
 
-test("unlinked office diagram serves the simplified three-view fixture study", async () => {
+test("unlinked office diagram serves the expanded four-view fixture study", async () => {
   const response = await render("/office-room-diagram");
   assert.equal(response.status, 200);
   assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
 
   const html = await response.text();
-  assert.match(html, /Revision 06/);
+  assert.match(html, /Revision 07/);
   assert.match(html, /29\.1″ overall height/);
   assert.match(html, /HLBSL609FS5/);
   assert.match(html, /A1-HLBSL/);
@@ -217,10 +309,13 @@ test("unlinked office diagram serves the simplified three-view fixture study", a
   assert.match(html, /B-RLS6/);
   assert.match(html, /C-HLBSL/);
   assert.match(html, /C-RLS6/);
-  assert.equal((html.match(/data-diagram-legend=/g) ?? []).length, 8);
+  assert.match(html, /D-HLBSL/);
+  assert.match(html, /D-RLS6/);
+  assert.equal((html.match(/data-diagram-legend=/g) ?? []).length, 10);
   for (const diagram of [
     "A1-HLBSL", "A2-HLBSL", "A1-RLS6", "A2-RLS6",
     "B-HLBSL", "B-RLS6", "C-HLBSL", "C-RLS6",
+    "D-HLBSL", "D-RLS6",
   ]) {
     assert.match(html, new RegExp(`data-diagram-legend="${diagram}"`));
   }
@@ -245,8 +340,8 @@ test("office diagram detailed analysis is served on its own hidden route", async
   const html = await response.text();
   assert.match(html, /<body class="details-page">/);
   assert.match(html, /Office Room — Detailed Lighting Analysis/);
-  assert.match(html, /D · How the corrected fan drop/);
-  assert.match(html, /E · Fixture comparison/);
+  assert.match(html, /E · How the corrected fan drop/);
+  assert.match(html, /F · Fixture comparison/);
 });
 
 test("office diagram geometry reflects the corrected fan drop", () => {
@@ -301,6 +396,28 @@ test("office diagram geometry reflects the corrected fan drop", () => {
   assert.ok(waferWindowWall.fieldPercent > 87 && waferWindowWall.fieldPercent < 89);
   assert.ok(rlsWindowWall.mainPercent > 23 && rlsWindowWall.mainPercent < 25);
   assert.ok(rlsWindowWall.fieldPercent > 62 && rlsWindowWall.fieldPercent < 64);
+
+  const waferBathroomWall = sampledBathroomWallCoverage(
+    config, config.lights, waferAxis,
+  );
+  const rlsBathroomWall = sampledBathroomWallCoverage(
+    config, config.baselineLights, verticalAxis,
+  );
+  assert.ok(waferBathroomWall.mainPercent > 82 && waferBathroomWall.mainPercent < 84);
+  assert.ok(waferBathroomWall.fieldPercent > 94 && waferBathroomWall.fieldPercent < 96);
+  assert.ok(rlsBathroomWall.mainPercent > 28 && rlsBathroomWall.mainPercent < 30);
+  assert.ok(rlsBathroomWall.fieldPercent > 53 && rlsBathroomWall.fieldPercent < 55);
+
+  const waferMonitor = sampledMonitorCoverage(
+    config, config.lights, waferAxis,
+  );
+  const rlsMonitor = sampledMonitorCoverage(
+    config, config.baselineLights, verticalAxis,
+  );
+  assert.equal(waferMonitor.mainPercent, 100);
+  assert.equal(waferMonitor.fieldPercent, 100);
+  assert.ok(rlsMonitor.mainPercent > 60 && rlsMonitor.mainPercent < 62);
+  assert.equal(rlsMonitor.fieldPercent, 100);
 });
 
 test("admin route reveals no private surface without Cloudflare Access", async () => {

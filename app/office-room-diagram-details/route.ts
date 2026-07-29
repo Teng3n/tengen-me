@@ -5,8 +5,8 @@ export const dynamic = "force-static";
 export async function GET() {
   const detailsHtml = diagramHtml
     .replace(
-      "<title>Office Room Lighting Study — Revision 06</title>",
-      "<title>Office Room Detailed Lighting Analysis — Revision 06</title>",
+      "<title>Office Room Lighting Study — Revision 07</title>",
+      "<title>Office Room Detailed Lighting Analysis — Revision 07</title>",
     )
     .replace("<body>", '<body class="details-page">');
 
