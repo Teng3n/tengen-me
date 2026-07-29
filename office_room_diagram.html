@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Office Room Lighting Study — Revision 05</title>
+  <title>Office Room Lighting Study — Revision 06</title>
 
   <!--
     ================================================================
@@ -14,7 +14,7 @@
   -->
   <script>
     const DRAWING_CONFIG = Object.freeze({
-      revision: "05",
+      revision: "06",
       drawingDate: "2026-07-29",
       units: "inches",
       room: {
@@ -337,23 +337,35 @@
     .risk-fringe { color: #8a5c00; }
     .risk-strobe { color: #a12f2f; }
 
-    .legend {
+    .diagram-legend {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px 18px;
-      margin-top: 22px;
-      padding: 14px 15px;
-      border: 1px solid #cfd6dc;
+      gap: 7px 18px;
+      margin-top: 12px;
+      padding: 11px 2px 0;
+      border-top: 1px solid #cfd6dc;
       break-inside: avoid;
       page-break-inside: avoid;
     }
-    .legend h2 { grid-column: 1 / -1; margin-bottom: 2px; }
+    .diagram-legend h3 {
+      grid-column: 1 / -1;
+      margin: 0 0 1px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
     .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11.5px; }
     .swatch { width: 34px; height: 12px; flex: 0 0 auto; background: #fff; }
     .swatch-main { border: 2px solid var(--beam); background: rgba(241,184,74,.12); }
     .swatch-field { border: 2px dashed var(--field); background: rgba(85,169,185,.07); }
     .swatch-fan { border: 3px dashed var(--fan); background: rgba(103,72,154,.06); }
+    .swatch-fan-main { border: 1px solid #a12f2f; background: rgba(196,61,50,.38); }
+    .swatch-fan-field { border: 1px solid var(--fan); background: rgba(112,86,149,.20); }
+    .swatch-axis { border-top: 2px dashed #a86400; height: 2px; }
+    .swatch-window { border: 2px solid #285d70; background: rgba(220,239,243,.88); }
     .swatch-desk { border: 2px solid var(--desk-line); background: rgba(215,168,102,.65); }
+    .swatch-desk-projection { border: 2px dashed var(--desk-line); background: rgba(215,168,102,.22); }
     .swatch-confirmed { border-top: 4px solid var(--confirmed); }
     .swatch-provisional { border-top: 4px solid var(--provisional); }
     .swatch-shadow { border: 2px dashed var(--shadow-risk); background: rgba(180,35,24,.18); }
@@ -375,8 +387,8 @@
     @media (max-width: 760px) {
       body { padding: 0; }
       main { padding: 18px 12px 24px; box-shadow: none; }
-      .summary-grid, .notes-grid, .legend, .coverage-summary { grid-template-columns: 1fr; }
-      .legend h2 { grid-column: 1; }
+      .summary-grid, .notes-grid, .diagram-legend, .coverage-summary { grid-template-columns: 1fr; }
+      .diagram-legend h3 { grid-column: 1; }
     }
 
     @page { size: letter landscape; margin: .34in; }
@@ -386,7 +398,7 @@
       body { padding: 0; }
       main { width: 100%; max-width: none; padding: 0; box-shadow: none; }
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-      .drawing-card, .analysis-section, .legend, .notes-grid { break-inside: avoid; page-break-inside: avoid; }
+      .drawing-card, .analysis-section, .diagram-legend, .notes-grid { break-inside: avoid; page-break-inside: avoid; }
       .drawing-card { padding: 8px; margin-top: 14px; }
       #plan-svg, #rls-plan-plan-svg { max-height: 6.9in; }
       #floor-svg, #rls-floor-floor-svg { max-height: 6.9in; }
@@ -402,7 +414,7 @@
 <main>
   <header class="main-page-only">
     <h1>Office Room — Lighting, Fan, and Glare Study</h1>
-    <p class="subtitle">Drawing revision 05 · 29 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
+    <p class="subtitle">Drawing revision 06 · 29 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
   </header>
 
   <section class="main-page-only" aria-labelledby="measurement-summary">
@@ -436,17 +448,6 @@
     </div>
   </section>
 
-  <section class="legend main-page-only" aria-labelledby="legend-heading">
-    <h2 id="legend-heading">Legend</h2>
-    <div class="legend-item"><span class="swatch swatch-main"></span><span>Main beam; darker yellow means multiple fixtures</span></div>
-    <div class="legend-item"><span class="swatch swatch-field"></span><span>Outer field</span></div>
-    <div class="legend-item"><span class="swatch swatch-fan"></span><span>60″ fan blade-sweep boundary</span></div>
-    <div class="legend-item"><span class="swatch swatch-shadow"></span><span>Possible moving fan-shadow projection</span></div>
-    <div class="legend-item"><span class="swatch swatch-old"></span><span>Prior 22″ geometry retained for comparison only</span></div>
-    <div class="legend-item"><span class="swatch swatch-desk"></span><span>Desktop footprint</span></div>
-    <div class="legend-item"><span class="swatch swatch-confirmed"></span><span>Confirmed measurement/status</span></div>
-    <div class="legend-item"><span class="swatch swatch-provisional"></span><span>Provisional measurement/assumption</span></div>
-  </section>
   <nav class="study-nav main-page-only" aria-label="Office lighting study pages">
     <a href="/office-room-diagram-details">Detailed analysis →</a>
   </nav>
@@ -554,6 +555,14 @@
         <text class="svg-small" x="24" y="9" text-anchor="end">24″ = 2′</text>
       </g>
     </svg>
+    <aside class="diagram-legend" data-diagram-legend="A1-HLBSL" aria-label="A1-HLBSL legend">
+      <h3>Legend</h3>
+      <div class="legend-item"><span class="swatch swatch-main"></span><span>112° main-beam coverage; darker yellow means multiple fixtures</span></div>
+      <div class="legend-item"><span class="swatch swatch-field"></span><span>160° outer-field-only coverage</span></div>
+      <div class="legend-item"><span class="swatch swatch-fan"></span><span>60″ fan sweep at the conservative screening plane</span></div>
+      <div class="legend-item"><span class="swatch swatch-fan-main"></span><span>Fan sweep inside at least one main beam</span></div>
+      <div class="legend-item"><span class="swatch swatch-fan-field"></span><span>Fan sweep reached only by the outer field</span></div>
+    </aside>
   </section>
 
   <section class="drawing-card main-page-only" aria-labelledby="floor-heading">
@@ -629,10 +638,6 @@
       <text class="svg-wall-label halo" x="16.5" y="96" text-anchor="middle" transform="rotate(-90 16.5 96)">BATHROOM WALL · HIGH SIDE</text>
       <text class="svg-wall-label halo" x="210" y="96" text-anchor="middle" transform="rotate(90 210 96)">WINDOW WALL · LOW SIDE</text>
 
-      <g transform="translate(40 177)">
-        <text class="svg-title" x="0" y="0">FLOOR-PLANE FOOTPRINTS</text>
-        <text class="svg-small" x="0" y="4">Yellow = 112° main beam · blue = 160° outer field · red = possible fan-shadow path</text>
-      </g>
       <g transform="translate(155 175)">
         <text class="svg-title" x="0" y="0">SCALE</text>
         <line x1="0" y1="5" x2="24" y2="5" stroke="#17212b" stroke-width=".7"/>
@@ -644,6 +649,13 @@
         <text class="svg-small" x="24" y="9" text-anchor="end">24″</text>
       </g>
     </svg>
+    <aside class="diagram-legend" data-diagram-legend="A2-HLBSL" aria-label="A2-HLBSL legend">
+      <h3>Legend</h3>
+      <div class="legend-item"><span class="swatch swatch-main"></span><span>112° main-beam floor coverage; darker yellow means multiple fixtures</span></div>
+      <div class="legend-item"><span class="swatch swatch-field"></span><span>160° outer-field-only floor coverage</span></div>
+      <div class="legend-item"><span class="swatch swatch-shadow"></span><span>Dotted red shading: possible moving fan-shadow path</span></div>
+      <div class="legend-item"><span class="swatch swatch-desk-projection"></span><span>Desktop footprint projected above the floor slice</span></div>
+    </aside>
   </section>
 
   <section class="drawing-card main-page-only" aria-labelledby="rls-plan-heading">
@@ -652,6 +664,13 @@
       <div class="drawing-meta">Same room, fan, monitor, and light centers as A1-HLBSL · 45° beam / 70° field · vertically aimed</div>
     </div>
     <div id="rls-plan-host"></div>
+    <aside class="diagram-legend" data-diagram-legend="A1-RLS6" aria-label="A1-RLS6 legend">
+      <h3>Legend</h3>
+      <div class="legend-item"><span class="swatch swatch-main"></span><span>45° main-beam coverage</span></div>
+      <div class="legend-item"><span class="swatch swatch-field"></span><span>70° outer-field-only coverage</span></div>
+      <div class="legend-item"><span class="swatch swatch-fan"></span><span>60″ fan sweep at the conservative screening plane</span></div>
+      <div class="legend-item"><span class="swatch swatch-fan-field"></span><span>Fan sweep reached only by the outer field; no main-beam overlap</span></div>
+    </aside>
   </section>
 
   <section class="drawing-card main-page-only" aria-labelledby="rls-floor-heading">
@@ -677,6 +696,12 @@
       </div>
     </div>
     <div id="rls-floor-host"></div>
+    <aside class="diagram-legend" data-diagram-legend="A2-RLS6" aria-label="A2-RLS6 legend">
+      <h3>Legend</h3>
+      <div class="legend-item"><span class="swatch swatch-main"></span><span>45° main-beam floor coverage; darker yellow means multiple fixtures</span></div>
+      <div class="legend-item"><span class="swatch swatch-field"></span><span>70° outer-field-only floor coverage</span></div>
+      <div class="legend-item"><span class="swatch swatch-desk-projection"></span><span>Desktop footprint projected above the floor slice</span></div>
+    </aside>
   </section>
 
   <section class="drawing-card main-page-only" aria-labelledby="elevation-heading">
@@ -767,8 +792,15 @@
       <text class="svg-wall-label halo" x="31" y="10">BATHROOM / HIGH</text>
       <text class="svg-wall-label halo" x="173" y="57" text-anchor="end">WINDOW / LOW</text>
       <text class="svg-small confirmed halo" x="102" y="8" text-anchor="middle">CONFIRMED SLOPE DIRECTION · 18.26° downward toward Window wall</text>
-      <text class="svg-small halo" x="102" y="173" text-anchor="middle">HLBSL wafer axes are perpendicular to the ceiling: 18.26° toward the Bathroom/high wall.</text>
     </svg>
+    <aside class="diagram-legend" data-diagram-legend="B-HLBSL" aria-label="B-HLBSL legend">
+      <h3>Legend</h3>
+      <div class="legend-item"><span class="swatch swatch-main"></span><span>112° main cone</span></div>
+      <div class="legend-item"><span class="swatch swatch-field"></span><span>160° outer-field cone</span></div>
+      <div class="legend-item"><span class="swatch swatch-axis"></span><span>Fixture axis: 18.26° toward the Bathroom/high wall</span></div>
+      <div class="legend-item"><span class="swatch swatch-fan"></span><span>Haiku L fan envelope and conservative lowest-point plane</span></div>
+      <div class="legend-item"><span class="swatch swatch-old"></span><span>Prior 22″ screening assumption</span></div>
+    </aside>
   </section>
 
   <section class="drawing-card main-page-only" aria-labelledby="rls-elevation-heading">
@@ -777,6 +809,14 @@
       <div class="drawing-meta">Same projected slice as B-HLBSL · 45° main beam / 70° outer field · vertically aimed</div>
     </div>
     <div id="rls-elevation-host"></div>
+    <aside class="diagram-legend" data-diagram-legend="B-RLS6" aria-label="B-RLS6 legend">
+      <h3>Legend</h3>
+      <div class="legend-item"><span class="swatch swatch-main"></span><span>45° main cone</span></div>
+      <div class="legend-item"><span class="swatch swatch-field"></span><span>70° outer-field cone</span></div>
+      <div class="legend-item"><span class="swatch swatch-axis"></span><span>Fixture axis: vertically downward</span></div>
+      <div class="legend-item"><span class="swatch swatch-fan"></span><span>Haiku L fan envelope and conservative lowest-point plane</span></div>
+      <div class="legend-item"><span class="swatch swatch-old"></span><span>Prior 22″ screening assumption</span></div>
+    </aside>
   </section>
 
   <section class="drawing-card main-page-only" aria-labelledby="window-wall-heading">
@@ -828,8 +868,13 @@
       <text class="svg-wall-label halo" x="40" y="17">SIDEYARD WALL</text>
       <text class="svg-wall-label halo" x="172" y="17" text-anchor="end">CLOSET WALL</text>
       <text class="svg-small halo" x="106" y="8" text-anchor="middle">LOOKING FROM BATHROOM WALL TOWARD WINDOW WALL</text>
-      <text class="svg-small halo" x="106" y="125" text-anchor="middle">Yellow = main beam · blue = outer field · red = possible fan-shadow path</text>
     </svg>
+    <aside class="diagram-legend" data-diagram-legend="C-HLBSL" aria-label="C-HLBSL legend">
+      <h3>Legend</h3>
+      <div class="legend-item"><span class="swatch swatch-main"></span><span>112° main-beam coverage on solid wall; darker yellow means multiple fixtures</span></div>
+      <div class="legend-item"><span class="swatch swatch-field"></span><span>160° outer-field-only coverage on solid wall</span></div>
+      <div class="legend-item"><span class="swatch swatch-window"></span><span>Window opening, excluded from wall-area percentages</span></div>
+    </aside>
   </section>
 
   <section class="drawing-card main-page-only" aria-labelledby="rls-window-wall-heading">
@@ -855,11 +900,17 @@
       </div>
     </div>
     <div id="rls-window-wall-host"></div>
+    <aside class="diagram-legend" data-diagram-legend="C-RLS6" aria-label="C-RLS6 legend">
+      <h3>Legend</h3>
+      <div class="legend-item"><span class="swatch swatch-main"></span><span>45° main-beam coverage on solid wall; darker yellow means multiple fixtures</span></div>
+      <div class="legend-item"><span class="swatch swatch-field"></span><span>70° outer-field-only coverage on solid wall</span></div>
+      <div class="legend-item"><span class="swatch swatch-window"></span><span>Window opening, excluded from wall-area percentages</span></div>
+    </aside>
   </section>
 
   <header class="details-only">
     <h1>Office Room — Detailed Lighting Analysis</h1>
-    <p class="subtitle">Revision 05 · Calculation assumptions, fan sensitivity, and fixture comparison</p>
+    <p class="subtitle">Revision 06 · Calculation assumptions, fan sensitivity, and fixture comparison</p>
   </header>
 
   <section class="analysis-section details-only" aria-labelledby="analysis-heading">
@@ -963,8 +1014,8 @@
     </article>
   </section>
 
-  <footer class="main-page-only">OFFICE ROOM LIGHTING STUDY · REV 05 · SELF-CONTAINED HTML / INLINE SVG</footer>
-  <footer class="details-only">OFFICE ROOM DETAILED ANALYSIS · REV 05</footer>
+  <footer class="main-page-only">OFFICE ROOM LIGHTING STUDY · REV 06 · SELF-CONTAINED HTML / INLINE SVG</footer>
+  <footer class="details-only">OFFICE ROOM DETAILED ANALYSIS · REV 06</footer>
 </main>
 
 <script>
@@ -1150,12 +1201,6 @@
     rlsFloor.get("floor-title").textContent = "RLS6 top-down floor-plane light coverage";
     rlsFloor.get("floor-desc").textContent =
       "The same office geometry showing sampled 45 degree main-beam and 70 degree outer-field floor coverage from four vertically aimed HALO RLS6 fixtures.";
-    [...rlsFloor.svg.querySelectorAll("text")].forEach(label => {
-      if (label.textContent.includes("Yellow = 112°")) {
-        label.textContent =
-          "Yellow = 45° main beam · blue = 70° outer field · red = possible fan-shadow path";
-      }
-    });
 
     const rlsElevation = cloneSvgWithPrefix(
       "elevation-svg", "rls-elevation-host", "rls-elevation"
@@ -1164,11 +1209,6 @@
       "RLS6 office side elevation along the ceiling slope";
     rlsElevation.get("elevation-desc").textContent =
       "The same Bathroom-wall-to-Window-wall elevation showing vertically aimed HALO RLS6 main and outer-field cones.";
-    [...rlsElevation.svg.querySelectorAll("text")].forEach(label => {
-      if (label.textContent.includes("HLBSL wafer axes")) {
-        label.textContent = "RLS6 axes are aimed vertically downward.";
-      }
-    });
 
     const rlsWindowWall = cloneSvgWithPrefix(
       "window-wall-svg", "rls-window-wall-host", "rls-window-wall"

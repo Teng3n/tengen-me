@@ -206,7 +206,7 @@ test("unlinked office diagram serves the simplified three-view fixture study", a
   assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
 
   const html = await response.text();
-  assert.match(html, /Revision 05/);
+  assert.match(html, /Revision 06/);
   assert.match(html, /29\.1″ overall height/);
   assert.match(html, /HLBSL609FS5/);
   assert.match(html, /A1-HLBSL/);
@@ -217,6 +217,17 @@ test("unlinked office diagram serves the simplified three-view fixture study", a
   assert.match(html, /B-RLS6/);
   assert.match(html, /C-HLBSL/);
   assert.match(html, /C-RLS6/);
+  assert.equal((html.match(/data-diagram-legend=/g) ?? []).length, 8);
+  for (const diagram of [
+    "A1-HLBSL", "A2-HLBSL", "A1-RLS6", "A2-RLS6",
+    "B-HLBSL", "B-RLS6", "C-HLBSL", "C-RLS6",
+  ]) {
+    assert.match(html, new RegExp(`data-diagram-legend="${diagram}"`));
+  }
+  assert.match(html, />COORDINATES</);
+  assert.doesNotMatch(html, /FLOOR-PLANE FOOTPRINTS/);
+  assert.doesNotMatch(html, /Yellow = main beam · blue = outer field/);
+  assert.doesNotMatch(html, /<section class="legend main-page-only"/);
   assert.match(html, /href="\/office-room-diagram-details"/);
   assert.match(html, /mounting plane flush and parallel to the Bathroom wall/);
   assert.match(html, /How the corrected fan drop changes the wafer-light result/);
