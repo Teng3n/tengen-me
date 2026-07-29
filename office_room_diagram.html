@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Office Room Diagram — Revision 02</title>
+  <title>Office Room Lighting Study — Revision 03</title>
 
   <!--
     ================================================================
@@ -14,8 +14,8 @@
   -->
   <script>
     const DRAWING_CONFIG = Object.freeze({
-      revision: "02",
-      drawingDate: "2026-07-27",
+      revision: "03",
+      drawingDate: "2026-07-29",
       units: "inches",
       room: {
         width: 144,
@@ -39,12 +39,15 @@
       },
       monitor: {
         wall: "Bathroom wall",
+        manufacturer: "Samsung",
+        model: "57-inch Odyssey Neo G9",
         widthAlongWall: 52.3,
         centerAlongWall: 44,
-        depth: 2.5,
-        height: 18,
+        maximumDepth: 13.3,
+        height: 16.9,
+        curveRadius: 1000 / 25.4,
         bottomAboveDesktop: 5,
-        status: "provisional"
+        status: "manufacturer dimensions; wall offset and vertical placement provisional"
       },
       window: {
         wall: "Window wall",
@@ -62,24 +65,36 @@
         diameter: 60,
         radius: 30,
         center: { x: 72, y: 66 },
-        bladeDropFromCeiling: 22,
-        dropStatus: "provisional"
+        downrodLength: 22,
+        overallDropFromCeiling: 29.1,
+        previousAssumedBladeDrop: 22,
+        analysisDropFromCeiling: 29.1,
+        bladePlaneStatus: "unconfirmed; manufacturer publishes overall height, not a separate blade-plane dimension",
+        overallDropStatus: "confirmed by current manufacturer technical sheet"
       },
       lights: {
-        fixture: "HALO RLS6",
-        model: "RLS6159FS1EWHDMR",
-        lumensApprox: 1630,
+        fixture: "HALO HLBSL 6-inch wafer",
+        model: "HLBSL609FS5",
+        lumensApprox: 900,
         colorTemperatureK: 3000,
-        beamAngleDegrees: 45,
-        fieldAngleDegrees: 70,
-        aiming: "vertically downward",
+        beamAngleDegrees: 112,
+        fieldAngleDegrees: 160,
+        aiming: "perpendicular to the 18.26-degree sloped ceiling",
         centers: [
           { number: 1, x: 32, y: 30 },
           { number: 2, x: 112, y: 30 },
           { number: 3, x: 32, y: 102 },
           { number: 4, x: 112, y: 102 }
         ],
-        status: "confirmed positions; manufacturer photometric data summarized"
+        status: "scenario under review; confirmed positions and manufacturer photometric angles"
+      },
+      baselineLights: {
+        fixture: "HALO RLS6",
+        model: "RLS6159FS1EWHDMR",
+        lumensApprox: 1630,
+        beamAngleDegrees: 45,
+        fieldAngleDegrees: 70,
+        aiming: "vertically downward"
       },
       ceiling: {
         highHeight: 144,
@@ -93,7 +108,7 @@
       analysisPlanes: {
         floorHeight: 0,
         desktopHeight: 29.5,
-        fanBladePlane: "calculated"
+        fanScreeningPlane: "conservative fan lowest-point plane; exact blade plane unconfirmed"
       }
     });
   </script>
@@ -115,6 +130,8 @@
       --light: #d97706;
       --provisional: #a13b2a;
       --confirmed: #256148;
+      --shadow-risk: #a12f2f;
+      --old-geometry: #7d8790;
       --paper: #ffffff;
       --panel: #f7f9fa;
     }
@@ -219,6 +236,16 @@
     .fan-hub { fill: var(--fan); stroke: #fff; stroke-width: .5; vector-effect: non-scaling-stroke; }
     .beam-main { fill: #f1b84a; fill-opacity: .09; stroke: var(--beam); stroke-width: .7; vector-effect: non-scaling-stroke; }
     .beam-field { fill: #55a9b9; fill-opacity: .045; stroke: var(--field); stroke-width: .55; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+    .coverage-field-cell { fill: #55a9b9; fill-opacity: .12; stroke: none; }
+    .coverage-main-cell { fill: #f1b84a; fill-opacity: .20; stroke: none; }
+    .coverage-main-multi { fill: #e69b15; fill-opacity: .31; stroke: none; }
+    .fan-field-overlap { fill: #705695; fill-opacity: .20; stroke: none; }
+    .fan-main-overlap { fill: #c43d32; fill-opacity: .38; stroke: none; }
+    .shadow-zone { fill: #b42318; fill-opacity: .20; stroke: #8f1f17; stroke-width: .2; stroke-dasharray: 1.3 1; vector-effect: non-scaling-stroke; }
+    .old-plane { stroke: var(--old-geometry); stroke-width: .55; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+    .fan-envelope { fill: #67489a; fill-opacity: .13; stroke: var(--fan); stroke-width: .45; stroke-dasharray: 2 1.4; vector-effect: non-scaling-stroke; }
+    .fan-bottom { stroke: var(--fan); stroke-width: 1.15; vector-effect: non-scaling-stroke; }
+    .wafer-axis { stroke: #a86400; stroke-width: .55; stroke-dasharray: 2 1.4; vector-effect: non-scaling-stroke; }
     .light-symbol { fill: #fff; stroke: var(--light); stroke-width: .8; vector-effect: non-scaling-stroke; }
     .light-core { fill: var(--light); }
     .dimension { fill: none; stroke: #33414d; stroke-width: .42; vector-effect: non-scaling-stroke; marker-start: url(#arrow); marker-end: url(#arrow); }
@@ -265,6 +292,18 @@
     }
     .coverage-metric strong { display: block; font-size: 15px; line-height: 1.25; }
     .coverage-metric small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.35; }
+    .coverage-metric.alert { border-top: 4px solid var(--shadow-risk); }
+    .coverage-metric.caution { border-top: 4px solid #b87800; }
+    .coverage-metric.good { border-top: 4px solid var(--confirmed); }
+
+    .finding {
+      margin: 12px 0 0;
+      padding: 12px 14px;
+      border-left: 5px solid var(--shadow-risk);
+      background: #fff4f2;
+      font-size: 12.5px;
+    }
+    .finding strong { color: #84271f; }
 
     .analysis-section { margin-top: 22px; break-inside: avoid; page-break-inside: avoid; }
     .analysis-intro { margin: -5px 0 10px; color: var(--muted); font-size: 12px; }
@@ -299,6 +338,8 @@
     .swatch-desk { border: 2px solid var(--desk-line); background: rgba(215,168,102,.65); }
     .swatch-confirmed { border-top: 4px solid var(--confirmed); }
     .swatch-provisional { border-top: 4px solid var(--provisional); }
+    .swatch-shadow { border: 2px dashed var(--shadow-risk); background: rgba(180,35,24,.18); }
+    .swatch-old { border-top: 2px dashed var(--old-geometry); }
 
     .disclaimer {
       margin: 18px 0 0;
@@ -342,8 +383,8 @@
 <body>
 <main>
   <header>
-    <h1>Office Room — 2D Planning Diagram</h1>
-    <p class="subtitle">Drawing revision 02 · 27 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
+    <h1>Office Room — Lighting, Fan, and Glare Study</h1>
+    <p class="subtitle">Drawing revision 03 · 29 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
   </header>
 
   <section aria-labelledby="measurement-summary">
@@ -358,17 +399,19 @@
           <li>Window: 72″ (6′-0″) wide, centered on Window wall; sill 41″ (3′-5″), head 81″ (6′-9″) AFF.</li>
           <li>Ceiling endpoints: 144″ high and 96.5″ low.</li>
           <li>Ceiling slopes from the Bathroom/high wall to the Window/low wall.</li>
-          <li>Fan: Haiku L, 60″ diameter, centered at (72, 66).</li>
+          <li>Fan: current 60″ Haiku L, centered at (72, 66), with a 22″ downrod.</li>
+          <li>Manufacturer overall fan height with that downrod: 29.1″ from ceiling to lowest point.</li>
           <li>Lights: L1 (32,30), L2 (112,30), L3 (32,102), L4 (112,102).</li>
         </ul>
       </article>
       <article class="summary-card provisional-card">
         <h3 class="provisional">Provisional measurements / assumptions</h3>
         <ul>
-          <li>Fan blade drop is 22″ from the ceiling at the fan center.</li>
-          <li>Monitor: 52.3″ × 18″ × 2.5″; centerline 44″ from Sideyard wall.</li>
+          <li>Exact fan blade plane is not published separately; the 29.1″ lowest-point plane is used as a conservative obstruction screen.</li>
+          <li>The prior drawing’s 22″ blade plane is retained only as an old-geometry comparison.</li>
+          <li>Monitor: 57″ Odyssey Neo G9, 52.3″ × 16.9″ × 13.3″ maximum depth, 1000R curve; centerline 44″ from Sideyard wall.</li>
           <li>Monitor bottom is 5″ above the desktop.</li>
-          <li>Fixtures are represented as aimed vertically downward.</li>
+          <li>Wafer-light scenario uses HALO HLBSL609FS5 photometrics and follows the ceiling’s 18.26° slope.</li>
         </ul>
       </article>
     </div>
@@ -376,12 +419,12 @@
 
   <section class="drawing-card" aria-labelledby="plan-heading">
     <div class="drawing-header">
-      <h2 id="plan-heading">A1 · Fan-plane interference map — top view</h2>
-      <div class="drawing-meta">Horizontal slice at 98.25″ AFF · Scale: 1 SVG unit = 1 inch</div>
+      <h2 id="plan-heading">A1 · Wafer-light fan interference — conservative top view</h2>
+      <div class="drawing-meta">Screening slice at <span id="plan-plane-meta">91.15″ AFF</span> · Uses confirmed fan lowest-point plane; actual blades are slightly higher</div>
     </div>
     <svg id="plan-svg" viewBox="0 0 220 194" role="img" aria-labelledby="plan-title plan-desc">
       <title id="plan-title">Top-down office room plan</title>
-      <desc id="plan-desc">A 144 by 132 inch room with an L-shaped desk, monitor, centered 60 inch ceiling fan, four recessed lights, and calculated light footprints at the fan blade plane.</desc>
+      <desc id="plan-desc">A 144 by 132 inch room with an L-shaped desk, curved monitor, centered 60 inch ceiling fan, four sloped-ceiling wafer lights, and calculated angular light coverage at a conservative fan obstruction plane.</desc>
       <defs>
         <marker id="arrow" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto-start-reverse" markerUnits="strokeWidth">
           <path d="M 5 0 L 0 2.5 L 5 5 z" fill="#33414d"/>
@@ -401,11 +444,11 @@
       <text class="svg-small halo" x="65" y="42.5" text-anchor="middle">edge joint</text>
       <text class="svg-label halo" x="105" y="47" text-anchor="middle">L-shaped butcher-block desk</text>
 
-      <!-- Monitor on Bathroom wall -->
-      <rect class="monitor" x="40" y="47.85" width="2.5" height="52.3"/>
+      <!-- Curved 57-inch Odyssey Neo G9 on Bathroom wall; 1000R screen envelope -->
+      <path class="monitor" d="M53.3 47.85 Q40 74 53.3 100.15" fill="none" stroke-width="1.15"/>
       <line class="centerline" x1="36.5" y1="74" x2="93" y2="74"/>
       <text class="svg-small svg-provisional halo" x="45" y="67.5">MONITOR — PROVISIONAL</text>
-      <text class="svg-tiny halo" x="45" y="71">52.3″ W × 18″ H × 2.5″ D</text>
+      <text class="svg-tiny halo" x="45" y="71">57″ Neo G9 · 52.3″ chord · 1000R curve · 13.3″ max depth</text>
 
       <!-- Fan geometry -->
       <g aria-label="60 inch ceiling fan centered at 72,66">
@@ -418,7 +461,7 @@
         </g>
         <line class="centerline" x1="108" y1="96" x2="116" y2="96"/>
         <line class="centerline" x1="112" y1="92" x2="112" y2="100"/>
-        <text class="svg-label halo" x="112" y="104" text-anchor="middle">HAIKU L FAN SWEEP</text>
+        <text class="svg-label halo" x="112" y="104" text-anchor="middle">HAIKU L FAN SWEEP / CONSERVATIVE SCREEN</text>
         <text class="svg-small halo" x="112" y="107.2" text-anchor="middle">Center (72,66) · 60″ Ø</text>
       </g>
 
@@ -463,7 +506,7 @@
       <line class="extension" x1="40" y1="47.85" x2="31.5" y2="47.85"/>
       <line class="extension" x1="40" y1="100.15" x2="31.5" y2="100.15"/>
       <line class="dimension" x1="31.5" y1="47.85" x2="31.5" y2="100.15"/>
-      <text class="svg-small halo" x="29" y="74" text-anchor="middle" transform="rotate(-90 29 74)">52.3″ provisional</text>
+        <text class="svg-small halo" x="29" y="74" text-anchor="middle" transform="rotate(-90 29 74)">52.3″ chord · 1000R</text>
 
       <!-- Fan diameter dimension -->
       <line class="dimension" x1="82" y1="96" x2="142" y2="96"/>
@@ -495,29 +538,29 @@
 
   <section class="drawing-card" aria-labelledby="floor-heading">
     <div class="drawing-header">
-      <h2 id="floor-heading">A2 · Floor-plane light coverage — top view</h2>
-      <div class="drawing-meta">Horizontal slice at 0″ AFF · Same room and fixture positions as A1</div>
+      <h2 id="floor-heading">A2 · Wafer floor coverage and potential fan-shadow zones</h2>
+      <div class="drawing-meta">Horizontal slice at 0″ AFF · Red regions use the conservative 29.1″ obstruction drop</div>
     </div>
     <div class="coverage-summary" aria-label="Floor coverage summary">
       <div class="coverage-metric">
         <span>Installed output</span>
-        <strong id="floor-output-value">6,520 lumens</strong>
-        <small>Four fixtures at approximately 1,630 lumens each.</small>
+        <strong id="floor-output-value">3,600 lumens</strong>
+        <small>Four HALO HLBSL609FS5 fixtures at approximately 900 lumens each.</small>
       </div>
       <div class="coverage-metric">
         <span>Raw output density</span>
-        <strong id="floor-density-value">49.4 lm/ft²</strong>
+        <strong id="floor-density-value">27.3 lm/ft²</strong>
         <small>Before optical, reflectance, obstruction, and maintenance losses; not measured foot-candles.</small>
       </div>
       <div class="coverage-metric">
         <span>Geometric coverage</span>
-        <strong>70° field reaches the entire floor</strong>
-        <small>The 45° main-beam footprints leave a small central transition zone.</small>
+        <strong id="floor-main-coverage-value">100% inside at least one 112° main beam</strong>
+        <small id="floor-field-coverage-note">The 160° outer field also reaches the entire floor.</small>
       </div>
     </div>
     <svg id="floor-svg" viewBox="0 0 220 194" role="img" aria-labelledby="floor-title floor-desc">
       <title id="floor-title">Top-down floor-plane light coverage</title>
-      <desc id="floor-desc">The same 144 by 132 inch room showing calculated 45 degree main-beam and 70 degree outer-field footprints where the four recessed lights reach floor level.</desc>
+      <desc id="floor-desc">The same 144 by 132 inch room showing sampled 112 degree main-beam and 160 degree outer-field coverage from four ceiling-normal wafer lights, plus conservative potential fan-shadow regions.</desc>
       <defs>
         <marker id="floor-arrow" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto-start-reverse" markerUnits="strokeWidth">
           <path d="M 5 0 L 0 2.5 L 5 5 z" fill="#33414d"/>
@@ -570,7 +613,7 @@
 
       <g transform="translate(40 177)">
         <text class="svg-title" x="0" y="0">FLOOR-PLANE FOOTPRINTS</text>
-        <text class="svg-small" x="0" y="4">Yellow = 45° main beam · dashed blue = 70° outer field · circles clipped at walls</text>
+        <text class="svg-small" x="0" y="4">Yellow = 112° main beam · blue = 160° outer field · red = possible fan-shadow path</text>
       </g>
       <g transform="translate(155 175)">
         <text class="svg-title" x="0" y="0">SCALE</text>
@@ -587,12 +630,12 @@
 
   <section class="drawing-card" aria-labelledby="elevation-heading">
     <div class="drawing-header">
-      <h2 id="elevation-heading">B · Projected side elevation — heights and beam spread</h2>
-      <div class="drawing-meta">Bathroom/high wall at left · Window/low wall at right · Projected Y positions; not an overlap test</div>
+      <h2 id="elevation-heading">B · Corrected fan envelope and wafer-light axes</h2>
+      <div class="drawing-meta">Bathroom/high wall at left · Window/low wall at right · Projected Y positions; top view governs overlap</div>
     </div>
     <svg id="elevation-svg" viewBox="0 0 230 176" role="img" aria-labelledby="elevation-title elevation-desc">
       <title id="elevation-title">Office side elevation along the ceiling slope</title>
-      <desc id="elevation-desc">A Bathroom-wall-to-Window-wall side elevation showing the 144 inch high wall, 96.5 inch low wall, centered Window-wall window with a 41 inch sill and 81 inch head, sloped ceiling, desk, fan drop and blade plane, and representative vertical light cones.</desc>
+      <desc id="elevation-desc">A Bathroom-wall-to-Window-wall side elevation showing the sloped ceiling, window, desk, curved monitor envelope, 22 inch fan downrod, confirmed 29.1 inch overall fan height, an unconfirmed blade-plane band, and representative ceiling-normal wafer light axes.</desc>
       <defs>
         <marker id="elev-arrow" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto-start-reverse" markerUnits="strokeWidth">
           <path d="M 5 0 L 0 2.5 L 5 5 z" fill="#33414d"/>
@@ -608,8 +651,10 @@
       <!-- Reference planes -->
       <line class="reference" x1="30" y1="130.5" x2="174" y2="130.5"/>
       <text class="svg-small halo" x="176" y="130.5">Desktop reference 29.5″ AFF</text>
-      <line class="reference" x1="30" y1="61.75" x2="174" y2="61.75"/>
-      <text class="svg-small halo" x="176" y="61.75">Fan blade plane 98.25″ AFF</text>
+      <line class="old-plane" x1="30" y1="61.75" x2="174" y2="61.75"/>
+      <text class="svg-small halo" x="176" y="59.9">Prior 22″ assumption: 98.25″ AFF</text>
+      <line class="reference" x1="30" y1="68.85" x2="174" y2="68.85"/>
+      <text class="svg-small halo" x="176" y="68.85">Conservative screen / fan bottom: 91.15″ AFF</text>
 
       <!-- Room envelope -->
       <line class="floor" x1="30" y1="160" x2="174" y2="160"/>
@@ -638,20 +683,22 @@
       <text class="svg-tiny halo" x="82.5" y="136" text-anchor="middle">25″ Bathroom segment + 80″ Sideyard run · edge-joined, no overlap</text>
 
       <!-- Monitor elevation -->
-      <rect class="monitor" x="31" y="107.5" width="2.5" height="18"/>
-      <line class="centerline" x1="29" y1="116.5" x2="39" y2="116.5"/>
-      <text class="svg-small svg-provisional halo" x="37" y="112">Monitor 18″ high — PROVISIONAL</text>
-      <text class="svg-tiny halo" x="37" y="116">Bottom 5″ above desktop; top 52.5″ AFF</text>
+      <rect class="monitor" x="31" y="108.6" width="13.3" height="16.9"/>
+      <line class="centerline" x1="29" y1="117.05" x2="48" y2="117.05"/>
+      <text class="svg-small svg-provisional halo" x="47" y="112">57″ Neo G9 envelope — wall offset provisional</text>
+      <text class="svg-tiny halo" x="47" y="116">16.9″ high · 13.3″ max depth · top 51.4″ AFF</text>
 
       <!-- Fan at X = 72 -->
       <circle class="fan-hub" cx="102" cy="39.75" r="2.3"/>
       <line x1="102" y1="42" x2="102" y2="61.75" stroke="#4d2d7f" stroke-width=".9"/>
-      <line x1="72" y1="61.75" x2="132" y2="61.75" stroke="#4d2d7f" stroke-width="1.7"/>
-      <line class="centerline" x1="102" y1="35" x2="102" y2="66"/>
-      <line class="dimension" x1="108" y1="39.75" x2="108" y2="61.75" style="marker-start:url(#elev-arrow); marker-end:url(#elev-arrow)"/>
-      <text class="svg-small svg-provisional halo" x="111.5" y="50.75">22″ drop — PROVISIONAL</text>
+      <rect class="fan-envelope" x="72" y="61.75" width="60" height="7.1"/>
+      <line class="fan-bottom" x1="96" y1="68.85" x2="108" y2="68.85"/>
+      <line class="centerline" x1="102" y1="35" x2="102" y2="73"/>
+      <line class="dimension" x1="108" y1="39.75" x2="108" y2="68.85" style="marker-start:url(#elev-arrow); marker-end:url(#elev-arrow)"/>
+      <text class="svg-small confirmed halo" x="111.5" y="51">22″ downrod</text>
+      <text class="svg-small confirmed halo" x="111.5" y="55">29.1″ overall height</text>
       <text class="svg-small halo" x="102" y="35" text-anchor="middle">Ceiling at fan center: 120.25″</text>
-      <text class="svg-small halo" x="102" y="66.5" text-anchor="middle">60″ fan blade plane: 98.25″ AFF</text>
+      <text class="svg-small svg-provisional halo" x="102" y="72" text-anchor="middle">Blade plane lies above bottom; exact offset not published</text>
 
       <!-- Representative fixtures are inserted by script -->
       <g id="elevation-lights"></g>
@@ -671,44 +718,79 @@
       <text class="svg-wall-label halo" x="31" y="10">BATHROOM / HIGH</text>
       <text class="svg-wall-label halo" x="173" y="57" text-anchor="end">WINDOW / LOW</text>
       <text class="svg-small confirmed halo" x="102" y="8" text-anchor="middle">CONFIRMED SLOPE DIRECTION · 18.26° downward toward Window wall</text>
-      <text class="svg-small halo" x="102" y="173" text-anchor="middle">Light cones are vertical (plumb), not perpendicular to the sloped ceiling.</text>
+      <text class="svg-small halo" x="102" y="173" text-anchor="middle">HLBSL wafer axes are perpendicular to the ceiling: 18.26° toward the Bathroom/high wall.</text>
     </svg>
   </section>
 
   <section class="analysis-section" aria-labelledby="analysis-heading">
-    <h2 id="analysis-heading">Fan / light overlap screening at fan blade plane</h2>
-    <p class="analysis-intro">Positive clearance means separation; 0 means tangent; a negative value is the calculated overlap amount.</p>
+    <h2 id="analysis-heading">C · How the corrected fan drop changes the wafer-light result</h2>
+    <p class="analysis-intro">The manufacturer confirms the fan’s overall height, but not the separate blade plane. The rows below therefore show sensitivity from the old assumption down to the confirmed lowest-point plane.</p>
+    <div class="coverage-summary" aria-label="Corrected fan findings">
+      <div class="coverage-metric alert">
+        <span>Strong-beam fan intersection</span>
+        <strong id="fan-main-union-value">67% at conservative plane</strong>
+        <small>Share of the 60″ sweep inside at least one wafer’s 112° / 50%-intensity beam boundary.</small>
+      </div>
+      <div class="coverage-metric caution">
+        <span>Monitor shadow sensitivity</span>
+        <strong id="monitor-shadow-value">Up to 88% from L4</strong>
+        <small>Conservative curved-screen proxy; this is a possible moving shadow, not electrical LED flicker.</small>
+      </div>
+      <div class="coverage-metric good">
+        <span>Narrow RLS6 comparison</span>
+        <strong id="rls-comparison-value">0% strong-beam intersection</strong>
+        <small>At the same conservative plane, the vertically aimed 45° RLS6 main beams still clear the fan.</small>
+      </div>
+    </div>
+    <p class="finding"><strong>Updated conclusion:</strong> the old 22″ blade-plane assumption materially understated the wafer interaction. A severe whole-room flash is not guaranteed, but visible moving shadows are now plausible enough that the exact blade height or a one-fixture mockup should be confirmed before choosing the wide wafers.</p>
+    <div class="table-wrap" style="margin-top:12px">
+      <table>
+        <thead>
+          <tr>
+            <th>Ceiling-to-screening<br>drop</th>
+            <th>Screening elevation<br>AFF</th>
+            <th>Fan sweep inside ≥1<br>wafer main beam</th>
+            <th>L4 potential shadow on<br>curved monitor face</th>
+            <th>Meaning</th>
+          </tr>
+        </thead>
+        <tbody id="sensitivity-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="analysis-section" aria-labelledby="fixture-comparison-heading">
+    <h2 id="fixture-comparison-heading">D · Fixture comparison at the conservative 91.15″ plane</h2>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>Light</th>
-            <th>Coordinates<br>(in)</th>
-            <th>Ceiling<br>height</th>
-            <th>Distance to<br>fan center</th>
-            <th>Main 45°<br>radius</th>
-            <th>Main clearance<br>(+ sep. / − overlap)</th>
-            <th>Field 70°<br>radius</th>
-            <th>Field clearance<br>(+ sep. / − overlap)</th>
-            <th>Risk classification</th>
+            <th>Fixture</th>
+            <th>Aim on this ceiling</th>
+            <th>Main / field angle</th>
+            <th>Fan sweep in main beam</th>
+            <th>Fan sweep in outer field</th>
+            <th>Screening result</th>
           </tr>
         </thead>
-        <tbody id="analysis-body"></tbody>
+        <tbody id="fixture-comparison-body"></tbody>
       </table>
     </div>
   </section>
 
   <section class="legend" aria-labelledby="legend-heading">
     <h2 id="legend-heading">Legend</h2>
-    <div class="legend-item"><span class="swatch swatch-main"></span><span>45° main beam, solid outline</span></div>
-    <div class="legend-item"><span class="swatch swatch-field"></span><span>70° outer field, dashed outline</span></div>
+    <div class="legend-item"><span class="swatch swatch-main"></span><span>112° wafer main beam; darker yellow means multiple fixtures</span></div>
+    <div class="legend-item"><span class="swatch swatch-field"></span><span>160° wafer outer field</span></div>
     <div class="legend-item"><span class="swatch swatch-fan"></span><span>60″ fan blade-sweep boundary</span></div>
+    <div class="legend-item"><span class="swatch swatch-shadow"></span><span>Possible moving fan-shadow projection</span></div>
+    <div class="legend-item"><span class="swatch swatch-old"></span><span>Prior 22″ geometry retained for comparison only</span></div>
     <div class="legend-item"><span class="swatch swatch-desk"></span><span>Butcher-block desktop footprint</span></div>
     <div class="legend-item"><span class="swatch swatch-confirmed"></span><span>Confirmed measurement/status</span></div>
     <div class="legend-item"><span class="swatch swatch-provisional"></span><span>Provisional measurement/assumption</span></div>
   </section>
 
-  <p class="disclaimer">This is a simplified geometric screening diagram, not a full photometric lighting simulation.</p>
+  <p class="disclaimer">This is a conservative geometric screening study, not a full photometric or time-domain flicker simulation. The exact Haiku L blade plane remains the decisive field measurement.</p>
 
   <section class="notes-grid" aria-label="Calculation and drawing notes">
     <article class="note-card">
@@ -716,21 +798,21 @@
       <ul>
         <li class="formula">ceilingHeight(x) = 144 − ((144 − 96.5) × x / 144)</li>
         <li>Ceiling height at fan center X = 72″: <strong id="fan-ceiling-value">120.25″</strong>.</li>
-        <li>Fan blade plane after provisional 22″ drop: <strong id="fan-plane-value">98.25″ AFF</strong>.</li>
+        <li>Current manufacturer overall fan height with 22″ downrod: <strong>29.1″</strong>.</li>
+        <li>Confirmed lowest point / conservative obstruction plane: <strong id="fan-plane-value">91.15″ AFF</strong>.</li>
+        <li>Prior 22″ assumed plane: <strong id="old-fan-plane-value">98.25″ AFF</strong>; this was not the complete fan height.</li>
         <li>Ceiling change: 47.5″ over 144″; calculated angle: <strong id="slope-angle-value">18.26°</strong>.</li>
       </ul>
     </article>
     <article class="note-card">
       <h3>Fixture and beam notes</h3>
       <ul>
-        <li>HALO RLS6, model RLS6159FS1EWHDMR; approximately 1,630 lm at 3000 K.</li>
-        <li>Fixtures are shown aimed vertically downward despite the sloped ceiling.</li>
-        <li class="formula">radius = verticalDistance × tan(angle / 2)</li>
-        <li>At desktop: L1/L3 main radius 43.06″ (86.11″ Ø), field radius 72.78″ (145.57″ Ø).</li>
-        <li>At desktop: L2/L4 main radius 32.13″ (64.25″ Ø), field radius 54.31″ (108.61″ Ø).</li>
-        <li>At floor: L1/L3 main radius 55.27″, field radius 93.44″; L2/L4 main radius 44.34″, field radius 74.96″.</li>
-        <li>A1 shows footprints at the fan blade plane; A2 shows footprints at floor level; B continues the cones to desktop height.</li>
-        <li>The floor’s 70° geometric field coverage is complete, but this alone does not establish illuminance or uniformity.</li>
+        <li>Wafer scenario: HALO HLBSL609FS5; 900 nominal lumens, 112° beam, 160° field.</li>
+        <li>The flush wafer follows the ceiling normal, so its axis tilts 18.26° toward the Bathroom/high wall.</li>
+        <li class="formula">coverage = angleBetween(fixtureAxis, fixtureToPoint) ≤ halfAngle</li>
+        <li>A1 samples the conservative 91.15″ screening plane; A2 samples floor coverage and projects possible fan-shadow paths.</li>
+        <li>The original HALO RLS6 is retained in Section D as a 45° / 70° vertically aimed baseline.</li>
+        <li>Beam and field angles are intensity boundaries, not hard edges or lux predictions.</li>
       </ul>
     </article>
     <article class="note-card">
@@ -738,7 +820,7 @@
       <ul>
         <li>Plan and elevation geometry use a one-inch coordinate basis.</li>
         <li>Plan grid: 12″ major spacing with lighter 6″ subdivisions.</li>
-        <li>Beam circles and cones are clipped to the interior room boundary.</li>
+        <li>Coverage maps are sampled on a 2″ grid because tilted wafer footprints are not circular on a horizontal plane.</li>
         <li>The projected side elevation collapses Y positions and must not be used for fan-overlap analysis.</li>
         <li>Dimensions govern; do not scale from a print unless print scaling is 100%.</li>
       </ul>
@@ -746,14 +828,14 @@
     <article class="note-card">
       <h3>Provisional assumptions to field-verify</h3>
       <ul>
-        <li>22″ fan blade drop from ceiling.</li>
-        <li>Monitor size, depth, vertical placement, and centerline.</li>
-        <li>Vertical fixture aim and simplified symmetric beam/field angles.</li>
+        <li>Exact blade plane within the 29.1″ fan assembly height.</li>
+        <li>Monitor wall offset, vertical placement, and exact curved-screen surface position.</li>
+        <li>Installed wafer orientation, dimming level, surface reflectance, and real shadow contrast.</li>
       </ul>
     </article>
   </section>
 
-  <footer>OFFICE ROOM DIAGRAM · REV 02 · SELF-CONTAINED HTML / INLINE SVG</footer>
+  <footer>OFFICE ROOM LIGHTING STUDY · REV 03 · SELF-CONTAINED HTML / INLINE SVG</footer>
 </main>
 
 <script>
@@ -764,27 +846,132 @@
     const NS = "http://www.w3.org/2000/svg";
     const roomOffset = { x: 40, y: 30 };
     const degToRad = degrees => degrees * Math.PI / 180;
-    const ceilingHeight = x =>
-      cfg.ceiling.highHeight -
-      ((cfg.ceiling.highHeight - cfg.ceiling.lowHeight) * x / cfg.ceiling.slopeAcross);
-    const radiusAt = (verticalDistance, fullAngleDegrees) =>
-      Math.max(0, verticalDistance) * Math.tan(degToRad(fullAngleDegrees / 2));
     const format = (value, decimals = 2) => Number(value).toFixed(decimals);
+    const ceilingSlope =
+      (cfg.ceiling.highHeight - cfg.ceiling.lowHeight) / cfg.ceiling.slopeAcross;
+    const ceilingHeight = x => cfg.ceiling.highHeight - ceilingSlope * x;
     const svgElement = (name, attributes = {}, text = "") => {
       const node = document.createElementNS(NS, name);
       for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
       if (text) node.textContent = text;
       return node;
     };
+    const appendCell = (path, x, y, size) =>
+      `${path}M${format(roomOffset.x + x, 1)} ${format(roomOffset.y + y, 1)}h${size}v${size}h-${size}Z`;
 
     const fanCeilingHeight = ceilingHeight(cfg.fan.center.x);
-    const fanBladePlaneHeight = fanCeilingHeight - cfg.fan.bladeDropFromCeiling;
-    const slopeAngle = Math.atan(
-      (cfg.ceiling.highHeight - cfg.ceiling.lowHeight) / cfg.ceiling.slopeAcross
-    ) * 180 / Math.PI;
+    const conservativeFanPlaneHeight =
+      fanCeilingHeight - cfg.fan.analysisDropFromCeiling;
+    const oldFanPlaneHeight =
+      fanCeilingHeight - cfg.fan.previousAssumedBladeDrop;
+    const slopeAngle = Math.atan(ceilingSlope) * 180 / Math.PI;
+    const axisMagnitude = Math.hypot(ceilingSlope, 1);
+    const waferAxis = {
+      x: -ceilingSlope / axisMagnitude,
+      y: 0,
+      z: -1 / axisMagnitude
+    };
+    const verticalAxis = { x: 0, y: 0, z: -1 };
+
+    const lightRecords = cfg.lights.centers.map(light => ({
+      ...light,
+      z: ceilingHeight(light.x)
+    }));
+
+    const angleFromAxis = (light, point, axis) => {
+      const dx = point.x - light.x;
+      const dy = point.y - light.y;
+      const dz = point.z - light.z;
+      const length = Math.hypot(dx, dy, dz);
+      const cosine = Math.max(-1, Math.min(1,
+        (dx * axis.x + dy * axis.y + dz * axis.z) / length
+      ));
+      return Math.acos(cosine) * 180 / Math.PI;
+    };
+
+    const coverageCounts = (point, fixture, axis) => {
+      let main = 0;
+      let field = 0;
+      lightRecords.forEach(light => {
+        const angle = angleFromAxis(light, point, axis);
+        if (angle <= fixture.beamAngleDegrees / 2) main += 1;
+        if (angle <= fixture.fieldAngleDegrees / 2) field += 1;
+      });
+      return { main, field };
+    };
+
+    const insideFanSweep = point =>
+      Math.hypot(point.x - cfg.fan.center.x, point.y - cfg.fan.center.y) <= cfg.fan.radius;
+
+    const rayCrossesFanSweep = (light, point, fanPlaneHeight) => {
+      const denominator = light.z - point.z;
+      if (denominator <= 0) return false;
+      const t = (light.z - fanPlaneHeight) / denominator;
+      if (t <= 0 || t >= 1) return false;
+      const crossing = {
+        x: light.x + t * (point.x - light.x),
+        y: light.y + t * (point.y - light.y)
+      };
+      return insideFanSweep(crossing);
+    };
+
+    const sampleFanSweepCoverage = (drop, fixture, axis, step = .5) => {
+      const z = fanCeilingHeight - drop;
+      let samples = 0;
+      let mainSamples = 0;
+      let fieldSamples = 0;
+      for (let y = cfg.fan.center.y - cfg.fan.radius; y <= cfg.fan.center.y + cfg.fan.radius; y += step) {
+        for (let x = cfg.fan.center.x - cfg.fan.radius; x <= cfg.fan.center.x + cfg.fan.radius; x += step) {
+          const point = { x, y, z };
+          if (!insideFanSweep(point)) continue;
+          samples += 1;
+          const counts = coverageCounts(point, fixture, axis);
+          if (counts.main > 0) mainSamples += 1;
+          if (counts.field > 0) fieldSamples += 1;
+        }
+      }
+      return {
+        mainPercent: 100 * mainSamples / samples,
+        fieldPercent: 100 * fieldSamples / samples
+      };
+    };
+
+    const curvedMonitorX = y => {
+      const localY = y - cfg.monitor.centerAlongWall;
+      const radius = cfg.monitor.curveRadius;
+      return radius - Math.sqrt(Math.max(0, radius ** 2 - localY ** 2));
+    };
+
+    const sampleMonitorShadow = (drop, lightNumber = 4, step = .5) => {
+      const light = lightRecords.find(record => record.number === lightNumber);
+      const fanPlaneHeight = fanCeilingHeight - drop;
+      const y1 = cfg.monitor.centerAlongWall - cfg.monitor.widthAlongWall / 2;
+      const y2 = cfg.monitor.centerAlongWall + cfg.monitor.widthAlongWall / 2;
+      const z1 = cfg.desk.finishedHeight + cfg.monitor.bottomAboveDesktop;
+      const z2 = z1 + cfg.monitor.height;
+      let samples = 0;
+      let shadowSamples = 0;
+      for (let y = y1; y <= y2; y += step) {
+        for (let z = z1; z <= z2; z += step) {
+          const point = { x: curvedMonitorX(y), y, z };
+          samples += 1;
+          const inMainBeam =
+            angleFromAxis(light, point, waferAxis) <= cfg.lights.beamAngleDegrees / 2;
+          if (inMainBeam && rayCrossesFanSweep(light, point, fanPlaneHeight)) {
+            shadowSamples += 1;
+          }
+        }
+      }
+      return 100 * shadowSamples / samples;
+    };
 
     document.getElementById("fan-ceiling-value").textContent = `${format(fanCeilingHeight)}″`;
-    document.getElementById("fan-plane-value").textContent = `${format(fanBladePlaneHeight)}″ AFF`;
+    document.getElementById("fan-plane-value").textContent =
+      `${format(conservativeFanPlaneHeight)}″ AFF`;
+    document.getElementById("old-fan-plane-value").textContent =
+      `${format(oldFanPlaneHeight)}″ AFF`;
+    document.getElementById("plan-plane-meta").textContent =
+      `${format(conservativeFanPlaneHeight)}″ AFF`;
     document.getElementById("slope-angle-value").textContent = `${format(slopeAngle)}°`;
 
     // 6-inch grid, with every 12-inch line emphasized.
@@ -807,144 +994,97 @@
     renderPlanGrid(document.getElementById("plan-grid"));
     renderPlanGrid(document.getElementById("floor-grid"));
 
-    const beams = document.getElementById("plan-beams");
-    const lights = document.getElementById("plan-lights");
-    const tableBody = document.getElementById("analysis-body");
-    const results = [];
-
-    cfg.lights.centers.forEach(light => {
-      const lightCeilingHeight = ceilingHeight(light.x);
-      const verticalToFan = Math.max(0, lightCeilingHeight - fanBladePlaneHeight);
-      const mainRadiusFan = radiusAt(verticalToFan, cfg.lights.beamAngleDegrees);
-      const fieldRadiusFan = radiusAt(verticalToFan, cfg.lights.fieldAngleDegrees);
-      const verticalToDesktop = lightCeilingHeight - cfg.desk.finishedHeight;
-      const mainRadiusDesktop = radiusAt(verticalToDesktop, cfg.lights.beamAngleDegrees);
-      const fieldRadiusDesktop = radiusAt(verticalToDesktop, cfg.lights.fieldAngleDegrees);
-      const verticalToFloor = lightCeilingHeight - cfg.analysisPlanes.floorHeight;
-      const mainRadiusFloor = radiusAt(verticalToFloor, cfg.lights.beamAngleDegrees);
-      const fieldRadiusFloor = radiusAt(verticalToFloor, cfg.lights.fieldAngleDegrees);
-      const dx = light.x - cfg.fan.center.x;
-      const dy = light.y - cfg.fan.center.y;
-      const centerDistance = Math.hypot(dx, dy);
-      const mainClearance = centerDistance - cfg.fan.radius - mainRadiusFan;
-      const fieldClearance = centerDistance - cfg.fan.radius - fieldRadiusFan;
-      const risk = mainClearance < 0
-        ? "Possible visible strobing"
-        : fieldClearance < 0
-          ? "Possible fringe shadow"
-          : "Low risk";
-
-      results.push({
-        ...light,
-        lightCeilingHeight, verticalToFan, mainRadiusFan, fieldRadiusFan,
-        mainRadiusDesktop, fieldRadiusDesktop, verticalToFloor,
-        mainRadiusFloor, fieldRadiusFloor, centerDistance,
-        mainClearance, fieldClearance, risk
-      });
-
-      const cx = roomOffset.x + light.x;
-      const cy = roomOffset.y + light.y;
-      beams.appendChild(svgElement("circle", {
-        cx, cy, r: fieldRadiusFan, class: "beam-field"
-      }));
-      beams.appendChild(svgElement("circle", {
-        cx, cy, r: mainRadiusFan, class: "beam-main"
-      }));
-
+    const renderLightSymbols = (group, includeFloorNote = false) => {
+      lightRecords.forEach(light => {
+        const cx = roomOffset.x + light.x;
+        const cy = roomOffset.y + light.y;
       const lightGroup = svgElement("g");
       lightGroup.appendChild(svgElement("circle", { cx, cy, r: 2.2, class: "light-symbol" }));
       lightGroup.appendChild(svgElement("circle", { cx, cy, r: .72, class: "light-core" }));
       lightGroup.appendChild(svgElement("text", {
         x: cx, y: cy - 4.1, class: "svg-small halo", "text-anchor": "middle"
-      }, `L${light.number} (${light.x},${light.y})`));
-
-      const horizontalWall = light.x <= cfg.room.width / 2 ? "Bathroom" : "Window";
-      const horizontalDistance = light.x <= cfg.room.width / 2 ? light.x : cfg.room.width - light.x;
-      const verticalWall = light.y <= cfg.room.length / 2 ? "Sideyard" : "Closet";
-      const verticalDistance = light.y <= cfg.room.length / 2 ? light.y : cfg.room.length - light.y;
+      }, `L${light.number} · ${format(light.z)}″ ceiling`));
       const labelY = light.y < cfg.room.length / 2 ? cy + 4.2 : cy - 4.2;
       lightGroup.appendChild(svgElement("text", {
         x: cx, y: labelY, class: "svg-tiny halo", "text-anchor": "middle"
-      }, `${horizontalDistance}″ to ${horizontalWall} · ${verticalDistance}″ to ${verticalWall}`));
-      lights.appendChild(lightGroup);
+      }, includeFloorNote
+        ? `112° beam · axis ${format(slopeAngle)}° toward Bathroom`
+        : `HLBSL wafer · axis follows ceiling slope`
+      ));
+        group.appendChild(lightGroup);
+      });
+    };
 
-      const tr = document.createElement("tr");
-      const riskClass = risk === "Low risk"
-        ? "risk-low"
-        : risk === "Possible fringe shadow"
-          ? "risk-fringe"
-          : "risk-strobe";
-      tr.innerHTML = `
-        <td>L${light.number}</td>
-        <td>(${light.x}, ${light.y})</td>
-        <td>${format(lightCeilingHeight)}″</td>
-        <td>${format(centerDistance)}″</td>
-        <td>${format(mainRadiusFan)}″</td>
-        <td>${format(mainClearance)}″</td>
-        <td>${format(fieldRadiusFan)}″</td>
-        <td>${format(fieldClearance)}″</td>
-        <td class="risk ${riskClass}">${risk}</td>
-      `;
-      tableBody.appendChild(tr);
-    });
+    const renderCoverageMap = (group, z, options = {}) => {
+      const cell = 2;
+      let fieldPath = "";
+      let mainPath = "";
+      let multiPath = "";
+      let fanFieldPath = "";
+      let fanMainPath = "";
+      let shadowPath = "";
+      let samples = 0;
+      let mainSamples = 0;
+      let fieldSamples = 0;
+      for (let y = 0; y < cfg.room.length; y += cell) {
+        for (let x = 0; x < cfg.room.width; x += cell) {
+          const point = { x: x + cell / 2, y: y + cell / 2, z };
+          const counts = coverageCounts(point, cfg.lights, waferAxis);
+          samples += 1;
+          if (counts.main > 0) mainSamples += 1;
+          if (counts.field > 0) fieldSamples += 1;
 
-    // Floor-plane footprints and a sampled geometric coverage check.
-    const floorBeams = document.getElementById("floor-beams");
-    const floorLights = document.getElementById("floor-lights");
-    results.forEach(light => {
-      const cx = roomOffset.x + light.x;
-      const cy = roomOffset.y + light.y;
-      floorBeams.appendChild(svgElement("circle", {
-        cx, cy, r: light.fieldRadiusFloor, class: "beam-field"
-      }));
-      floorBeams.appendChild(svgElement("circle", {
-        cx, cy, r: light.mainRadiusFloor, class: "beam-main"
-      }));
+          if (counts.main >= 2) {
+            multiPath = appendCell(multiPath, x, y, cell);
+          } else if (counts.main === 1) {
+            mainPath = appendCell(mainPath, x, y, cell);
+          } else if (counts.field > 0) {
+            fieldPath = appendCell(fieldPath, x, y, cell);
+          }
 
-      floorLights.appendChild(svgElement("circle", { cx, cy, r: 2.2, class: "light-symbol" }));
-      floorLights.appendChild(svgElement("circle", { cx, cy, r: .72, class: "light-core" }));
-      floorLights.appendChild(svgElement("text", {
-        x: cx, y: cy - 4.2, class: "svg-small halo", "text-anchor": "middle"
-      }, `L${light.number} (${light.x},${light.y})`));
-      const radiusLabelY = light.y < cfg.room.length / 2 ? cy + 4.1 : cy - 4.1;
-      floorLights.appendChild(svgElement("text", {
-        x: cx, y: radiusLabelY, class: "svg-tiny halo", "text-anchor": "middle"
-      }, `floor radii: ${format(light.mainRadiusFloor)}″ main · ${format(light.fieldRadiusFloor)}″ field`));
-    });
+          if (options.markFanOverlap && insideFanSweep(point)) {
+            if (counts.main > 0) {
+              fanMainPath = appendCell(fanMainPath, x, y, cell);
+            } else if (counts.field > 0) {
+              fanFieldPath = appendCell(fanFieldPath, x, y, cell);
+            }
+          }
 
-    let worstMainPoint = { x: 0, y: 0, gap: -Infinity };
-    let worstFieldGap = -Infinity;
-    for (let y = 0; y <= cfg.room.length; y += .5) {
-      for (let x = 0; x <= cfg.room.width; x += .5) {
-        const mainGap = Math.min(...results.map(light =>
-          Math.hypot(x - light.x, y - light.y) - light.mainRadiusFloor
-        ));
-        const fieldGap = Math.min(...results.map(light =>
-          Math.hypot(x - light.x, y - light.y) - light.fieldRadiusFloor
-        ));
-        if (mainGap > worstMainPoint.gap) worstMainPoint = { x, y, gap: mainGap };
-        if (fieldGap > worstFieldGap) worstFieldGap = fieldGap;
+          if (options.markProjectedShadows) {
+            const strongShadow = lightRecords.some(light =>
+              angleFromAxis(light, point, waferAxis) <= cfg.lights.beamAngleDegrees / 2 &&
+              rayCrossesFanSweep(light, point, conservativeFanPlaneHeight)
+            );
+            if (strongShadow) shadowPath = appendCell(shadowPath, x, y, cell);
+          }
+        }
       }
-    }
+      if (fieldPath) group.appendChild(svgElement("path", { d: fieldPath, class: "coverage-field-cell" }));
+      if (mainPath) group.appendChild(svgElement("path", { d: mainPath, class: "coverage-main-cell" }));
+      if (multiPath) group.appendChild(svgElement("path", { d: multiPath, class: "coverage-main-multi" }));
+      if (fanFieldPath) group.appendChild(svgElement("path", { d: fanFieldPath, class: "fan-field-overlap" }));
+      if (fanMainPath) group.appendChild(svgElement("path", { d: fanMainPath, class: "fan-main-overlap" }));
+      if (shadowPath) group.appendChild(svgElement("path", { d: shadowPath, class: "shadow-zone" }));
+      return {
+        mainPercent: 100 * mainSamples / samples,
+        fieldPercent: 100 * fieldSamples / samples
+      };
+    };
 
-    const coverageMarker = document.getElementById("floor-coverage-marker");
-    if (worstMainPoint.gap > 0) {
-      const gapX = roomOffset.x + worstMainPoint.x;
-      const gapY = roomOffset.y + worstMainPoint.y;
-      coverageMarker.appendChild(svgElement("circle", {
-        cx: gapX, cy: gapY, r: 1.6, class: "coverage-gap"
-      }));
-      coverageMarker.appendChild(svgElement("path", {
-        d: `M${gapX + 2} ${gapY - 1} L${gapX + 10} ${gapY - 8} H${gapX + 24}`,
-        class: "leader"
-      }));
-      coverageMarker.appendChild(svgElement("text", {
-        x: gapX + 25, y: gapY - 8, class: "svg-small halo"
-      }, "Approx. center of main-beam transition zone"));
-      coverageMarker.appendChild(svgElement("text", {
-        x: gapX + 25, y: gapY - 4.8, class: "svg-tiny halo"
-      }, `${format(worstMainPoint.gap)}″ beyond nearest 45° boundary; still within overlapping outer fields`));
-    }
+    const planCoverage = renderCoverageMap(
+      document.getElementById("plan-beams"),
+      conservativeFanPlaneHeight,
+      { markFanOverlap: true }
+    );
+    renderLightSymbols(document.getElementById("plan-lights"));
+
+    const floorBeams = document.getElementById("floor-beams");
+    const floorCoverage = renderCoverageMap(
+      floorBeams,
+      cfg.analysisPlanes.floorHeight,
+      { markProjectedShadows: true }
+    );
+    renderLightSymbols(document.getElementById("floor-lights"), true);
 
     const totalLumens = cfg.lights.centers.length * cfg.lights.lumensApprox;
     const roomAreaSquareFeet = cfg.room.width * cfg.room.length / 144;
@@ -952,43 +1092,110 @@
       `${totalLumens.toLocaleString("en-US")} lumens`;
     document.getElementById("floor-density-value").textContent =
       `${format(totalLumens / roomAreaSquareFeet, 1)} lm/ft²`;
+    document.getElementById("floor-main-coverage-value").textContent =
+      `${format(floorCoverage.mainPercent, 0)}% inside at least one 112° main beam`;
+    document.getElementById("floor-field-coverage-note").textContent =
+      `${format(floorCoverage.fieldPercent, 0)}% lies inside at least one 160° outer field; this is geometric coverage, not measured illuminance.`;
 
-    // Side elevation: two X positions represent two top-down fixtures each.
+    // Sensitivity table: the exact blade plane is unknown, so show how the result changes with drop.
+    const sensitivityRows = [
+      { drop: 22, meaning: "Previous diagram — known to omit the fan assembly below the downrod" },
+      { drop: 25, meaning: "Sensitivity case — 3″ below the prior line" },
+      { drop: 27, meaning: "Sensitivity case — 5″ below the prior line" },
+      { drop: 29.1, meaning: "Conservative bound — confirmed lowest point, not the exact blade plane" }
+    ];
+    const sensitivityBody = document.getElementById("sensitivity-body");
+    sensitivityRows.forEach(row => {
+      const sweep = sampleFanSweepCoverage(row.drop, cfg.lights, waferAxis);
+      const monitorShadow = sampleMonitorShadow(row.drop);
+      const tr = document.createElement("tr");
+      const riskClass = row.drop === 22
+        ? "risk-fringe"
+        : row.drop === 29.1
+          ? "risk-strobe"
+          : "risk-fringe";
+      tr.innerHTML = `
+        <td>${format(row.drop, row.drop % 1 ? 1 : 0)}″</td>
+        <td>${format(fanCeilingHeight - row.drop)}″</td>
+        <td>${format(sweep.mainPercent, 0)}%</td>
+        <td>${format(monitorShadow, 0)}%</td>
+        <td class="risk ${riskClass}">${row.meaning}</td>
+      `;
+      sensitivityBody.appendChild(tr);
+    });
+
+    const conservativeWafer = sampleFanSweepCoverage(
+      cfg.fan.analysisDropFromCeiling, cfg.lights, waferAxis
+    );
+    const conservativeRls = sampleFanSweepCoverage(
+      cfg.fan.analysisDropFromCeiling, cfg.baselineLights, verticalAxis
+    );
+    const conservativeMonitorShadow = sampleMonitorShadow(cfg.fan.analysisDropFromCeiling);
+    document.getElementById("fan-main-union-value").textContent =
+      `${format(conservativeWafer.mainPercent, 0)}% at conservative plane`;
+    document.getElementById("monitor-shadow-value").textContent =
+      `Up to ${format(conservativeMonitorShadow, 0)}% from L4`;
+    document.getElementById("rls-comparison-value").textContent =
+      `${format(conservativeRls.mainPercent, 0)}% strong-beam intersection`;
+
+    const fixtureComparisonBody = document.getElementById("fixture-comparison-body");
+    [
+      {
+        fixture: `${cfg.baselineLights.fixture} (${cfg.baselineLights.model})`,
+        aim: "Plumb / vertically downward",
+        angles: `${cfg.baselineLights.beamAngleDegrees}° / ${cfg.baselineLights.fieldAngleDegrees}°`,
+        metrics: conservativeRls,
+        result: "Main beams clear; limited fringe-field interaction"
+      },
+      {
+        fixture: `${cfg.lights.fixture} (${cfg.lights.model})`,
+        aim: `${format(slopeAngle)}° toward Bathroom/high wall`,
+        angles: `${cfg.lights.beamAngleDegrees}° / ${cfg.lights.fieldAngleDegrees}°`,
+        metrics: conservativeWafer,
+        result: "Material strong-beam interaction; mockup or exact blade height advised"
+      }
+    ].forEach(row => {
+      const tr = document.createElement("tr");
+      const riskClass = row.metrics.mainPercent > 0 ? "risk-strobe" : "risk-low";
+      tr.innerHTML = `
+        <td>${row.fixture}</td>
+        <td>${row.aim}</td>
+        <td>${row.angles}</td>
+        <td>${format(row.metrics.mainPercent, 0)}%</td>
+        <td>${format(row.metrics.fieldPercent, 0)}%</td>
+        <td class="risk ${riskClass}">${row.result}</td>
+      `;
+      fixtureComparisonBody.appendChild(tr);
+    });
+
+    // Side elevation: show the bounded 112-degree main cone and true ceiling-normal axis.
     const elevationCones = document.getElementById("elevation-cones");
     const elevationLights = document.getElementById("elevation-lights");
     [32, 112].forEach((positionX, index) => {
-      const representative = results.find(result => result.x === positionX);
+      const representative = lightRecords.find(result => result.x === positionX);
       const x = 30 + positionX;
-      const fixtureY = 160 - representative.lightCeilingHeight;
+      const fixtureY = 160 - representative.z;
       const desktopY = 160 - cfg.desk.finishedHeight;
-      const bladeY = 160 - fanBladePlaneHeight;
-
+      const verticalDrop = representative.z - cfg.desk.finishedHeight;
+      const axisAngleFromVertical = -slopeAngle;
+      const leftBoundary = axisAngleFromVertical - cfg.lights.beamAngleDegrees / 2;
+      const rightBoundary = axisAngleFromVertical + cfg.lights.beamAngleDegrees / 2;
+      const leftX = x + verticalDrop * Math.tan(degToRad(leftBoundary));
+      const rightX = x + verticalDrop * Math.tan(degToRad(rightBoundary));
       elevationCones.appendChild(svgElement("path", {
-        d: `M${x} ${fixtureY} L${x - representative.fieldRadiusDesktop} ${desktopY} L${x + representative.fieldRadiusDesktop} ${desktopY} Z`,
-        class: "cone-field"
-      }));
-      elevationCones.appendChild(svgElement("path", {
-        d: `M${x} ${fixtureY} L${x - representative.mainRadiusDesktop} ${desktopY} L${x + representative.mainRadiusDesktop} ${desktopY} Z`,
+        d: `M${x} ${fixtureY} L${leftX} ${desktopY} L${rightX} ${desktopY} Z`,
         class: "cone-main"
       }));
+      const axisEndX = x + verticalDrop * Math.tan(degToRad(axisAngleFromVertical));
       elevationCones.appendChild(svgElement("line", {
-        x1: x - representative.fieldRadiusFan, y1: bladeY,
-        x2: x + representative.fieldRadiusFan, y2: bladeY,
-        class: "beam-field"
-      }));
-      elevationCones.appendChild(svgElement("line", {
-        x1: x - representative.mainRadiusFan, y1: bladeY,
-        x2: x + representative.mainRadiusFan, y2: bladeY,
-        class: "beam-main"
-      }));
-      elevationCones.appendChild(svgElement("line", {
-        x1: x, y1: fixtureY, x2: x, y2: desktopY,
-        class: "centerline"
+        x1: x, y1: fixtureY, x2: axisEndX, y2: desktopY,
+        class: "wafer-axis"
       }));
 
       elevationLights.appendChild(svgElement("rect", {
         x: x - 3, y: fixtureY - 1, width: 6, height: 2,
-        rx: .5, class: "light-symbol"
+        rx: .5, class: "light-symbol",
+        transform: `rotate(${format(slopeAngle)} ${x} ${fixtureY})`
       }));
       elevationLights.appendChild(svgElement("circle", {
         cx: x, cy: fixtureY, r: .6, class: "light-core"
@@ -998,7 +1205,7 @@
       }, index === 0 ? "L1 + L3 at X=32″" : "L2 + L4 at X=112″"));
       elevationLights.appendChild(svgElement("text", {
         x, y: fixtureY - 2.5, class: "svg-tiny halo", "text-anchor": "middle"
-      }, `${format(representative.lightCeilingHeight)}″ ceiling`));
+      }, `${format(representative.z)}″ ceiling · 112° main cone`));
     });
 
     // Internal geometry validation. Passing assertions remain silent in the console.
@@ -1028,9 +1235,20 @@
       "Light coordinates do not match the required positions."
     );
     console.assert(Math.abs(fanCeilingHeight - 120.25) < 1e-9, "Ceiling formula check failed.");
-    console.assert(Math.abs(radiusAt(1, 45) - Math.tan(Math.PI / 8)) < 1e-12, "Degree-to-radian beam conversion failed.");
-    console.assert(worstFieldGap <= 0, "The 70-degree floor fields should cover the full room.");
-    console.assert(worstMainPoint.gap > 0, "The floor plan should identify the central main-beam transition zone.");
+    console.assert(
+      Math.abs(conservativeFanPlaneHeight - 91.15) < 1e-9,
+      "Conservative fan screening plane must be 91.15 inches AFF."
+    );
+    console.assert(
+      Math.abs(oldFanPlaneHeight - 98.25) < 1e-9,
+      "Prior comparison plane must remain 98.25 inches AFF."
+    );
+    console.assert(floorCoverage.mainPercent === 100, "Wafer main beams should cover the sampled floor.");
+    console.assert(
+      conservativeWafer.mainPercent > 60 && conservativeRls.mainPercent < 1,
+      "Fixture comparison should show materially greater wafer/fan interaction."
+    );
+    console.assert(planCoverage.fieldPercent > 95, "Wafer outer fields should cover nearly all of the screening plane.");
   })();
 </script>
 </body>

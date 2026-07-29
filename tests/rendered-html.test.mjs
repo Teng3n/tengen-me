@@ -1,5 +1,46 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
+import vm from "node:vm";
+
+const diagramSource = readFileSync(
+  new URL("../office_room_diagram.html", import.meta.url),
+  "utf8",
+);
+
+function diagramConfig() {
+  const configScript = diagramSource.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(configScript, "drawing configuration script should exist");
+  return vm.runInNewContext(`${configScript}; DRAWING_CONFIG`);
+}
+
+function sampledFanCoverage(config, drop, fixture, axis) {
+  const slope = (config.ceiling.highHeight - config.ceiling.lowHeight) / config.ceiling.slopeAcross;
+  const ceilingHeight = (x) => config.ceiling.highHeight - slope * x;
+  const fanCeiling = ceilingHeight(config.fan.center.x);
+  const z = fanCeiling - drop;
+  let samples = 0;
+  let mainSamples = 0;
+
+  for (let y = 36; y <= 96; y += 0.5) {
+    for (let x = 42; x <= 102; x += 0.5) {
+      if (Math.hypot(x - 72, y - 66) > 30) continue;
+      samples += 1;
+      const inMain = config.lights.centers.some((light) => {
+        const dx = x - light.x;
+        const dy = y - light.y;
+        const dz = z - ceilingHeight(light.x);
+        const length = Math.hypot(dx, dy, dz);
+        const angle = Math.acos(
+          (dx * axis.x + dy * axis.y + dz * axis.z) / length,
+        ) * 180 / Math.PI;
+        return angle <= fixture.beamAngleDegrees / 2;
+      });
+      if (inMain) mainSamples += 1;
+    }
+  }
+  return 100 * mainSamples / samples;
+}
 
 async function render(path = "/", headers = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -77,6 +118,55 @@ test("about and projects pages render their presentation details", async () => {
   assert.equal(projectsResponse.status, 200);
   const projectsHtml = await projectsResponse.text();
   assert.match(projectsHtml, /project-status project-status-active/);
+});
+
+test("unlinked office diagram serves the corrected fan and wafer study", async () => {
+  const response = await render("/office-room-diagram");
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
+
+  const html = await response.text();
+  assert.match(html, /Revision 03/);
+  assert.match(html, /29\.1″ overall height/);
+  assert.match(html, /HLBSL609FS5/);
+  assert.match(html, /How the corrected fan drop changes the wafer-light result/);
+  assert.doesNotMatch(html, /href=["']\/office-room-diagram/i);
+});
+
+test("office diagram geometry reflects the corrected fan drop", () => {
+  const config = diagramConfig();
+  const slope = (config.ceiling.highHeight - config.ceiling.lowHeight) / config.ceiling.slopeAcross;
+  const fanCeiling = config.ceiling.highHeight - slope * config.fan.center.x;
+  const axisLength = Math.hypot(slope, 1);
+  const waferAxis = { x: -slope / axisLength, y: 0, z: -1 / axisLength };
+  const verticalAxis = { x: 0, y: 0, z: -1 };
+
+  assert.equal(fanCeiling, 120.25);
+  assert.equal(fanCeiling - config.fan.analysisDropFromCeiling, 91.15);
+  assert.equal(fanCeiling - config.fan.previousAssumedBladeDrop, 98.25);
+
+  const oldWaferOverlap = sampledFanCoverage(
+    config,
+    config.fan.previousAssumedBladeDrop,
+    config.lights,
+    waferAxis,
+  );
+  const correctedWaferOverlap = sampledFanCoverage(
+    config,
+    config.fan.analysisDropFromCeiling,
+    config.lights,
+    waferAxis,
+  );
+  const correctedRlsOverlap = sampledFanCoverage(
+    config,
+    config.fan.analysisDropFromCeiling,
+    config.baselineLights,
+    verticalAxis,
+  );
+
+  assert.ok(oldWaferOverlap > 13 && oldWaferOverlap < 15);
+  assert.ok(correctedWaferOverlap > 66 && correctedWaferOverlap < 68);
+  assert.equal(correctedRlsOverlap, 0);
 });
 
 test("admin route reveals no private surface without Cloudflare Access", async () => {
