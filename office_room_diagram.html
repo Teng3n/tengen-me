@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Office Room Lighting Study — Revision 03</title>
+  <title>Office Room Lighting Study — Revision 04</title>
 
   <!--
     ================================================================
@@ -14,7 +14,7 @@
   -->
   <script>
     const DRAWING_CONFIG = Object.freeze({
-      revision: "03",
+      revision: "04",
       drawingDate: "2026-07-29",
       units: "inches",
       room: {
@@ -47,7 +47,7 @@
         height: 16.9,
         curveRadius: 1000 / 25.4,
         bottomAboveDesktop: 5,
-        status: "manufacturer dimensions; wall offset and vertical placement provisional"
+        status: "manufacturer dimensions; mounting plane flush to Bathroom wall; vertical placement provisional"
       },
       window: {
         wall: "Window wall",
@@ -227,6 +227,8 @@
     .wall { fill: none; stroke: var(--wall); stroke-width: 1.35; vector-effect: non-scaling-stroke; }
     .desk { fill: var(--desk); fill-opacity: .69; stroke: var(--desk-line); stroke-width: .65; vector-effect: non-scaling-stroke; }
     .monitor { fill: #4b5966; stroke: #17212b; stroke-width: .45; vector-effect: non-scaling-stroke; }
+    .monitor-mount { stroke: #17212b; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+    .monitor-depth-envelope { stroke: #66737e; stroke-width: .35; stroke-dasharray: 2 1.3; vector-effect: non-scaling-stroke; }
     .window-cut { stroke: #fff; stroke-width: 4.2; vector-effect: non-scaling-stroke; }
     .window-glass { stroke: #16738f; stroke-width: 1.15; vector-effect: non-scaling-stroke; }
     .window-frame { stroke: #285d70; stroke-width: .55; vector-effect: non-scaling-stroke; }
@@ -370,8 +372,8 @@
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .drawing-card, .analysis-section, .legend, .notes-grid { break-inside: avoid; page-break-inside: avoid; }
       .drawing-card { padding: 8px; margin-top: 14px; }
-      #plan-svg { max-height: 6.9in; }
-      #floor-svg { max-height: 6.9in; }
+      #plan-svg, #rls-plan-plan-svg { max-height: 6.9in; }
+      #floor-svg, #rls-floor-floor-svg { max-height: 6.9in; }
       #elevation-svg { max-height: 6.6in; }
       h1 { font-size: 20px; }
       .summary-card li, .note-card li { font-size: 10.5px; }
@@ -384,7 +386,7 @@
 <main>
   <header>
     <h1>Office Room — Lighting, Fan, and Glare Study</h1>
-    <p class="subtitle">Drawing revision 03 · 29 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
+    <p class="subtitle">Drawing revision 04 · 29 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
   </header>
 
   <section aria-labelledby="measurement-summary">
@@ -409,9 +411,10 @@
         <ul>
           <li>Exact fan blade plane is not published separately; the 29.1″ lowest-point plane is used as a conservative obstruction screen.</li>
           <li>The prior drawing’s 22″ blade plane is retained only as an old-geometry comparison.</li>
-          <li>Monitor: 57″ Odyssey Neo G9, 52.3″ × 16.9″ × 13.3″ maximum depth, 1000R curve; centerline 44″ from Sideyard wall.</li>
+          <li>Monitor: 57″ Odyssey Neo G9, 52.3″ × 16.9″ × 13.3″ maximum depth, 1000R curve; centered 44″ from Sideyard wall with its mounting plane flush and parallel to the Bathroom wall.</li>
           <li>Monitor bottom is 5″ above the desktop.</li>
-          <li>Wafer-light scenario uses HALO HLBSL609FS5 photometrics and follows the ceiling’s 18.26° slope.</li>
+          <li>HLBSL scenario uses HALO HLBSL609FS5 photometrics and follows the ceiling’s 18.26° slope.</li>
+          <li>RLS6 scenario uses HALO RLS6159FS1EWHDMR photometrics and is aimed vertically downward.</li>
         </ul>
       </article>
     </div>
@@ -419,7 +422,7 @@
 
   <section class="drawing-card" aria-labelledby="plan-heading">
     <div class="drawing-header">
-      <h2 id="plan-heading">A1 · Wafer-light fan interference — conservative top view</h2>
+      <h2 id="plan-heading">A1-HLBSL · Fan interference — conservative top view</h2>
       <div class="drawing-meta">Screening slice at <span id="plan-plane-meta">91.15″ AFF</span> · Uses confirmed fan lowest-point plane; actual blades are slightly higher</div>
     </div>
     <svg id="plan-svg" viewBox="0 0 220 194" role="img" aria-labelledby="plan-title plan-desc">
@@ -444,11 +447,14 @@
       <text class="svg-small halo" x="65" y="42.5" text-anchor="middle">edge joint</text>
       <text class="svg-label halo" x="105" y="47" text-anchor="middle">L-shaped butcher-block desk</text>
 
-      <!-- Curved 57-inch Odyssey Neo G9 on Bathroom wall; 1000R screen envelope -->
-      <path class="monitor" d="M53.3 47.85 Q40 74 53.3 100.15" fill="none" stroke-width="1.15"/>
+      <!-- Curved 57-inch Odyssey Neo G9 with its mounting plane flush to the Bathroom wall. -->
+      <line class="monitor-mount" x1="40" y1="47.85" x2="40" y2="100.15"/>
+      <path class="monitor" d="M50.1 47.85 Q40 74 50.1 100.15" fill="none" stroke-width="1.15"/>
+      <line class="monitor-depth-envelope" x1="53.3" y1="47.85" x2="53.3" y2="100.15"/>
       <line class="centerline" x1="36.5" y1="74" x2="93" y2="74"/>
       <text class="svg-small svg-provisional halo" x="45" y="67.5">MONITOR — PROVISIONAL</text>
-      <text class="svg-tiny halo" x="45" y="71">57″ Neo G9 · 52.3″ chord · 1000R curve · 13.3″ max depth</text>
+      <text class="svg-tiny halo" x="45" y="71">mounting plane flush to Bathroom wall · curved face projects into room</text>
+      <text class="svg-tiny halo" x="45" y="74.2">52.3″ chord · 1000R · dashed line = 13.3″ maximum-depth envelope</text>
 
       <!-- Fan geometry -->
       <g aria-label="60 inch ceiling fan centered at 72,66">
@@ -538,7 +544,7 @@
 
   <section class="drawing-card" aria-labelledby="floor-heading">
     <div class="drawing-header">
-      <h2 id="floor-heading">A2 · Wafer floor coverage and potential fan-shadow zones</h2>
+      <h2 id="floor-heading">A2-HLBSL · Floor coverage and potential fan-shadow zones</h2>
       <div class="drawing-meta">Horizontal slice at 0″ AFF · Red regions use the conservative 29.1″ obstruction drop</div>
     </div>
     <div class="coverage-summary" aria-label="Floor coverage summary">
@@ -628,6 +634,39 @@
     </svg>
   </section>
 
+  <section class="drawing-card" aria-labelledby="rls-plan-heading">
+    <div class="drawing-header">
+      <h2 id="rls-plan-heading">A1-RLS6 · Fan interference — conservative top view</h2>
+      <div class="drawing-meta">Same room, fan, monitor, and light centers as A1-HLBSL · 45° beam / 70° field · vertically aimed</div>
+    </div>
+    <div id="rls-plan-host"></div>
+  </section>
+
+  <section class="drawing-card" aria-labelledby="rls-floor-heading">
+    <div class="drawing-header">
+      <h2 id="rls-floor-heading">A2-RLS6 · Floor coverage and potential fan-shadow zones</h2>
+      <div class="drawing-meta">Horizontal slice at 0″ AFF · Same four fixture locations · RLS6 optical distribution</div>
+    </div>
+    <div class="coverage-summary" aria-label="RLS6 floor coverage summary">
+      <div class="coverage-metric">
+        <span>Installed output</span>
+        <strong id="rls-floor-output-value">6,520 lumens</strong>
+        <small>Four HALO RLS6159FS1EWHDMR fixtures at approximately 1,630 lumens each.</small>
+      </div>
+      <div class="coverage-metric">
+        <span>Raw output density</span>
+        <strong id="rls-floor-density-value">49.4 lm/ft²</strong>
+        <small>Before optical, reflectance, obstruction, and maintenance losses; not measured foot-candles.</small>
+      </div>
+      <div class="coverage-metric">
+        <span>Geometric coverage</span>
+        <strong id="rls-floor-main-coverage-value">Calculating 45° main-beam coverage…</strong>
+        <small id="rls-floor-field-coverage-note">Calculating 70° outer-field coverage…</small>
+      </div>
+    </div>
+    <div id="rls-floor-host"></div>
+  </section>
+
   <section class="drawing-card" aria-labelledby="elevation-heading">
     <div class="drawing-header">
       <h2 id="elevation-heading">B · Corrected fan envelope and wafer-light axes</h2>
@@ -682,10 +721,11 @@
       <text class="svg-small halo" x="82.5" y="126.5" text-anchor="middle">Desktop 29.5″ AFF · 1.5″ thick · underside 28″</text>
       <text class="svg-tiny halo" x="82.5" y="136" text-anchor="middle">25″ Bathroom segment + 80″ Sideyard run · edge-joined, no overlap</text>
 
-      <!-- Monitor elevation -->
-      <rect class="monitor" x="31" y="108.6" width="13.3" height="16.9"/>
+      <!-- Monitor elevation: mounting plane is flush to the Bathroom wall; depth projects into room. -->
+      <line class="monitor-mount" x1="30" y1="108.6" x2="30" y2="125.5"/>
+      <rect class="monitor" x="30" y="108.6" width="13.3" height="16.9"/>
       <line class="centerline" x1="29" y1="117.05" x2="48" y2="117.05"/>
-      <text class="svg-small svg-provisional halo" x="47" y="112">57″ Neo G9 envelope — wall offset provisional</text>
+      <text class="svg-small confirmed halo" x="47" y="112">57″ Neo G9 mounting plane flush to Bathroom wall</text>
       <text class="svg-tiny halo" x="47" y="116">16.9″ high · 13.3″ max depth · top 51.4″ AFF</text>
 
       <!-- Fan at X = 72 -->
@@ -810,8 +850,8 @@
         <li>Wafer scenario: HALO HLBSL609FS5; 900 nominal lumens, 112° beam, 160° field.</li>
         <li>The flush wafer follows the ceiling normal, so its axis tilts 18.26° toward the Bathroom/high wall.</li>
         <li class="formula">coverage = angleBetween(fixtureAxis, fixtureToPoint) ≤ halfAngle</li>
-        <li>A1 samples the conservative 91.15″ screening plane; A2 samples floor coverage and projects possible fan-shadow paths.</li>
-        <li>The original HALO RLS6 is retained in Section D as a 45° / 70° vertically aimed baseline.</li>
+        <li>Both A1 diagrams sample the conservative 91.15″ screening plane; both A2 diagrams sample floor coverage and project possible fan-shadow paths.</li>
+        <li>A1/A2-HLBSL use 112° / 160° ceiling-normal wafer optics; A1/A2-RLS6 use the 45° / 70° vertically aimed baseline.</li>
         <li>Beam and field angles are intensity boundaries, not hard edges or lux predictions.</li>
       </ul>
     </article>
@@ -829,13 +869,13 @@
       <h3>Provisional assumptions to field-verify</h3>
       <ul>
         <li>Exact blade plane within the 29.1″ fan assembly height.</li>
-        <li>Monitor wall offset, vertical placement, and exact curved-screen surface position.</li>
+        <li>Monitor vertical placement and exact curved-screen surface position; the mounting plane is set flush to the Bathroom wall.</li>
         <li>Installed wafer orientation, dimming level, surface reflectance, and real shadow contrast.</li>
       </ul>
     </article>
   </section>
 
-  <footer>OFFICE ROOM LIGHTING STUDY · REV 03 · SELF-CONTAINED HTML / INLINE SVG</footer>
+  <footer>OFFICE ROOM LIGHTING STUDY · REV 04 · SELF-CONTAINED HTML / INLINE SVG</footer>
 </main>
 
 <script>
@@ -855,6 +895,42 @@
       for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
       if (text) node.textContent = text;
       return node;
+    };
+    const cloneSvgWithPrefix = (sourceId, hostId, prefix) => {
+      const source = document.getElementById(sourceId);
+      const clone = source.cloneNode(true);
+      const idMap = new Map();
+      const nodes = [clone, ...clone.querySelectorAll("*")];
+
+      nodes.forEach(node => {
+        if (!node.id) return;
+        const replacement = `${prefix}-${node.id}`;
+        idMap.set(node.id, replacement);
+        node.id = replacement;
+      });
+
+      nodes.forEach(node => {
+        [...node.attributes].forEach(attribute => {
+          let value = attribute.value;
+          if (attribute.name === "aria-labelledby") {
+            value = value
+              .split(/\s+/)
+              .map(token => idMap.get(token) || token)
+              .join(" ");
+          }
+          idMap.forEach((replacement, original) => {
+            value = value.replaceAll(`url(#${original})`, `url(#${replacement})`);
+            if (value === `#${original}`) value = `#${replacement}`;
+          });
+          node.setAttribute(attribute.name, value);
+        });
+      });
+
+      document.getElementById(hostId).appendChild(clone);
+      return {
+        svg: clone,
+        get: originalId => clone.querySelector(`[id="${idMap.get(originalId)}"]`)
+      };
     };
     const appendCell = (path, x, y, size) =>
       `${path}M${format(roomOffset.x + x, 1)} ${format(roomOffset.y + y, 1)}h${size}v${size}h-${size}Z`;
@@ -974,6 +1050,24 @@
       `${format(conservativeFanPlaneHeight)}″ AFF`;
     document.getElementById("slope-angle-value").textContent = `${format(slopeAngle)}°`;
 
+    // Duplicate the two base drawings before rendering. This keeps the room,
+    // furniture, fan, and monitor geometry identical between fixture scenarios.
+    const rlsPlan = cloneSvgWithPrefix("plan-svg", "rls-plan-host", "rls-plan");
+    rlsPlan.get("plan-title").textContent = "RLS6 top-down office room plan";
+    rlsPlan.get("plan-desc").textContent =
+      "The same office geometry showing vertically aimed HALO RLS6 coverage at the conservative fan obstruction plane.";
+
+    const rlsFloor = cloneSvgWithPrefix("floor-svg", "rls-floor-host", "rls-floor");
+    rlsFloor.get("floor-title").textContent = "RLS6 top-down floor-plane light coverage";
+    rlsFloor.get("floor-desc").textContent =
+      "The same office geometry showing sampled 45 degree main-beam and 70 degree outer-field floor coverage from four vertically aimed HALO RLS6 fixtures.";
+    [...rlsFloor.svg.querySelectorAll("text")].forEach(label => {
+      if (label.textContent.includes("Yellow = 112°")) {
+        label.textContent =
+          "Yellow = 45° main beam · blue = 70° outer field · red = possible fan-shadow path";
+      }
+    });
+
     // 6-inch grid, with every 12-inch line emphasized.
     const renderPlanGrid = grid => {
       for (let x = 6; x < cfg.room.width; x += 6) {
@@ -993,29 +1087,37 @@
     };
     renderPlanGrid(document.getElementById("plan-grid"));
     renderPlanGrid(document.getElementById("floor-grid"));
+    renderPlanGrid(rlsPlan.get("plan-grid"));
+    renderPlanGrid(rlsFloor.get("floor-grid"));
 
-    const renderLightSymbols = (group, includeFloorNote = false) => {
+    const renderLightSymbols = (group, fixture, axis, includeFloorNote = false) => {
+      const isHlBsl = fixture === cfg.lights;
+      const aimLabel = isHlBsl
+        ? `axis ${format(slopeAngle)}° toward Bathroom`
+        : "axis vertical";
       lightRecords.forEach(light => {
         const cx = roomOffset.x + light.x;
         const cy = roomOffset.y + light.y;
-      const lightGroup = svgElement("g");
-      lightGroup.appendChild(svgElement("circle", { cx, cy, r: 2.2, class: "light-symbol" }));
-      lightGroup.appendChild(svgElement("circle", { cx, cy, r: .72, class: "light-core" }));
-      lightGroup.appendChild(svgElement("text", {
-        x: cx, y: cy - 4.1, class: "svg-small halo", "text-anchor": "middle"
-      }, `L${light.number} · ${format(light.z)}″ ceiling`));
-      const labelY = light.y < cfg.room.length / 2 ? cy + 4.2 : cy - 4.2;
-      lightGroup.appendChild(svgElement("text", {
-        x: cx, y: labelY, class: "svg-tiny halo", "text-anchor": "middle"
-      }, includeFloorNote
-        ? `112° beam · axis ${format(slopeAngle)}° toward Bathroom`
-        : `HLBSL wafer · axis follows ceiling slope`
-      ));
+        const lightGroup = svgElement("g");
+        lightGroup.appendChild(svgElement("circle", { cx, cy, r: 2.2, class: "light-symbol" }));
+        lightGroup.appendChild(svgElement("circle", { cx, cy, r: .72, class: "light-core" }));
+        lightGroup.appendChild(svgElement("text", {
+          x: cx, y: cy - 4.1, class: "svg-small halo", "text-anchor": "middle"
+        }, `L${light.number} · ${format(light.z)}″ ceiling`));
+        const labelY = light.y < cfg.room.length / 2 ? cy + 4.2 : cy - 4.2;
+        lightGroup.appendChild(svgElement("text", {
+          x: cx, y: labelY, class: "svg-tiny halo", "text-anchor": "middle"
+        }, includeFloorNote
+          ? `${fixture.beamAngleDegrees}° beam · ${aimLabel}`
+          : `${isHlBsl ? "HLBSL wafer" : "RLS6"} · ${aimLabel}`
+        ));
         group.appendChild(lightGroup);
       });
     };
 
     const renderCoverageMap = (group, z, options = {}) => {
+      const fixture = options.fixture || cfg.lights;
+      const axis = options.axis || waferAxis;
       const cell = 2;
       let fieldPath = "";
       let mainPath = "";
@@ -1029,7 +1131,7 @@
       for (let y = 0; y < cfg.room.length; y += cell) {
         for (let x = 0; x < cfg.room.width; x += cell) {
           const point = { x: x + cell / 2, y: y + cell / 2, z };
-          const counts = coverageCounts(point, cfg.lights, waferAxis);
+          const counts = coverageCounts(point, fixture, axis);
           samples += 1;
           if (counts.main > 0) mainSamples += 1;
           if (counts.field > 0) fieldSamples += 1;
@@ -1052,7 +1154,7 @@
 
           if (options.markProjectedShadows) {
             const strongShadow = lightRecords.some(light =>
-              angleFromAxis(light, point, waferAxis) <= cfg.lights.beamAngleDegrees / 2 &&
+              angleFromAxis(light, point, axis) <= fixture.beamAngleDegrees / 2 &&
               rayCrossesFanSweep(light, point, conservativeFanPlaneHeight)
             );
             if (strongShadow) shadowPath = appendCell(shadowPath, x, y, cell);
@@ -1074,17 +1176,35 @@
     const planCoverage = renderCoverageMap(
       document.getElementById("plan-beams"),
       conservativeFanPlaneHeight,
-      { markFanOverlap: true }
+      { fixture: cfg.lights, axis: waferAxis, markFanOverlap: true }
     );
-    renderLightSymbols(document.getElementById("plan-lights"));
+    renderLightSymbols(document.getElementById("plan-lights"), cfg.lights, waferAxis);
 
     const floorBeams = document.getElementById("floor-beams");
     const floorCoverage = renderCoverageMap(
       floorBeams,
       cfg.analysisPlanes.floorHeight,
-      { markProjectedShadows: true }
+      { fixture: cfg.lights, axis: waferAxis, markProjectedShadows: true }
     );
-    renderLightSymbols(document.getElementById("floor-lights"), true);
+    renderLightSymbols(document.getElementById("floor-lights"), cfg.lights, waferAxis, true);
+
+    const rlsPlanCoverage = renderCoverageMap(
+      rlsPlan.get("plan-beams"),
+      conservativeFanPlaneHeight,
+      { fixture: cfg.baselineLights, axis: verticalAxis, markFanOverlap: true }
+    );
+    renderLightSymbols(
+      rlsPlan.get("plan-lights"), cfg.baselineLights, verticalAxis
+    );
+
+    const rlsFloorCoverage = renderCoverageMap(
+      rlsFloor.get("floor-beams"),
+      cfg.analysisPlanes.floorHeight,
+      { fixture: cfg.baselineLights, axis: verticalAxis, markProjectedShadows: true }
+    );
+    renderLightSymbols(
+      rlsFloor.get("floor-lights"), cfg.baselineLights, verticalAxis, true
+    );
 
     const totalLumens = cfg.lights.centers.length * cfg.lights.lumensApprox;
     const roomAreaSquareFeet = cfg.room.width * cfg.room.length / 144;
@@ -1096,6 +1216,17 @@
       `${format(floorCoverage.mainPercent, 0)}% inside at least one 112° main beam`;
     document.getElementById("floor-field-coverage-note").textContent =
       `${format(floorCoverage.fieldPercent, 0)}% lies inside at least one 160° outer field; this is geometric coverage, not measured illuminance.`;
+
+    const rlsTotalLumens =
+      cfg.lights.centers.length * cfg.baselineLights.lumensApprox;
+    document.getElementById("rls-floor-output-value").textContent =
+      `${rlsTotalLumens.toLocaleString("en-US")} lumens`;
+    document.getElementById("rls-floor-density-value").textContent =
+      `${format(rlsTotalLumens / roomAreaSquareFeet, 1)} lm/ft²`;
+    document.getElementById("rls-floor-main-coverage-value").textContent =
+      `${format(rlsFloorCoverage.mainPercent, 0)}% inside at least one 45° main beam`;
+    document.getElementById("rls-floor-field-coverage-note").textContent =
+      `${format(rlsFloorCoverage.fieldPercent, 0)}% lies inside at least one 70° outer field; this is geometric coverage, not measured illuminance.`;
 
     // Sensitivity table: the exact blade plane is unknown, so show how the result changes with drop.
     const sensitivityRows = [

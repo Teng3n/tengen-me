@@ -42,6 +42,40 @@ function sampledFanCoverage(config, drop, fixture, axis) {
   return 100 * mainSamples / samples;
 }
 
+function sampledRoomCoverage(config, fixture, axis, z = 0, cell = 2) {
+  const slope = (config.ceiling.highHeight - config.ceiling.lowHeight) / config.ceiling.slopeAcross;
+  const ceilingHeight = (x) => config.ceiling.highHeight - slope * x;
+  let samples = 0;
+  let mainSamples = 0;
+  let fieldSamples = 0;
+
+  for (let y = 0; y < config.room.length; y += cell) {
+    for (let x = 0; x < config.room.width; x += cell) {
+      samples += 1;
+      let main = 0;
+      let field = 0;
+      for (const light of config.lights.centers) {
+        const dx = x + cell / 2 - light.x;
+        const dy = y + cell / 2 - light.y;
+        const dz = z - ceilingHeight(light.x);
+        const length = Math.hypot(dx, dy, dz);
+        const angle = Math.acos(
+          (dx * axis.x + dy * axis.y + dz * axis.z) / length,
+        ) * 180 / Math.PI;
+        if (angle <= fixture.beamAngleDegrees / 2) main += 1;
+        if (angle <= fixture.fieldAngleDegrees / 2) field += 1;
+      }
+      if (main > 0) mainSamples += 1;
+      if (field > 0) fieldSamples += 1;
+    }
+  }
+
+  return {
+    mainPercent: 100 * mainSamples / samples,
+    fieldPercent: 100 * fieldSamples / samples,
+  };
+}
+
 async function render(path = "/", headers = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${path}`);
@@ -120,15 +154,20 @@ test("about and projects pages render their presentation details", async () => {
   assert.match(projectsHtml, /project-status project-status-active/);
 });
 
-test("unlinked office diagram serves the corrected fan and wafer study", async () => {
+test("unlinked office diagram serves both fixture studies with the corrected monitor mount", async () => {
   const response = await render("/office-room-diagram");
   assert.equal(response.status, 200);
   assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
 
   const html = await response.text();
-  assert.match(html, /Revision 03/);
+  assert.match(html, /Revision 04/);
   assert.match(html, /29\.1″ overall height/);
   assert.match(html, /HLBSL609FS5/);
+  assert.match(html, /A1-HLBSL/);
+  assert.match(html, /A2-HLBSL/);
+  assert.match(html, /A1-RLS6/);
+  assert.match(html, /A2-RLS6/);
+  assert.match(html, /mounting plane flush and parallel to the Bathroom wall/);
   assert.match(html, /How the corrected fan drop changes the wafer-light result/);
   assert.doesNotMatch(html, /href=["']\/office-room-diagram/i);
 });
@@ -167,6 +206,13 @@ test("office diagram geometry reflects the corrected fan drop", () => {
   assert.ok(oldWaferOverlap > 13 && oldWaferOverlap < 15);
   assert.ok(correctedWaferOverlap > 66 && correctedWaferOverlap < 68);
   assert.equal(correctedRlsOverlap, 0);
+
+  const waferFloor = sampledRoomCoverage(config, config.lights, waferAxis);
+  const rlsFloor = sampledRoomCoverage(config, config.baselineLights, verticalAxis);
+  assert.equal(waferFloor.mainPercent, 100);
+  assert.equal(waferFloor.fieldPercent, 100);
+  assert.ok(rlsFloor.mainPercent > 99 && rlsFloor.mainPercent < 100);
+  assert.equal(rlsFloor.fieldPercent, 100);
 });
 
 test("admin route reveals no private surface without Cloudflare Access", async () => {
