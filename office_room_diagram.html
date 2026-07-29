@@ -1658,7 +1658,7 @@
       let monitorMainSamples = 0;
       let monitorFieldSamples = 0;
       let monitorShadowSamples = 0;
-      const monitorCell = 1;
+      const monitorCell = .5;
       for (let y = monitorY1; y < monitorY2; y += monitorCell) {
         for (let z = monitorZ1; z < monitorZ2; z += monitorCell) {
           const width = Math.min(monitorCell, monitorY2 - y);
