@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Office Room Lighting Study — Revision 07</title>
+  <title>Office Room Lighting Study — Revision 08</title>
 
   <!--
     ================================================================
@@ -14,7 +14,7 @@
   -->
   <script>
     const DRAWING_CONFIG = Object.freeze({
-      revision: "07",
+      revision: "08",
       drawingDate: "2026-07-29",
       units: "inches",
       room: {
@@ -94,7 +94,9 @@
         lumensApprox: 1630,
         beamAngleDegrees: 45,
         fieldAngleDegrees: 70,
-        aiming: "vertically downward"
+        pitchPositionsDegrees: { 1: 27, 2: 18, 3: 18, 4: 18 },
+        tiltAxis: "toward Window wall",
+        aiming: "L1 at 27 degrees; L2-L4 at 18 degrees"
       },
       ceiling: {
         highHeight: 144,
@@ -263,6 +265,7 @@
     .fan-envelope { fill: #67489a; fill-opacity: .13; stroke: var(--fan); stroke-width: .45; stroke-dasharray: 2 1.4; vector-effect: non-scaling-stroke; }
     .fan-bottom { stroke: var(--fan); stroke-width: 1.15; vector-effect: non-scaling-stroke; }
     .wafer-axis { stroke: #a86400; stroke-width: .55; stroke-dasharray: 2 1.4; vector-effect: non-scaling-stroke; }
+    .axis-arrow { fill: #a86400; stroke: none; }
     .light-symbol { fill: #fff; stroke: var(--light); stroke-width: .8; vector-effect: non-scaling-stroke; }
     .light-core { fill: var(--light); }
     .dimension { fill: none; stroke: #33414d; stroke-width: .42; vector-effect: non-scaling-stroke; marker-start: url(#arrow); marker-end: url(#arrow); }
@@ -278,6 +281,9 @@
     .monitor-outline { fill: none; stroke: #17212b; stroke-width: 1; vector-effect: non-scaling-stroke; }
     .cone-main { fill: #f1b84a; fill-opacity: .07; stroke: var(--beam); stroke-width: .6; vector-effect: non-scaling-stroke; }
     .cone-field { fill: #55a9b9; fill-opacity: .035; stroke: var(--field); stroke-width: .55; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+    .cone-main.adjusted-cone { stroke: #b24b00; stroke-width: 1; }
+    .cone-field.adjusted-cone { stroke: #b24b00; stroke-width: .9; }
+    .adjusted-axis { stroke: #b24b00; stroke-width: .9; vector-effect: non-scaling-stroke; }
     .svg-title { font-size: 4px; font-weight: 700; }
     .svg-label { font-size: 3px; }
     .svg-small { font-size: 2.35px; fill: #33414d; }
@@ -364,6 +370,7 @@
     .swatch-fan-main { border: 1px solid #a12f2f; background: rgba(196,61,50,.38); }
     .swatch-fan-field { border: 1px solid var(--fan); background: rgba(112,86,149,.20); }
     .swatch-axis { border-top: 2px dashed #a86400; height: 2px; }
+    .swatch-adjusted { border-top: 3px solid #b24b00; height: 2px; }
     .swatch-window { border: 2px solid #285d70; background: rgba(220,239,243,.88); }
     .swatch-monitor { border: 2px solid #17212b; background: rgba(75,89,102,.10); }
     .swatch-desk { border: 2px solid var(--desk-line); background: rgba(215,168,102,.65); }
@@ -418,7 +425,7 @@
 <main>
   <header class="main-page-only">
     <h1>Office Room — Lighting, Fan, and Glare Study</h1>
-    <p class="subtitle">Drawing revision 07 · 29 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
+    <p class="subtitle">Drawing revision 08 · 29 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
   </header>
 
   <section class="main-page-only" aria-labelledby="measurement-summary">
@@ -446,7 +453,7 @@
           <li>Monitor: 57″ Odyssey Neo G9, 52.3″ × 16.9″ × 13.3″ maximum depth, 1000R curve; centered 44″ from Sideyard wall with its mounting plane flush and parallel to the Bathroom wall.</li>
           <li>Monitor bottom is 5″ above the desktop.</li>
           <li>HLBSL scenario uses HALO HLBSL609FS5 photometrics and follows the ceiling’s 18.26° slope.</li>
-          <li>RLS6 scenario uses HALO RLS6159FS1EWHDMR photometrics and is aimed vertically downward.</li>
+          <li>RLS6 scenario uses HALO RLS6159FS1EWHDMR photometrics: L1 is set to 27° and L2–L4 are set to 18°, all clocked toward the Window wall.</li>
         </ul>
       </article>
     </div>
@@ -664,14 +671,15 @@
 
   <section class="drawing-card main-page-only" aria-labelledby="rls-plan-heading">
     <div class="drawing-header">
-      <h2 id="rls-plan-heading">A1-RLS6 · Fan interference — conservative top view</h2>
-      <div class="drawing-meta">Same room, fan, monitor, and light centers as A1-HLBSL · 45° beam / 70° field · vertically aimed</div>
+      <h2 id="rls-plan-heading">A1-RLS6 · L1 at 27° — conservative top view</h2>
+      <div class="drawing-meta">L1 aims 8.74° past vertical toward the Window wall · L2–L4 use the 18° near-vertical setting</div>
     </div>
     <div id="rls-plan-host"></div>
     <aside class="diagram-legend" data-diagram-legend="A1-RLS6" aria-label="A1-RLS6 legend">
       <h3>Legend</h3>
       <div class="legend-item"><span class="swatch swatch-main"></span><span>45° main-beam coverage</span></div>
       <div class="legend-item"><span class="swatch swatch-field"></span><span>70° outer-field-only coverage</span></div>
+      <div class="legend-item"><span class="swatch swatch-axis"></span><span>L1: 27° fixture setting; L2–L4: 18° setting</span></div>
       <div class="legend-item"><span class="swatch swatch-fan"></span><span>60″ fan sweep at the conservative screening plane</span></div>
       <div class="legend-item"><span class="swatch swatch-fan-field"></span><span>Fan sweep reached only by the outer field; no main-beam overlap</span></div>
     </aside>
@@ -679,8 +687,8 @@
 
   <section class="drawing-card main-page-only" aria-labelledby="rls-floor-heading">
     <div class="drawing-header">
-      <h2 id="rls-floor-heading">A2-RLS6 · Floor coverage and potential fan-shadow zones</h2>
-      <div class="drawing-meta">Horizontal slice at 0″ AFF · Same four fixture locations · RLS6 optical distribution</div>
+      <h2 id="rls-floor-heading">A2-RLS6 · Floor coverage with L1 at 27°</h2>
+      <div class="drawing-meta">Horizontal slice at 0″ AFF · L1 aims toward the Window wall · L2–L4 remain near vertical</div>
     </div>
     <div class="coverage-summary" aria-label="RLS6 floor coverage summary">
       <div class="coverage-metric">
@@ -704,6 +712,7 @@
       <h3>Legend</h3>
       <div class="legend-item"><span class="swatch swatch-main"></span><span>45° main-beam floor coverage; darker yellow means multiple fixtures</span></div>
       <div class="legend-item"><span class="swatch swatch-field"></span><span>70° outer-field-only floor coverage</span></div>
+      <div class="legend-item"><span class="swatch swatch-axis"></span><span>L1: 27° setting, aimed 8.74° past vertical toward Window wall</span></div>
       <div class="legend-item"><span class="swatch swatch-desk-projection"></span><span>Desktop footprint projected above the floor slice</span></div>
     </aside>
   </section>
@@ -809,15 +818,16 @@
 
   <section class="drawing-card main-page-only" aria-labelledby="rls-elevation-heading">
     <div class="drawing-header">
-      <h2 id="rls-elevation-heading">B-RLS6 · Bathroom-to-Window side elevation</h2>
-      <div class="drawing-meta">Same projected slice as B-HLBSL · 45° main beam / 70° outer field · vertically aimed</div>
+      <h2 id="rls-elevation-heading">B-RLS6 · L1 27° / L2–L4 18° side elevation</h2>
+      <div class="drawing-meta">Bathroom/high wall at left · Window/low wall at right · L1 axis shown separately from L3</div>
     </div>
     <div id="rls-elevation-host"></div>
     <aside class="diagram-legend" data-diagram-legend="B-RLS6" aria-label="B-RLS6 legend">
       <h3>Legend</h3>
       <div class="legend-item"><span class="swatch swatch-main"></span><span>45° main cone</span></div>
       <div class="legend-item"><span class="swatch swatch-field"></span><span>70° outer-field cone</span></div>
-      <div class="legend-item"><span class="swatch swatch-axis"></span><span>Fixture axis: vertically downward</span></div>
+      <div class="legend-item"><span class="swatch swatch-axis"></span><span>L1 axis: 8.74° past vertical toward Window; L2–L4: 0.26° toward Bathroom</span></div>
+      <div class="legend-item"><span class="swatch swatch-adjusted"></span><span>Orange cone outline and solid axis: adjusted L1 at 27°</span></div>
       <div class="legend-item"><span class="swatch swatch-fan"></span><span>Haiku L fan envelope and conservative lowest-point plane</span></div>
       <div class="legend-item"><span class="swatch swatch-old"></span><span>Prior 22″ screening assumption</span></div>
     </aside>
@@ -884,7 +894,7 @@
   <section class="drawing-card main-page-only" aria-labelledby="rls-window-wall-heading">
     <div class="drawing-header">
       <h2 id="rls-window-wall-heading">C-RLS6 · Window-wall illumination</h2>
-      <div class="drawing-meta">Same Window-wall elevation as C-HLBSL · 45° main beam / 70° outer field · vertically aimed</div>
+      <div class="drawing-meta">L1 at 27° toward this wall · L2–L4 at 18° · Actual 3D angular coverage</div>
     </div>
     <div class="coverage-summary" aria-label="RLS6 Window-wall coverage summary">
       <div class="coverage-metric">
@@ -908,6 +918,7 @@
       <h3>Legend</h3>
       <div class="legend-item"><span class="swatch swatch-main"></span><span>45° main-beam coverage on solid wall; darker yellow means multiple fixtures</span></div>
       <div class="legend-item"><span class="swatch swatch-field"></span><span>70° outer-field-only coverage on solid wall</span></div>
+      <div class="legend-item"><span class="swatch swatch-axis"></span><span>L1 is aimed 8.74° past vertical toward this wall</span></div>
       <div class="legend-item"><span class="swatch swatch-window"></span><span>Window opening, excluded from wall-area percentages</span></div>
     </aside>
   </section>
@@ -983,7 +994,7 @@
   <section class="drawing-card main-page-only" aria-labelledby="rls-bathroom-wall-heading">
     <div class="drawing-header">
       <h2 id="rls-bathroom-wall-heading">D-RLS6 · Bathroom-wall and monitor illumination</h2>
-      <div class="drawing-meta">Same reverse elevation as D-HLBSL · 45° main beam / 70° outer field · vertically aimed</div>
+      <div class="drawing-meta">L1 at 27° away from this wall · L2–L4 at 18° · Monitor surface sampled separately</div>
     </div>
     <div class="coverage-summary" aria-label="RLS6 Bathroom-wall and monitor coverage summary">
       <div class="coverage-metric">
@@ -1007,6 +1018,7 @@
       <h3>Legend</h3>
       <div class="legend-item"><span class="swatch swatch-main"></span><span>45° main-beam coverage; darker yellow means multiple fixtures</span></div>
       <div class="legend-item"><span class="swatch swatch-field"></span><span>70° outer-field-only coverage</span></div>
+      <div class="legend-item"><span class="swatch swatch-axis"></span><span>L1 is aimed 8.74° past vertical away from the monitor</span></div>
       <div class="legend-item"><span class="swatch swatch-monitor"></span><span>Projected outline of the separately sampled curved monitor</span></div>
       <div class="legend-item"><span class="swatch swatch-desk-projection"></span><span>88″ Bathroom-wall desktop edge</span></div>
     </aside>
@@ -1014,7 +1026,7 @@
 
   <header class="details-only">
     <h1>Office Room — Detailed Lighting Analysis</h1>
-    <p class="subtitle">Revision 07 · Calculation assumptions, fan sensitivity, and fixture comparison</p>
+    <p class="subtitle">Revision 08 · Calculation assumptions, fan sensitivity, and fixture comparison</p>
   </header>
 
   <section class="analysis-section details-only" aria-labelledby="analysis-heading">
@@ -1034,7 +1046,7 @@
       <div class="coverage-metric good">
         <span>Narrow RLS6 comparison</span>
         <strong id="rls-comparison-value">0% strong-beam intersection</strong>
-        <small>At the same conservative plane, the vertically aimed 45° RLS6 main beams still clear the fan.</small>
+        <small>At the same conservative plane, the L1 27° / L2–L4 18° RLS6 main beams still clear the fan.</small>
       </div>
     </div>
     <p class="finding"><strong>Updated conclusion:</strong> the old 22″ blade-plane assumption materially understated the wafer interaction. A severe whole-room flash is not guaranteed, but visible moving shadows are now plausible enough that the exact blade height or a one-fixture mockup should be confirmed before choosing the wide wafers.</p>
@@ -1094,7 +1106,7 @@
         <li>The flush wafer follows the ceiling normal, so its axis tilts 18.26° toward the Bathroom/high wall.</li>
         <li class="formula">coverage = angleBetween(fixtureAxis, fixtureToPoint) ≤ halfAngle</li>
         <li>Both A1 diagrams sample the conservative 91.15″ screening plane; both A2 diagrams sample floor coverage and project possible fan-shadow paths.</li>
-        <li>A1/A2-HLBSL use 112° / 160° ceiling-normal wafer optics; A1/A2-RLS6 use the 45° / 70° vertically aimed baseline.</li>
+        <li>A1/A2-HLBSL use 112° / 160° ceiling-normal wafer optics; A1/A2-RLS6 use 45° / 70° optics with L1 at 27° and L2–L4 at 18°.</li>
         <li>Beam and field angles are intensity boundaries, not hard edges or lux predictions.</li>
       </ul>
     </article>
@@ -1191,7 +1203,22 @@
       y: 0,
       z: -1 / axisMagnitude
     };
-    const verticalAxis = { x: 0, y: 0, z: -1 };
+    const axisForRlsLight = light => {
+      const pitchPosition =
+        cfg.baselineLights.pitchPositionsDegrees[light.number];
+      const anglePastVertical = pitchPosition - slopeAngle;
+      return {
+        x: Math.sin(degToRad(anglePastVertical)),
+        y: 0,
+        z: -Math.cos(degToRad(anglePastVertical))
+      };
+    };
+    const resolveLightAxis = (axisOrResolver, light) =>
+      typeof axisOrResolver === "function"
+        ? axisOrResolver(light)
+        : axisOrResolver;
+    const axisAngleFromVertical = axis =>
+      Math.atan2(axis.x, -axis.z) * 180 / Math.PI;
 
     const lightRecords = cfg.lights.centers.map(light => ({
       ...light,
@@ -1209,10 +1236,11 @@
       return Math.acos(cosine) * 180 / Math.PI;
     };
 
-    const coverageCounts = (point, fixture, axis) => {
+    const coverageCounts = (point, fixture, axisOrResolver) => {
       let main = 0;
       let field = 0;
       lightRecords.forEach(light => {
+        const axis = resolveLightAxis(axisOrResolver, light);
         const angle = angleFromAxis(light, point, axis);
         if (angle <= fixture.beamAngleDegrees / 2) main += 1;
         if (angle <= fixture.fieldAngleDegrees / 2) field += 1;
@@ -1299,12 +1327,12 @@
     const rlsPlan = cloneSvgWithPrefix("plan-svg", "rls-plan-host", "rls-plan");
     rlsPlan.get("plan-title").textContent = "RLS6 top-down office room plan";
     rlsPlan.get("plan-desc").textContent =
-      "The same office geometry showing vertically aimed HALO RLS6 coverage at the conservative fan obstruction plane.";
+      "The same office geometry showing HALO RLS6 coverage with L1 at the 27 degree position and L2 through L4 at the 18 degree position.";
 
     const rlsFloor = cloneSvgWithPrefix("floor-svg", "rls-floor-host", "rls-floor");
     rlsFloor.get("floor-title").textContent = "RLS6 top-down floor-plane light coverage";
     rlsFloor.get("floor-desc").textContent =
-      "The same office geometry showing sampled 45 degree main-beam and 70 degree outer-field floor coverage from four vertically aimed HALO RLS6 fixtures.";
+      "The same office geometry showing sampled RLS6 floor coverage with L1 aimed 8.74 degrees past vertical toward the Window wall.";
 
     const rlsElevation = cloneSvgWithPrefix(
       "elevation-svg", "rls-elevation-host", "rls-elevation"
@@ -1312,7 +1340,7 @@
     rlsElevation.get("elevation-title").textContent =
       "RLS6 office side elevation along the ceiling slope";
     rlsElevation.get("elevation-desc").textContent =
-      "The same Bathroom-wall-to-Window-wall elevation showing vertically aimed HALO RLS6 main and outer-field cones.";
+      "The same Bathroom-wall-to-Window-wall elevation showing L1 at 27 degrees and L2 through L4 at 18 degrees.";
 
     const rlsWindowWall = cloneSvgWithPrefix(
       "window-wall-svg", "rls-window-wall-host", "rls-window-wall"
@@ -1320,7 +1348,7 @@
     rlsWindowWall.get("window-wall-title").textContent =
       "RLS6 coverage on the Window wall";
     rlsWindowWall.get("window-wall-desc").textContent =
-      "A view from the Bathroom wall toward the Window wall showing actual three-dimensional main-beam and outer-field coverage from all four RLS6 fixtures.";
+      "A view from the Bathroom wall toward the Window wall showing actual three-dimensional coverage with L1 at 27 degrees and L2 through L4 at 18 degrees.";
 
     const rlsBathroomWall = cloneSvgWithPrefix(
       "bathroom-wall-svg", "rls-bathroom-wall-host", "rls-bathroom-wall"
@@ -1328,7 +1356,7 @@
     rlsBathroomWall.get("bathroom-wall-title").textContent =
       "RLS6 coverage on the Bathroom wall and monitor";
     rlsBathroomWall.get("bathroom-wall-desc").textContent =
-      "A view from the Window wall toward the Bathroom wall showing actual three-dimensional RLS6 coverage on the solid wall and separately sampled curved monitor surface.";
+      "A view from the Window wall toward the Bathroom wall showing actual three-dimensional RLS6 coverage with L1 aimed away from the monitor.";
 
     // 6-inch grid, with every 12-inch line emphasized.
     const renderPlanGrid = grid => {
@@ -1394,15 +1422,37 @@
     renderBathroomWallGrid(document.getElementById("bathroom-wall-grid"));
     renderBathroomWallGrid(rlsBathroomWall.get("bathroom-wall-grid"));
 
-    const renderLightSymbols = (group, fixture, axis, includeFloorNote = false) => {
+    const renderLightSymbols = (group, fixture, axisOrResolver, includeFloorNote = false) => {
       const isHlBsl = fixture === cfg.lights;
-      const aimLabel = isHlBsl
-        ? `axis ${format(slopeAngle)}° toward Bathroom`
-        : "axis vertical";
       lightRecords.forEach(light => {
+        const axis = resolveLightAxis(axisOrResolver, light);
+        const axisAngle = axisAngleFromVertical(axis);
+        const pitchPosition = isHlBsl
+          ? null
+          : cfg.baselineLights.pitchPositionsDegrees[light.number];
+        const aimLabel = isHlBsl
+          ? `axis ${format(slopeAngle)}° with ceiling normal`
+          : light.number === 1
+            ? `${pitchPosition}° setting · ${format(axisAngle, 2)}° toward Window`
+            : `${pitchPosition}° setting · near vertical`;
         const cx = roomOffset.x + light.x;
         const cy = roomOffset.y + light.y;
         const lightGroup = svgElement("g");
+        if (!isHlBsl && Math.abs(axisAngle) > 1) {
+          lightGroup.appendChild(svgElement("line", {
+            x1: cx,
+            y1: cy,
+            x2: cx + Math.sign(axisAngle) * 12,
+            y2: cy,
+            class: "wafer-axis"
+          }));
+          lightGroup.appendChild(svgElement("path", {
+            d: `M${cx + Math.sign(axisAngle) * 12} ${cy} ` +
+               `l${-Math.sign(axisAngle) * 2.2} -1.3 ` +
+               `v2.6 Z`,
+            class: "axis-arrow"
+          }));
+        }
         lightGroup.appendChild(svgElement("circle", { cx, cy, r: 2.2, class: "light-symbol" }));
         lightGroup.appendChild(svgElement("circle", { cx, cy, r: .72, class: "light-core" }));
         lightGroup.appendChild(svgElement("text", {
@@ -1458,7 +1508,9 @@
 
           if (options.markProjectedShadows) {
             const strongShadow = lightRecords.some(light =>
-              angleFromAxis(light, point, axis) <= fixture.beamAngleDegrees / 2 &&
+              angleFromAxis(
+                light, point, resolveLightAxis(axis, light)
+              ) <= fixture.beamAngleDegrees / 2 &&
               rayCrossesFanSweep(light, point, conservativeFanPlaneHeight)
             );
             if (strongShadow) shadowPath = appendCell(shadowPath, x, y, cell);
@@ -1520,7 +1572,9 @@
           }
 
           const strongShadow = lightRecords.some(light =>
-            angleFromAxis(light, point, axis) <= fixture.beamAngleDegrees / 2 &&
+            angleFromAxis(
+              light, point, resolveLightAxis(axis, light)
+            ) <= fixture.beamAngleDegrees / 2 &&
             rayCrossesFanSweep(light, point, conservativeFanPlaneHeight)
           );
           if (strongShadow) {
@@ -1567,7 +1621,9 @@
         }
       };
       const shadowedAt = point => lightRecords.some(light =>
-        angleFromAxis(light, point, axis) <= fixture.beamAngleDegrees / 2 &&
+        angleFromAxis(
+          light, point, resolveLightAxis(axis, light)
+        ) <= fixture.beamAngleDegrees / 2 &&
         rayCrossesFanSweep(light, point, conservativeFanPlaneHeight)
       );
 
@@ -1653,26 +1709,26 @@
     const rlsPlanCoverage = renderCoverageMap(
       rlsPlan.get("plan-beams"),
       conservativeFanPlaneHeight,
-      { fixture: cfg.baselineLights, axis: verticalAxis, markFanOverlap: true }
+      { fixture: cfg.baselineLights, axis: axisForRlsLight, markFanOverlap: true }
     );
     renderLightSymbols(
-      rlsPlan.get("plan-lights"), cfg.baselineLights, verticalAxis
+      rlsPlan.get("plan-lights"), cfg.baselineLights, axisForRlsLight
     );
 
     const rlsFloorCoverage = renderCoverageMap(
       rlsFloor.get("floor-beams"),
       cfg.analysisPlanes.floorHeight,
-      { fixture: cfg.baselineLights, axis: verticalAxis, markProjectedShadows: true }
+      { fixture: cfg.baselineLights, axis: axisForRlsLight, markProjectedShadows: true }
     );
     renderLightSymbols(
-      rlsFloor.get("floor-lights"), cfg.baselineLights, verticalAxis, true
+      rlsFloor.get("floor-lights"), cfg.baselineLights, axisForRlsLight, true
     );
 
     const windowWallCoverage = renderWindowWallCoverage(
       document.getElementById("window-wall-coverage"), cfg.lights, waferAxis
     );
     const rlsWindowWallCoverage = renderWindowWallCoverage(
-      rlsWindowWall.get("window-wall-coverage"), cfg.baselineLights, verticalAxis
+      rlsWindowWall.get("window-wall-coverage"), cfg.baselineLights, axisForRlsLight
     );
     const bathroomWallCoverage = renderBathroomWallCoverage(
       document.getElementById("bathroom-wall-coverage"),
@@ -1684,7 +1740,7 @@
       rlsBathroomWall.get("bathroom-wall-coverage"),
       rlsBathroomWall.get("bathroom-monitor-coverage"),
       cfg.baselineLights,
-      verticalAxis
+      axisForRlsLight
     );
 
     const totalLumens = cfg.lights.centers.length * cfg.lights.lumensApprox;
@@ -1705,7 +1761,7 @@
     document.getElementById("rls-floor-density-value").textContent =
       `${format(rlsTotalLumens / roomAreaSquareFeet, 1)} lm/ft²`;
     document.getElementById("rls-floor-main-coverage-value").textContent =
-      `${format(rlsFloorCoverage.mainPercent, 0)}% inside at least one 45° main beam`;
+      `${format(rlsFloorCoverage.mainPercent, 1)}% inside at least one 45° main beam`;
     document.getElementById("rls-floor-field-coverage-note").textContent =
       `${format(rlsFloorCoverage.fieldPercent, 0)}% lies inside at least one 70° outer field; this is geometric coverage, not measured illuminance.`;
     document.getElementById("window-wall-main-value").textContent =
@@ -1730,7 +1786,7 @@
     document.getElementById("rls-bathroom-wall-field-value").textContent =
       `${format(rlsBathroomWallCoverage.wallFieldPercent, 0)}% of solid wall`;
     document.getElementById("rls-bathroom-monitor-value").textContent =
-      `${format(rlsBathroomWallCoverage.monitorMainPercent, 0)}% main · ` +
+      `${format(rlsBathroomWallCoverage.monitorMainPercent, 1)}% main · ` +
       `${format(rlsBathroomWallCoverage.monitorFieldPercent, 0)}% outer field`;
     document.getElementById("rls-bathroom-monitor-note").textContent =
       `${format(rlsBathroomWallCoverage.monitorShadowPercent, 0)}% of the screen lies on a possible main-beam fan-shadow path; direct incidence is not the same as reflected glare.`;
@@ -1766,7 +1822,7 @@
       cfg.fan.analysisDropFromCeiling, cfg.lights, waferAxis
     );
     const conservativeRls = sampleFanSweepCoverage(
-      cfg.fan.analysisDropFromCeiling, cfg.baselineLights, verticalAxis
+      cfg.fan.analysisDropFromCeiling, cfg.baselineLights, axisForRlsLight
     );
     const conservativeMonitorShadow = sampleMonitorShadow(cfg.fan.analysisDropFromCeiling);
     document.getElementById("fan-main-union-value").textContent =
@@ -1780,10 +1836,10 @@
     [
       {
         fixture: `${cfg.baselineLights.fixture} (${cfg.baselineLights.model})`,
-        aim: "Plumb / vertically downward",
+        aim: "L1 27° toward Window; L2–L4 18°",
         angles: `${cfg.baselineLights.beamAngleDegrees}° / ${cfg.baselineLights.fieldAngleDegrees}°`,
         metrics: conservativeRls,
-        result: "Main beams clear; limited fringe-field interaction"
+        result: "Main beams clear; L1 main beam moves away from monitor"
       },
       {
         fixture: `${cfg.lights.fixture} (${cfg.lights.model})`,
@@ -1806,37 +1862,63 @@
       fixtureComparisonBody.appendChild(tr);
     });
 
-    // Side elevations share geometry; only fixture aim and photometric angles differ.
+    // Side elevations share geometry. The RLS6 view separates the projected
+    // L1 and L3 cones because they share X=32 but use different pitch positions.
     const renderElevationScenario = (coneGroup, lightGroup, fixture, isHlBsl) => {
       [32, 112].forEach((positionX, index) => {
-        const representative = lightRecords.find(result => result.x === positionX);
+        const recordsAtX = lightRecords.filter(result => result.x === positionX);
+        const representative = recordsAtX[0];
         const x = 30 + positionX;
         const fixtureY = 160 - representative.z;
         const desktopY = 160 - cfg.desk.finishedHeight;
         const verticalDrop = representative.z - cfg.desk.finishedHeight;
-        const axisAngleFromVertical = isHlBsl ? -slopeAngle : 0;
         const projectedX = angle => {
           const boundedAngle = Math.max(-89, Math.min(89, angle));
           return x + verticalDrop * Math.tan(degToRad(boundedAngle));
         };
-        const conePath = halfAngle =>
-          `M${x} ${fixtureY} ` +
-          `L${projectedX(axisAngleFromVertical - halfAngle)} ${desktopY} ` +
-          `L${projectedX(axisAngleFromVertical + halfAngle)} ${desktopY} Z`;
+        const coneSpecs = isHlBsl
+          ? [{ angle: -slopeAngle, adjusted: false }]
+          : positionX === 32
+            ? [
+                {
+                  angle: axisAngleFromVertical(axisForRlsLight(
+                    recordsAtX.find(light => light.number === 3)
+                  )),
+                  adjusted: false
+                },
+                {
+                  angle: axisAngleFromVertical(axisForRlsLight(
+                    recordsAtX.find(light => light.number === 1)
+                  )),
+                  adjusted: true
+                }
+              ]
+            : [{
+                angle: axisAngleFromVertical(axisForRlsLight(representative)),
+                adjusted: false
+              }];
 
-        coneGroup.appendChild(svgElement("path", {
-          d: conePath(fixture.fieldAngleDegrees / 2),
-          class: "cone-field"
-        }));
-        coneGroup.appendChild(svgElement("path", {
-          d: conePath(fixture.beamAngleDegrees / 2),
-          class: "cone-main"
-        }));
-        coneGroup.appendChild(svgElement("line", {
-          x1: x, y1: fixtureY,
-          x2: projectedX(axisAngleFromVertical), y2: desktopY,
-          class: "wafer-axis"
-        }));
+        coneSpecs.forEach(spec => {
+          const conePath = halfAngle =>
+            `M${x} ${fixtureY} ` +
+            `L${projectedX(spec.angle - halfAngle)} ${desktopY} ` +
+            `L${projectedX(spec.angle + halfAngle)} ${desktopY} Z`;
+          const adjustedClass = spec.adjusted ? " adjusted-cone" : "";
+
+          coneGroup.appendChild(svgElement("path", {
+            d: conePath(fixture.fieldAngleDegrees / 2),
+            class: `cone-field${adjustedClass}`
+          }));
+          coneGroup.appendChild(svgElement("path", {
+            d: conePath(fixture.beamAngleDegrees / 2),
+            class: `cone-main${adjustedClass}`
+          }));
+          coneGroup.appendChild(svgElement("line", {
+            x1: x, y1: fixtureY,
+            x2: projectedX(spec.angle), y2: desktopY,
+            class: spec.adjusted ? "adjusted-axis" : "wafer-axis"
+          }));
+        });
 
         lightGroup.appendChild(svgElement("rect", {
           x: x - 3, y: fixtureY - 1, width: 6, height: 2,
@@ -1846,13 +1928,20 @@
         lightGroup.appendChild(svgElement("circle", {
           cx: x, cy: fixtureY, r: .6, class: "light-core"
         }));
+        const title = isHlBsl
+          ? (index === 0 ? "L1 + L3 at X=32″" : "L2 + L4 at X=112″")
+          : (index === 0 ? "L1 27° + L3 18° at X=32″" : "L2 + L4 18° at X=112″");
+        const detail = isHlBsl
+          ? `${format(representative.z)}″ ceiling · ${fixture.beamAngleDegrees}° / ${fixture.fieldAngleDegrees}°`
+          : index === 0
+            ? `L1 axis +${format(27 - slopeAngle, 2)}° · L3 axis ${format(18 - slopeAngle, 2)}°`
+            : `Axis ${format(18 - slopeAngle, 2)}° · ${fixture.beamAngleDegrees}° / ${fixture.fieldAngleDegrees}°`;
         lightGroup.appendChild(svgElement("text", {
           x, y: fixtureY - 5.2, class: "svg-small halo", "text-anchor": "middle"
-        }, index === 0 ? "L1 + L3 at X=32″" : "L2 + L4 at X=112″"));
+        }, title));
         lightGroup.appendChild(svgElement("text", {
           x, y: fixtureY - 2.5, class: "svg-tiny halo", "text-anchor": "middle"
-        }, `${format(representative.z)}″ ceiling · ` +
-           `${fixture.beamAngleDegrees}° / ${fixture.fieldAngleDegrees}°`));
+        }, detail));
       });
     };
     renderElevationScenario(
@@ -1894,6 +1983,15 @@
       JSON.stringify([[32,30],[112,30],[32,102],[112,102]]),
       "Light coordinates do not match the required positions."
     );
+    console.assert(
+      JSON.stringify(cfg.baselineLights.pitchPositionsDegrees) ===
+      JSON.stringify({ 1: 27, 2: 18, 3: 18, 4: 18 }),
+      "RLS6 pitch positions must keep L1 at 27 degrees and L2-L4 at 18 degrees."
+    );
+    console.assert(
+      Math.abs(axisAngleFromVertical(axisForRlsLight(lightRecords[0])) - 8.74428660757427) < 1e-9,
+      "L1 RLS6 axis must aim 8.74 degrees past vertical toward the Window wall."
+    );
     console.assert(Math.abs(fanCeilingHeight - 120.25) < 1e-9, "Ceiling formula check failed.");
     console.assert(
       Math.abs(conservativeFanPlaneHeight - 91.15) < 1e-9,
@@ -1904,6 +2002,14 @@
       "Prior comparison plane must remain 98.25 inches AFF."
     );
     console.assert(floorCoverage.mainPercent === 100, "Wafer main beams should cover the sampled floor.");
+    console.assert(
+      rlsFloorCoverage.mainPercent > 99 && rlsFloorCoverage.fieldPercent === 100,
+      "Adjusted RLS6 layout should retain more than 99 percent main-beam floor coverage."
+    );
+    console.assert(
+      rlsBathroomWallCoverage.monitorMainPercent < 2,
+      "Adjusted L1 should remove nearly all RLS6 main-beam exposure from the monitor."
+    );
     console.assert(
       conservativeWafer.mainPercent > 60 && conservativeRls.mainPercent < 1,
       "Fixture comparison should show materially greater wafer/fan interaction."

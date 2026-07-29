@@ -14,6 +14,12 @@ function diagramConfig() {
   return vm.runInNewContext(`${configScript}; DRAWING_CONFIG`);
 }
 
+function resolveAxis(axisOrResolver, light) {
+  return typeof axisOrResolver === "function"
+    ? axisOrResolver(light)
+    : axisOrResolver;
+}
+
 function sampledFanCoverage(config, drop, fixture, axis) {
   const slope = (config.ceiling.highHeight - config.ceiling.lowHeight) / config.ceiling.slopeAcross;
   const ceilingHeight = (x) => config.ceiling.highHeight - slope * x;
@@ -27,12 +33,13 @@ function sampledFanCoverage(config, drop, fixture, axis) {
       if (Math.hypot(x - 72, y - 66) > 30) continue;
       samples += 1;
       const inMain = config.lights.centers.some((light) => {
+        const lightAxis = resolveAxis(axis, light);
         const dx = x - light.x;
         const dy = y - light.y;
         const dz = z - ceilingHeight(light.x);
         const length = Math.hypot(dx, dy, dz);
         const angle = Math.acos(
-          (dx * axis.x + dy * axis.y + dz * axis.z) / length,
+          (dx * lightAxis.x + dy * lightAxis.y + dz * lightAxis.z) / length,
         ) * 180 / Math.PI;
         return angle <= fixture.beamAngleDegrees / 2;
       });
@@ -55,12 +62,13 @@ function sampledRoomCoverage(config, fixture, axis, z = 0, cell = 2) {
       let main = 0;
       let field = 0;
       for (const light of config.lights.centers) {
+        const lightAxis = resolveAxis(axis, light);
         const dx = x + cell / 2 - light.x;
         const dy = y + cell / 2 - light.y;
         const dz = z - ceilingHeight(light.x);
         const length = Math.hypot(dx, dy, dz);
         const angle = Math.acos(
-          (dx * axis.x + dy * axis.y + dz * axis.z) / length,
+          (dx * lightAxis.x + dy * lightAxis.y + dz * lightAxis.z) / length,
         ) * 180 / Math.PI;
         if (angle <= fixture.beamAngleDegrees / 2) main += 1;
         if (angle <= fixture.fieldAngleDegrees / 2) field += 1;
@@ -101,12 +109,13 @@ function sampledWindowWallCoverage(config, fixture, axis, cell = 2) {
       let main = 0;
       let field = 0;
       for (const light of config.lights.centers) {
+        const lightAxis = resolveAxis(axis, light);
         const dx = point.x - light.x;
         const dy = point.y - light.y;
         const dz = point.z - ceilingHeight(light.x);
         const length = Math.hypot(dx, dy, dz);
         const angle = Math.acos(
-          (dx * axis.x + dy * axis.y + dz * axis.z) / length,
+          (dx * lightAxis.x + dy * lightAxis.y + dz * lightAxis.z) / length,
         ) * 180 / Math.PI;
         if (angle <= fixture.beamAngleDegrees / 2) main += 1;
         if (angle <= fixture.fieldAngleDegrees / 2) field += 1;
@@ -145,12 +154,13 @@ function sampledBathroomWallCoverage(config, fixture, axis, cell = 2) {
       let main = 0;
       let field = 0;
       for (const light of config.lights.centers) {
+        const lightAxis = resolveAxis(axis, light);
         const dx = point.x - light.x;
         const dy = point.y - light.y;
         const dz = point.z - ceilingHeight(light.x);
         const length = Math.hypot(dx, dy, dz);
         const angle = Math.acos(
-          (dx * axis.x + dy * axis.y + dz * axis.z) / length,
+          (dx * lightAxis.x + dy * lightAxis.y + dz * lightAxis.z) / length,
         ) * 180 / Math.PI;
         if (angle <= fixture.beamAngleDegrees / 2) main += 1;
         if (angle <= fixture.fieldAngleDegrees / 2) field += 1;
@@ -193,12 +203,13 @@ function sampledMonitorCoverage(config, fixture, axis, cell = 1) {
       let main = 0;
       let field = 0;
       for (const light of config.lights.centers) {
+        const lightAxis = resolveAxis(axis, light);
         const dx = point.x - light.x;
         const dy = point.y - light.y;
         const dz = point.z - ceilingHeight(light.x);
         const length = Math.hypot(dx, dy, dz);
         const angle = Math.acos(
-          (dx * axis.x + dy * axis.y + dz * axis.z) / length,
+          (dx * lightAxis.x + dy * lightAxis.y + dz * lightAxis.z) / length,
         ) * 180 / Math.PI;
         if (angle <= fixture.beamAngleDegrees / 2) main += 1;
         if (angle <= fixture.fieldAngleDegrees / 2) field += 1;
@@ -298,7 +309,8 @@ test("unlinked office diagram serves the expanded four-view fixture study", asyn
   assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
 
   const html = await response.text();
-  assert.match(html, /Revision 07/);
+  assert.match(html, /Revision 08/);
+  assert.match(html, /pitchPositionsDegrees: \{ 1: 27, 2: 18, 3: 18, 4: 18 \}/);
   assert.match(html, /29\.1″ overall height/);
   assert.match(html, /HLBSL609FS5/);
   assert.match(html, /A1-HLBSL/);
@@ -350,7 +362,13 @@ test("office diagram geometry reflects the corrected fan drop", () => {
   const fanCeiling = config.ceiling.highHeight - slope * config.fan.center.x;
   const axisLength = Math.hypot(slope, 1);
   const waferAxis = { x: -slope / axisLength, y: 0, z: -1 / axisLength };
-  const verticalAxis = { x: 0, y: 0, z: -1 };
+  const slopeAngle = Math.atan(slope) * 180 / Math.PI;
+  const rlsAxis = (light) => {
+    const angle = (
+      config.baselineLights.pitchPositionsDegrees[light.number] - slopeAngle
+    ) * Math.PI / 180;
+    return { x: Math.sin(angle), y: 0, z: -Math.cos(angle) };
+  };
 
   assert.equal(fanCeiling, 120.25);
   assert.equal(fanCeiling - config.fan.analysisDropFromCeiling, 91.15);
@@ -372,7 +390,7 @@ test("office diagram geometry reflects the corrected fan drop", () => {
     config,
     config.fan.analysisDropFromCeiling,
     config.baselineLights,
-    verticalAxis,
+    rlsAxis,
   );
 
   assert.ok(oldWaferOverlap > 13 && oldWaferOverlap < 15);
@@ -380,7 +398,7 @@ test("office diagram geometry reflects the corrected fan drop", () => {
   assert.equal(correctedRlsOverlap, 0);
 
   const waferFloor = sampledRoomCoverage(config, config.lights, waferAxis);
-  const rlsFloor = sampledRoomCoverage(config, config.baselineLights, verticalAxis);
+  const rlsFloor = sampledRoomCoverage(config, config.baselineLights, rlsAxis);
   assert.equal(waferFloor.mainPercent, 100);
   assert.equal(waferFloor.fieldPercent, 100);
   assert.ok(rlsFloor.mainPercent > 99 && rlsFloor.mainPercent < 100);
@@ -390,33 +408,33 @@ test("office diagram geometry reflects the corrected fan drop", () => {
     config, config.lights, waferAxis,
   );
   const rlsWindowWall = sampledWindowWallCoverage(
-    config, config.baselineLights, verticalAxis,
+    config, config.baselineLights, rlsAxis,
   );
   assert.ok(waferWindowWall.mainPercent > 66 && waferWindowWall.mainPercent < 68);
   assert.ok(waferWindowWall.fieldPercent > 87 && waferWindowWall.fieldPercent < 89);
-  assert.ok(rlsWindowWall.mainPercent > 23 && rlsWindowWall.mainPercent < 25);
-  assert.ok(rlsWindowWall.fieldPercent > 62 && rlsWindowWall.fieldPercent < 64);
+  assert.ok(rlsWindowWall.mainPercent > 21 && rlsWindowWall.mainPercent < 23);
+  assert.ok(rlsWindowWall.fieldPercent > 61 && rlsWindowWall.fieldPercent < 63);
 
   const waferBathroomWall = sampledBathroomWallCoverage(
     config, config.lights, waferAxis,
   );
   const rlsBathroomWall = sampledBathroomWallCoverage(
-    config, config.baselineLights, verticalAxis,
+    config, config.baselineLights, rlsAxis,
   );
   assert.ok(waferBathroomWall.mainPercent > 82 && waferBathroomWall.mainPercent < 84);
   assert.ok(waferBathroomWall.fieldPercent > 94 && waferBathroomWall.fieldPercent < 96);
-  assert.ok(rlsBathroomWall.mainPercent > 28 && rlsBathroomWall.mainPercent < 30);
-  assert.ok(rlsBathroomWall.fieldPercent > 53 && rlsBathroomWall.fieldPercent < 55);
+  assert.ok(rlsBathroomWall.mainPercent > 16 && rlsBathroomWall.mainPercent < 18);
+  assert.ok(rlsBathroomWall.fieldPercent > 46 && rlsBathroomWall.fieldPercent < 48);
 
   const waferMonitor = sampledMonitorCoverage(
     config, config.lights, waferAxis,
   );
   const rlsMonitor = sampledMonitorCoverage(
-    config, config.baselineLights, verticalAxis,
+    config, config.baselineLights, rlsAxis,
   );
   assert.equal(waferMonitor.mainPercent, 100);
   assert.equal(waferMonitor.fieldPercent, 100);
-  assert.ok(rlsMonitor.mainPercent > 60 && rlsMonitor.mainPercent < 62);
+  assert.ok(rlsMonitor.mainPercent > 0 && rlsMonitor.mainPercent < 2);
   assert.equal(rlsMonitor.fieldPercent, 100);
 });
 
