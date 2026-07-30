@@ -356,6 +356,29 @@ test("office diagram detailed analysis is served on its own hidden route", async
   assert.match(html, /F · Fixture comparison/);
 });
 
+test("unlinked master room diagram serves the vaulted-ceiling lighting study", async () => {
+  const response = await render("/master-room-diagram");
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
+
+  const html = await response.text();
+  assert.match(html, /Master Room/);
+  assert.match(html, /Vaulted-Ceiling Lighting and Fan Study/);
+  assert.match(html, /LEDR6XT\/HO\/NL\/5CCTCA/);
+  assert.match(html, /Haiku L/);
+  assert.match(html, /id="blade-plan-heading"/);
+  assert.match(html, /id="floor-plan-heading"/);
+  assert.match(html, /id="section-heading"/);
+  assert.match(html, /id="night-heading"/);
+  assert.match(html, /id="tv-wall-heading"/);
+  assert.match(html, /id="analysis-heading"/);
+  assert.match(html, /22\.84/);
+  assert.match(html, /18\.52/);
+  assert.match(html, /exposed beam underside 131/);
+  assert.match(html, /beam top is concealed/i);
+  assert.doesNotMatch(html, /href=["']\/master-room-diagram["']/i);
+});
+
 test("office diagram geometry reflects the corrected fan drop", () => {
   const config = diagramConfig();
   const slope = (config.ceiling.highHeight - config.ceiling.lowHeight) / config.ceiling.slopeAcross;

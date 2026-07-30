@@ -1,0 +1,1604 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Master Room Diagram — Lighting and Fan Study</title>
+
+  <script>
+    const MASTER_ROOM_CONFIG = Object.freeze({
+      revision: "01",
+      drawingDate: "2026-07-30",
+      units: "inches",
+      room: {
+        width: 200,
+        length: 183,
+        areaSquareFeet: 254.17,
+        walls: {
+          top: "TV wall",
+          left: "Photo-left / door side",
+          right: "Mirrored-closet side",
+          bottom: "Opposite wall"
+        }
+      },
+      ceiling: {
+        peakHeight: 140,
+        leftWallHeight: 96,
+        rightWallHeight: 108,
+        leftAngleDegrees: 22.84,
+        rightAngleDegrees: 18.52,
+        status: "original 140-inch ridge estimate and original centerline slopes retained"
+      },
+      ridgeBeam: {
+        centerFromLeft: 104.48,
+        width: 5,
+        leftFaceFromLeft: 101.98,
+        rightFaceFromLeft: 106.98,
+        undersideHeight: 131,
+        exposedTopHeight: 139,
+        separatelyMeasuredTopHeight: 136,
+        statedDepth: 8,
+        status: "modeled as an 8-inch-deep exposed beam hanging below the ridge; top face concealed by the ceiling"
+      },
+      fan: {
+        manufacturer: "Big Ass Fans",
+        model: "Haiku L",
+        diameter: 52,
+        radius: 26,
+        blades: 3,
+        centerX: 104.48,
+        centerY: 77,
+        bladePlaneHeight: 113,
+        speedMinRpm: 35,
+        speedMaxRpm: 201,
+        likelyDownrodLength: 10,
+        status: "52-inch model confirmed; 18-inch underside-to-blade drop is consistent with the 10-inch downrod assembly"
+      },
+      fixture: {
+        manufacturer: "Feit Electric",
+        model: "LEDR6XT/HO/NL/5CCTCA",
+        lumens: 1200,
+        quantity: 8,
+        beamAngleDegrees: 110,
+        alternatePublishedBeamAngleDegrees: 100,
+        nightLightCct: 2200,
+        downlightCcts: [2700, 3000, 3500, 4000, 5000],
+        cri: 90,
+        aiming: "fixed perpendicular to each ceiling plane",
+        status: "fixture and manufacturer specifications confirmed"
+      },
+      tv: {
+        wall: "TV wall",
+        leftEdgeFromLeft: 112,
+        rightEdgeFromLeft: 159,
+        width: 47,
+        bottomHeight: 47,
+        topHeight: 80,
+        height: 33,
+        centerX: 135.5,
+        centerZ: 63.5,
+        projectionFromWall: 0,
+        tiltDegrees: 0,
+        status: "provisional rectangle from room-edge measurements; model, projection, tilt, and viewing point not yet confirmed"
+      },
+      lights: [
+        { number: 1, side: "left", x: 40, y: 22.875 },
+        { number: 2, side: "left", x: 40, y: 68.625 },
+        { number: 3, side: "left", x: 40, y: 114.375 },
+        { number: 4, side: "left", x: 40, y: 160.125 },
+        { number: 5, side: "right", x: 170, y: 22.875 },
+        { number: 6, side: "right", x: 170, y: 68.625 },
+        { number: 7, side: "right", x: 170, y: 114.375 },
+        { number: 8, side: "right", x: 170, y: 160.125 }
+      ]
+    });
+  </script>
+
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17212b;
+      --muted: #55616d;
+      --line: #2f3d49;
+      --wall: #101820;
+      --grid-12: #cfd6dc;
+      --grid-6: #e8ecef;
+      --fan: #4d2d7f;
+      --beam: #d78a00;
+      --light: #d97706;
+      --night: #dc7f2d;
+      --ridge-wood: #8a6947;
+      --tv: #27323b;
+      --provisional: #a13b2a;
+      --confirmed: #256148;
+      --shadow-risk: #a12f2f;
+      --paper: #ffffff;
+      --panel: #f7f9fa;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      background: #eef1f3;
+      color: var(--ink);
+      font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+      line-height: 1.35;
+    }
+
+    body { padding: 24px; }
+
+    main {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 28px 32px 34px;
+      background: var(--paper);
+      box-shadow: 0 1px 8px rgba(0,0,0,.10);
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 5px; font-size: 25px; letter-spacing: .02em; }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 17px;
+      letter-spacing: .055em;
+      text-transform: uppercase;
+    }
+    h3 { margin-bottom: 7px; font-size: 14px; }
+
+    .subtitle {
+      margin-bottom: 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .summary-grid, .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .summary-card, .note-card {
+      padding: 13px 15px;
+      border: 1px solid #d7dde2;
+      background: var(--panel);
+    }
+
+    .summary-card ul, .note-card ul {
+      margin: 6px 0 0;
+      padding-left: 19px;
+    }
+
+    .summary-card li, .note-card li {
+      margin: 3px 0;
+      font-size: 12.5px;
+    }
+
+    .confirmed-card { border-top: 4px solid var(--confirmed); }
+    .provisional-card { border-top: 4px solid var(--provisional); }
+    .confirmed { color: var(--confirmed); font-weight: 700; }
+    .provisional { color: var(--provisional); font-weight: 700; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+      gap: 12px 16px;
+      align-items: end;
+      margin-top: 18px;
+      padding: 13px 15px;
+      border: 1px solid #d7dde2;
+      background: #f7f9fa;
+    }
+
+    .control label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .control output {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="range"] {
+      display: block;
+      width: 100%;
+      accent-color: #285d70;
+    }
+
+    button {
+      min-height: 34px;
+      padding: 6px 12px;
+      border: 1px solid #9aa6ae;
+      border-radius: 2px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover { background: #edf1f3; }
+    button:focus-visible { outline: 3px solid rgba(40,93,112,.28); outline-offset: 2px; }
+
+    .coverage-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 18px 0 0;
+    }
+
+    .coverage-metric {
+      min-height: 74px;
+      padding: 11px 12px;
+      border: 1px solid #d7dde2;
+      background: var(--panel);
+    }
+
+    .coverage-metric span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .coverage-metric strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    .coverage-metric small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
+    .coverage-metric.good { border-top: 4px solid var(--confirmed); }
+    .coverage-metric.caution { border-top: 4px solid #b87800; }
+    .coverage-metric.alert { border-top: 4px solid var(--shadow-risk); }
+
+    .drawing-card {
+      margin-top: 22px;
+      padding: 14px;
+      border: 1px solid #cfd6dc;
+      background: #fff;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .drawing-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .drawing-header h2 { margin: 0; }
+    .drawing-meta {
+      color: var(--muted);
+      font-size: 11px;
+      text-align: right;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    svg text {
+      fill: var(--ink);
+      font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+      dominant-baseline: middle;
+    }
+
+    .room-fill { fill: #fff; }
+    .room-wall {
+      fill: none;
+      stroke: var(--wall);
+      stroke-width: 1.35;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .grid6 { stroke: var(--grid-6); stroke-width: .22; }
+    .grid12 { stroke: var(--grid-12); stroke-width: .34; }
+    .ridge {
+      stroke: #7f3f98;
+      stroke-width: .55;
+      stroke-dasharray: 3 2;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .ridge-beam-plan {
+      fill: var(--ridge-wood);
+      fill-opacity: .16;
+      stroke: var(--ridge-wood);
+      stroke-width: .7;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .ridge-beam {
+      fill: #b28a60;
+      fill-opacity: .58;
+      stroke: #6f5134;
+      stroke-width: .8;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .downrod {
+      stroke: #4d555c;
+      stroke-width: 2.2;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .fan-sweep {
+      fill: #67489a;
+      fill-opacity: .055;
+      stroke: var(--fan);
+      stroke-width: 1.35;
+      stroke-dasharray: 5 2;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .fan-blade {
+      fill: #6c5791;
+      fill-opacity: .38;
+      stroke: var(--fan);
+      stroke-width: .38;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .fan-hub {
+      fill: var(--fan);
+      stroke: #fff;
+      stroke-width: .5;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .light-symbol {
+      fill: #fff;
+      stroke: var(--light);
+      stroke-width: .9;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .light-core { fill: var(--light); }
+    .beam-main {
+      fill: #f1b84a;
+      fill-opacity: .12;
+      stroke: var(--beam);
+      stroke-width: .75;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .beam-hit {
+      fill: #c43d32;
+      fill-opacity: .28;
+      stroke: var(--shadow-risk);
+    }
+
+    .coverage-1 { fill: #f6d889; fill-opacity: .34; }
+    .coverage-2 { fill: #efb645; fill-opacity: .32; }
+    .coverage-3 { fill: #dc8514; fill-opacity: .36; }
+    .coverage-gap { fill: #b42318; fill-opacity: .26; }
+    .tv-coverage-1 { fill: #f6d889; fill-opacity: .40; }
+    .tv-coverage-2 { fill: #efb645; fill-opacity: .43; }
+    .tv-coverage-3 { fill: #c96c0b; fill-opacity: .47; }
+    .tv-screen {
+      fill: var(--tv);
+      fill-opacity: .13;
+      stroke: var(--tv);
+      stroke-width: 1.25;
+      vector-effect: non-scaling-stroke;
+    }
+    .tv-centerline {
+      stroke: var(--tv);
+      stroke-width: .4;
+      stroke-dasharray: 2 2;
+      vector-effect: non-scaling-stroke;
+    }
+    .ceiling-line, .floor-line, .wall-line {
+      fill: none;
+      stroke: #111b24;
+      stroke-width: 1.2;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .axis {
+      stroke: #a86400;
+      stroke-width: .65;
+      stroke-dasharray: 3 2;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .blade-plane {
+      stroke: var(--fan);
+      stroke-width: 5.5;
+      stroke-linecap: round;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .dimension {
+      fill: none;
+      stroke: #33414d;
+      stroke-width: .42;
+      marker-start: url(#arrow);
+      marker-end: url(#arrow);
+      vector-effect: non-scaling-stroke;
+    }
+
+    .extension {
+      stroke: #7b8790;
+      stroke-width: .3;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .night-ceiling {
+      fill: #2c292d;
+      stroke: #57515c;
+      stroke-width: 1.2;
+    }
+
+    .night-wall { fill: #242228; }
+    .night-floor { fill: #1d1b20; }
+    .night-ring {
+      fill: none;
+      stroke: #ffae57;
+      stroke-width: 3;
+    }
+
+    .night-glow {
+      fill: #ff9b3d;
+      fill-opacity: .28;
+      filter: url(#soft-glow);
+    }
+
+    .night-fan {
+      fill: #77707c;
+      fill-opacity: .52;
+      stroke: #b8b1bc;
+      stroke-width: .6;
+    }
+
+    .svg-label { font-size: 3px; }
+    .svg-small { fill: #33414d; font-size: 2.35px; }
+    .svg-tiny { fill: #42515c; font-size: 2px; }
+    .svg-wall-label {
+      font-size: 3.15px;
+      font-weight: 700;
+      letter-spacing: .03em;
+    }
+
+    .svg-dim { font-size: 2.65px; font-weight: 700; }
+    .svg-provisional { fill: var(--provisional); font-weight: 700; }
+    .halo {
+      paint-order: stroke;
+      stroke: #fff;
+      stroke-width: 1.3px;
+      stroke-linejoin: round;
+    }
+
+    .diagram-legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px 18px;
+      margin-top: 12px;
+      padding: 11px 2px 0;
+      border-top: 1px solid #cfd6dc;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .diagram-legend h3 {
+      grid-column: 1 / -1;
+      margin: 0 0 1px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+    }
+
+    .swatch {
+      width: 34px;
+      height: 12px;
+      flex: 0 0 auto;
+      background: #fff;
+    }
+
+    .swatch-main {
+      border: 2px solid var(--beam);
+      background: rgba(241,184,74,.15);
+    }
+
+    .swatch-fan {
+      border: 3px dashed var(--fan);
+      background: rgba(103,72,154,.07);
+    }
+
+    .swatch-light {
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--light);
+    }
+
+    .swatch-ridge { height: 2px; border-top: 2px dashed #7f3f98; }
+    .swatch-beam {
+      border: 2px solid #6f5134;
+      background: rgba(178,138,96,.58);
+    }
+    .swatch-tv {
+      border: 2px solid var(--tv);
+      background: rgba(39,50,59,.13);
+    }
+    .swatch-coverage-1 { background: rgba(246,216,137,.52); }
+    .swatch-coverage-2 { background: rgba(239,182,69,.48); }
+    .swatch-coverage-3 { background: rgba(220,133,20,.52); }
+    .swatch-axis { height: 2px; border-top: 2px dashed #a86400; }
+    .swatch-night {
+      border: 2px solid #ffae57;
+      background: rgba(255,155,61,.25);
+    }
+
+    .finding {
+      margin: 12px 0 0;
+      padding: 12px 14px;
+      border-left: 5px solid var(--confirmed);
+      background: #f0f8f4;
+      font-size: 12.5px;
+    }
+
+    .finding.caution {
+      border-left-color: #b87800;
+      background: #fff9ec;
+    }
+
+    .finding.alert {
+      border-left-color: var(--shadow-risk);
+      background: #fff4f2;
+    }
+
+    .analysis-section { margin-top: 22px; }
+    .analysis-intro {
+      margin: -5px 0 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid #cfd6dc;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    th, td {
+      padding: 8px 7px;
+      border-right: 1px solid #dce1e5;
+      border-bottom: 1px solid #dce1e5;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #edf1f3;
+      color: #26333d;
+      font-weight: 700;
+      vertical-align: bottom;
+    }
+
+    th:first-child, td:first-child, th:last-child, td:last-child { text-align: left; }
+    tr:last-child td { border-bottom: 0; }
+    th:last-child, td:last-child { border-right: 0; }
+    .risk-low { color: var(--confirmed); font-weight: 700; }
+    .risk-strobe { color: var(--shadow-risk); font-weight: 700; }
+
+    .notes-grid { margin-top: 16px; }
+    .disclaimer {
+      margin: 18px 0 0;
+      padding: 10px 12px;
+      border-left: 4px solid #687884;
+      background: #f1f4f5;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    footer {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 10.5px;
+      text-align: right;
+    }
+
+    footer a { color: #285d70; }
+
+    @media (max-width: 760px) {
+      body { padding: 0; }
+      main { padding: 18px 12px 24px; box-shadow: none; }
+      .summary-grid, .notes-grid, .coverage-summary, .diagram-legend, .controls {
+        grid-template-columns: 1fr;
+      }
+      .diagram-legend h3 { grid-column: 1; }
+      .drawing-header { display: block; }
+      .drawing-meta { margin-top: 4px; text-align: left; }
+    }
+
+    @page { size: letter landscape; margin: .34in; }
+
+    @media print {
+      html, body { background: #fff !important; }
+      body { padding: 0; }
+      main { width: 100%; max-width: none; padding: 0; box-shadow: none; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .controls { display: none; }
+      .drawing-card, .analysis-section, .diagram-legend, .notes-grid {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .drawing-card { margin-top: 14px; padding: 8px; }
+      h1 { font-size: 20px; }
+      table { font-size: 9px; }
+      th, td { padding: 5px 4px; }
+    }
+  </style>
+</head>
+
+<body>
+<main>
+  <header>
+    <h1>Master Room — Vaulted-Ceiling Lighting and Fan Study</h1>
+    <p class="subtitle">Drawing revision 01 · 30 July 2026 · Eight Feit night-light wafers · All dimensions in inches · Not for construction</p>
+  </header>
+
+  <section aria-labelledby="measurement-summary">
+    <h2 id="measurement-summary">Measurement status summary</h2>
+    <div class="summary-grid">
+      <article class="summary-card confirmed-card">
+        <h3 class="confirmed">Products and known geometry</h3>
+        <ul>
+          <li>Room footprint: 200″ × 183″ — approximately 254.2 sq. ft.</li>
+          <li>Haiku L: 52″ diameter, three blades, 35–201 RPM.</li>
+          <li>Eight Feit LEDR6XT/HO/NL/5CCTCA fixtures at 1,200 lumens each.</li>
+          <li>Feit downlight: 5CCT, 90+ CRI, dimmable, with 2200K night-light ring.</li>
+          <li>Proposed layout: four fixtures on each ceiling plane.</li>
+        </ul>
+      </article>
+
+      <article class="summary-card provisional-card">
+        <h3 class="provisional">Estimated — verify before installation</h3>
+        <ul>
+          <li>Ceiling ridge remains 140″; exposed beam underside 131″; beam approximately 8″ deep × 5″ wide.</li>
+          <li>Original ceiling slopes retained: 22.84° left and 18.52° right.</li>
+          <li>The ceiling planes continue to the ridge above/behind the beam; the beam top is concealed.</li>
+          <li>Beam centered approximately 104.5″ from the photo-left wall.</li>
+          <li>Fan blade plane approximately 113″ above floor.</li>
+          <li>Approximately 18″ from beam underside to blade plane, consistent with a 10″ Haiku L downrod assembly.</li>
+          <li>Fan center approximately 77″ from TV wall; earlier estimate was 94″.</li>
+          <li>TV rectangle: X 112–159″ and Z 47–80″; width/height remain provisional.</li>
+          <li>Feit documents list both 100° and 110° beam angles; this page defaults to 110°.</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="controls" aria-label="Model assumptions">
+      <div class="control">
+        <label for="fan-y-control">Fan from TV wall: <output id="fan-y-output">77″</output></label>
+        <input id="fan-y-control" type="range" min="70" max="100" value="77" step="1">
+      </div>
+      <div class="control">
+        <label for="fan-z-control">Blade height: <output id="fan-z-output">113″</output></label>
+        <input id="fan-z-control" type="range" min="110" max="116" value="113" step=".5">
+      </div>
+      <div class="control">
+        <label for="beam-control">Full beam angle: <output id="beam-output">110°</output></label>
+        <input id="beam-control" type="range" min="100" max="110" value="110" step="1">
+      </div>
+      <button id="reset-controls" type="button">Reset estimates</button>
+    </div>
+
+    <div class="coverage-summary" aria-label="Current model results">
+      <article class="coverage-metric good" id="fan-metric-card">
+        <span>Fan main-beam exposure</span>
+        <strong id="fan-coverage-value">0.0%</strong>
+        <small id="fan-crossing-value">0 of 8 nominal beams cross the blade disk</small>
+      </article>
+      <article class="coverage-metric good">
+        <span>Nominal floor coverage</span>
+        <strong id="floor-coverage-value">100%</strong>
+        <small id="floor-minimum-value">Every sampled point is inside at least four nominal beams</small>
+      </article>
+      <article class="coverage-metric caution">
+        <span>Installed output</span>
+        <strong>9,600 lm</strong>
+        <small>Approximately 37.8 raw lumens/sq. ft.; use a compatible LED dimmer</small>
+      </article>
+    </div>
+  </section>
+
+  <section class="drawing-card" aria-labelledby="blade-plan-heading">
+    <div class="drawing-header">
+      <h2 id="blade-plan-heading">A1 · Fan blade-plane view</h2>
+      <div class="drawing-meta">Current blade height <span id="blade-plan-height">113″</span> · Conservative 110° default beam</div>
+    </div>
+
+    <svg id="blade-plan-svg" viewBox="0 0 280 236" role="img" aria-labelledby="blade-plan-title blade-plan-desc">
+      <title id="blade-plan-title">Top-down master room plan at the fan blade plane</title>
+      <desc id="blade-plan-desc">Eight proposed light locations, their nominal beam regions at fan height, the asymmetric ceiling ridge, and the 52-inch fan disk.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto-start-reverse">
+          <path d="M 0 0 L 6 3 L 0 6 Z" fill="#33414d"></path>
+        </marker>
+        <clipPath id="plan-room-clip">
+          <rect x="40" y="24" width="200" height="183"></rect>
+        </clipPath>
+      </defs>
+      <rect class="room-fill" x="40" y="24" width="200" height="183"></rect>
+      <g id="blade-plan-grid"></g>
+      <rect class="ridge-beam-plan" x="141.98" y="24" width="5" height="183"></rect>
+      <line class="ridge" x1="144.48" y1="24" x2="144.48" y2="207"></line>
+      <g id="blade-beam-footprints" clip-path="url(#plan-room-clip)"></g>
+      <g id="blade-plan-lights"></g>
+      <g id="blade-plan-fan"></g>
+      <rect class="room-wall" x="40" y="24" width="200" height="183"></rect>
+      <text class="svg-wall-label" x="140" y="15" text-anchor="middle">TV WALL · 16′8″</text>
+      <text class="svg-wall-label" x="140" y="217" text-anchor="middle">OPPOSITE WALL</text>
+      <text class="svg-wall-label" x="25" y="115.5" text-anchor="middle" transform="rotate(-90 25 115.5)">PHOTO-LEFT · 8′ WALL</text>
+      <text class="svg-wall-label" x="255" y="115.5" text-anchor="middle" transform="rotate(90 255 115.5)">MIRRORED-CLOSET SIDE · 9′ WALL</text>
+      <text class="svg-small halo" x="149.5" y="31">5″ ridge beam</text>
+      <line class="extension" x1="40" y1="211" x2="40" y2="229"></line>
+      <line class="extension" x1="240" y1="211" x2="240" y2="229"></line>
+      <line class="dimension" x1="40" y1="225" x2="240" y2="225"></line>
+      <text class="svg-dim halo" x="140" y="225" text-anchor="middle">200″</text>
+    </svg>
+
+    <div class="diagram-legend" aria-label="Fan blade-plane legend">
+      <h3>Legend for A1</h3>
+      <div class="legend-item"><span class="swatch swatch-light"></span>Feit fixture center</div>
+      <div class="legend-item"><span class="swatch swatch-main"></span>Nominal main beam at blade height</div>
+      <div class="legend-item"><span class="swatch swatch-fan"></span>52″ fan swept disk</div>
+      <div class="legend-item"><span class="swatch swatch-beam"></span>Approximately 5″-wide ridge beam</div>
+    </div>
+
+    <p class="finding" id="blade-plan-finding"><strong>Working result:</strong> The proposed outward rows keep the fan outside all eight nominal main beams.</p>
+  </section>
+
+  <section class="drawing-card" aria-labelledby="floor-plan-heading">
+    <div class="drawing-header">
+      <h2 id="floor-plan-heading">A2 · Floor-level main-beam coverage</h2>
+      <div class="drawing-meta">Calculated from fixed wafers perpendicular to each ceiling plane</div>
+    </div>
+
+    <svg id="floor-plan-svg" viewBox="0 0 280 236" role="img" aria-labelledby="floor-plan-title floor-plan-desc">
+      <title id="floor-plan-title">Top-down nominal floor lighting coverage</title>
+      <desc id="floor-plan-desc">A coverage-count map of the eight Feit downlights at floor level.</desc>
+      <defs>
+        <clipPath id="floor-room-clip">
+          <rect x="40" y="24" width="200" height="183"></rect>
+        </clipPath>
+      </defs>
+      <rect class="room-fill" x="40" y="24" width="200" height="183"></rect>
+      <g id="floor-coverage-map" clip-path="url(#floor-room-clip)"></g>
+      <g id="floor-plan-grid"></g>
+      <rect class="ridge-beam-plan" x="141.98" y="24" width="5" height="183"></rect>
+      <line class="ridge" x1="144.48" y1="24" x2="144.48" y2="207"></line>
+      <g id="floor-plan-lights"></g>
+      <g id="floor-plan-fan"></g>
+      <rect class="room-wall" x="40" y="24" width="200" height="183"></rect>
+      <text class="svg-wall-label" x="140" y="15" text-anchor="middle">TV WALL</text>
+      <text class="svg-wall-label" x="140" y="217" text-anchor="middle">OPPOSITE WALL</text>
+      <text class="svg-wall-label" x="25" y="115.5" text-anchor="middle" transform="rotate(-90 25 115.5)">PHOTO-LEFT</text>
+      <text class="svg-wall-label" x="255" y="115.5" text-anchor="middle" transform="rotate(90 255 115.5)">MIRRORED-CLOSET SIDE</text>
+    </svg>
+
+    <div class="diagram-legend" aria-label="Floor coverage legend">
+      <h3>Legend for A2</h3>
+      <div class="legend-item"><span class="swatch swatch-coverage-1"></span>1–3 nominal beams</div>
+      <div class="legend-item"><span class="swatch swatch-coverage-2"></span>4–5 nominal beams</div>
+      <div class="legend-item"><span class="swatch swatch-coverage-3"></span>6–8 nominal beams</div>
+      <div class="legend-item"><span class="swatch swatch-light"></span>Fixture center</div>
+      <div class="legend-item"><span class="swatch swatch-fan"></span>Fan position projected to floor</div>
+      <div class="legend-item"><span class="swatch swatch-beam"></span>Ridge beam projection</div>
+    </div>
+
+    <p class="finding caution"><strong>Brightness finding:</strong> Coverage is not the concern with eight 1,200-lumen fixtures. The room should be bright at full output, with extensive beam overlap; dimming quality and low-level control will matter more.</p>
+  </section>
+
+  <section class="drawing-card" aria-labelledby="section-heading">
+    <div class="drawing-header">
+      <h2 id="section-heading">B · TV-wall cross-section</h2>
+      <div class="drawing-meta">Asymmetric vault · Representative fixture station nearest the fan</div>
+    </div>
+
+    <svg id="section-svg" viewBox="0 0 280 172" role="img" aria-labelledby="section-title section-desc">
+      <title id="section-title">Asymmetric vaulted-ceiling cross-section</title>
+      <desc id="section-desc">The 8-foot and 9-foot side walls, exposed ridge beam, two fixed downlights, their beam axes and nominal cones, and the fan blade plane.</desc>
+      <defs>
+        <clipPath id="section-room-clip">
+          <path d="M 40 152 L 40 56 L 144.48 12 L 240 44 L 240 152 Z"></path>
+        </clipPath>
+      </defs>
+      <path class="room-fill" d="M 40 152 L 40 56 L 144.48 12 L 240 44 L 240 152 Z"></path>
+      <g id="section-beams" clip-path="url(#section-room-clip)"></g>
+      <path class="wall-line" d="M 40 152 L 40 56"></path>
+      <path class="ceiling-line" d="M 40 56 L 144.48 12 L 240 44"></path>
+      <rect class="ridge-beam" x="141.98" y="13" width="5" height="8"></rect>
+      <path class="wall-line" d="M 240 44 L 240 152"></path>
+      <path class="floor-line" d="M 40 152 L 240 152"></path>
+      <line class="ridge" x1="144.48" y1="12" x2="144.48" y2="152"></line>
+      <g id="section-lights"></g>
+      <g id="section-fan"></g>
+      <text class="svg-wall-label" x="32" y="104" text-anchor="middle" transform="rotate(-90 32 104)">96″ WALL</text>
+      <text class="svg-wall-label" x="248" y="98" text-anchor="middle" transform="rotate(90 248 98)">108″ WALL</text>
+      <text class="svg-dim halo" x="139" y="7" text-anchor="end">140″ CEILING RIDGE</text>
+      <text class="svg-small halo" x="151" y="18">131″ underside</text>
+      <text class="svg-label halo" x="86" y="48" text-anchor="middle">22.84°</text>
+      <text class="svg-label halo" x="193" y="33" text-anchor="middle">18.52°</text>
+      <text class="svg-small halo" x="140" y="160" text-anchor="middle">200″ room width</text>
+    </svg>
+
+    <div class="diagram-legend" aria-label="Cross-section legend">
+      <h3>Legend for B</h3>
+      <div class="legend-item"><span class="swatch swatch-main"></span>110° nominal beam cone</div>
+      <div class="legend-item"><span class="swatch swatch-axis"></span>Fixed fixture optical axis</div>
+      <div class="legend-item"><span class="swatch swatch-fan"></span>Fan blade plane</div>
+      <div class="legend-item"><span class="swatch swatch-light"></span>Representative light in each row</div>
+      <div class="legend-item"><span class="swatch swatch-beam"></span>Exposed ridge beam</div>
+    </div>
+
+    <p class="finding"><strong>Why the row offsets work:</strong> The left fixtures sit essentially at blade height, while the right fixtures are only several inches above it and remain far outside the fan’s 26-inch radius. The broad beams open below the fan instead of crossing through its center.</p>
+  </section>
+
+  <section class="drawing-card" aria-labelledby="night-heading">
+    <div class="drawing-header">
+      <h2 id="night-heading">C · 2200K night-light mode</h2>
+      <div class="drawing-meta">Conceptual appearance only · Feit does not publish night-light lumens or photometry</div>
+    </div>
+
+    <svg id="night-svg" viewBox="0 0 280 172" role="img" aria-labelledby="night-title night-desc">
+      <title id="night-title">Conceptual night-light view of the vaulted room</title>
+      <desc id="night-desc">Warm perimeter glow from the eight Feit fixtures on both unequal ceiling planes.</desc>
+      <defs>
+        <filter id="soft-glow" x="-120%" y="-120%" width="340%" height="340%">
+          <feGaussianBlur stdDeviation="5"></feGaussianBlur>
+        </filter>
+        <clipPath id="night-room-clip">
+          <path d="M 40 152 L 40 56 L 144.48 12 L 240 44 L 240 152 Z"></path>
+        </clipPath>
+      </defs>
+      <rect class="night-wall" x="40" y="12" width="200" height="140"></rect>
+      <path class="night-floor" d="M 40 152 L 240 152 L 240 166 L 40 166 Z"></path>
+      <g id="night-glows" clip-path="url(#night-room-clip)"></g>
+      <path class="night-ceiling" d="M 40 56 L 144.48 12 L 240 44"></path>
+      <rect class="ridge-beam" x="141.98" y="13" width="5" height="8"></rect>
+      <path class="night-ceiling" d="M 40 56 L 40 152 M 240 44 L 240 152"></path>
+      <g id="night-rings"></g>
+      <g id="night-fan"></g>
+      <text x="140" y="161" text-anchor="middle" fill="#d8d1dc" font-size="3">Conceptual warm perimeter glow — not an illuminance prediction</text>
+    </svg>
+
+    <div class="diagram-legend" aria-label="Night-light legend">
+      <h3>Legend for C</h3>
+      <div class="legend-item"><span class="swatch swatch-night"></span>2200K edge-ring glow</div>
+      <div class="legend-item"><span class="swatch swatch-fan"></span>Fan position</div>
+      <div class="legend-item"><span class="swatch swatch-beam"></span>Exposed ridge beam</div>
+    </div>
+
+    <p class="finding caution"><strong>Night-light limitation:</strong> The manufacturer describes a low-output 2200K mode but supplies no lumen value or beam file. The drawing therefore shows the intended mood-light character, not a measured brightness boundary.</p>
+  </section>
+
+  <section class="drawing-card" aria-labelledby="tv-wall-heading">
+    <div class="drawing-header">
+      <h2 id="tv-wall-heading">D · TV-wall main-beam map</h2>
+      <div class="drawing-meta">Looking toward the TV wall · Screen rectangle provisional</div>
+    </div>
+
+    <div class="coverage-summary" aria-label="TV illumination results">
+      <article class="coverage-metric alert">
+        <span>Screen inside ≥1 main beam</span>
+        <strong id="tv-main-value">100%</strong>
+        <small>Direct screen illumination can reduce perceived contrast</small>
+      </article>
+      <article class="coverage-metric caution">
+        <span>Simultaneous nominal beams</span>
+        <strong id="tv-count-value">2–6</strong>
+        <small id="tv-dominant-value">The first two fixture stations dominate</small>
+      </article>
+      <article class="coverage-metric caution">
+        <span>Viewer-visible reflection</span>
+        <strong>Pending</strong>
+        <small>Requires TV tilt/projection and the viewing-eye position</small>
+      </article>
+    </div>
+
+    <svg id="tv-wall-svg" viewBox="0 0 280 172" role="img" aria-labelledby="tv-wall-title tv-wall-desc">
+      <title id="tv-wall-title">TV-wall nominal main-beam coverage</title>
+      <desc id="tv-wall-desc">A front elevation of the asymmetric vaulted TV wall showing the exposed ridge beam, provisional TV rectangle, and how many nominal downlight beams reach each area.</desc>
+      <defs>
+        <clipPath id="tv-wall-room-clip">
+          <path d="M 40 152 L 40 56 L 144.48 12 L 240 44 L 240 152 Z"></path>
+        </clipPath>
+      </defs>
+      <path class="room-fill" d="M 40 152 L 40 56 L 144.48 12 L 240 44 L 240 152 Z"></path>
+      <g id="tv-wall-coverage" clip-path="url(#tv-wall-room-clip)"></g>
+      <path class="wall-line" d="M 40 152 L 40 56"></path>
+      <path class="ceiling-line" d="M 40 56 L 144.48 12 L 240 44"></path>
+      <rect class="ridge-beam" x="141.98" y="13" width="5" height="8"></rect>
+      <path class="wall-line" d="M 240 44 L 240 152"></path>
+      <path class="floor-line" d="M 40 152 L 240 152"></path>
+      <rect class="tv-screen" x="152" y="72" width="47" height="33"></rect>
+      <line class="tv-centerline" x1="175.5" y1="72" x2="175.5" y2="105"></line>
+      <line class="tv-centerline" x1="152" y1="88.5" x2="199" y2="88.5"></line>
+      <text class="svg-wall-label" x="175.5" y="88.5" text-anchor="middle">TV · 47″ × 33″</text>
+      <text class="svg-small halo" x="175.5" y="109" text-anchor="middle">bottom 47″ · top 80″</text>
+      <text class="svg-label halo" x="86" y="48" text-anchor="middle">22.84°</text>
+      <text class="svg-label halo" x="193" y="33" text-anchor="middle">18.52°</text>
+    </svg>
+
+    <div class="diagram-legend" aria-label="TV-wall coverage legend">
+      <h3>Legend for D</h3>
+      <div class="legend-item"><span class="swatch swatch-coverage-1"></span>1 nominal main beam</div>
+      <div class="legend-item"><span class="swatch swatch-coverage-2"></span>2–3 nominal main beams</div>
+      <div class="legend-item"><span class="swatch swatch-coverage-3"></span>4–8 nominal main beams</div>
+      <div class="legend-item"><span class="swatch swatch-tv"></span>Provisional TV surface</div>
+      <div class="legend-item"><span class="swatch swatch-beam"></span>Exposed ridge beam</div>
+    </div>
+
+    <p class="finding alert"><strong>Screen-wash finding:</strong> The broad Feit wafers illuminate the entire provisional screen within the nominal main-beam region. This establishes a contrast concern, but a mirror-like reflection into the bed cannot be calculated until the screen angle and viewing-eye position are known.</p>
+  </section>
+
+  <section class="analysis-section" aria-labelledby="analysis-heading">
+    <h2 id="analysis-heading">E · Installation coordinates and current result</h2>
+    <p class="analysis-intro">Horizontal coordinates are easiest to transfer to the floor first and then project to the ceiling. The installer must move any cutout that conflicts with framing, wiring, ducts, or other services.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Lights</th>
+            <th>Ceiling side</th>
+            <th>Horizontal row offset</th>
+            <th>Along-slope offset</th>
+            <th>Distances from TV wall</th>
+            <th>Fixture elevation</th>
+            <th>Main-beam / fan result</th>
+          </tr>
+        </thead>
+        <tbody id="coordinate-table-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="notes-grid" aria-label="Calculation notes">
+    <article class="note-card">
+      <h3>What “low strobe risk” means</h3>
+      <ul>
+        <li>The model checks the published nominal beam against the entire 52-inch swept blade disk.</li>
+        <li>A published beam angle is not a hard cutoff; weaker spill light exists outside it.</li>
+        <li>If a blade does interrupt a beam, the three-blade fan produces approximately 1.75–10.05 blade passes per second across its published speed range.</li>
+        <li>Actual brightness and shadow contrast also depend on dimmer level, wall reflectance, bedding, and daylight.</li>
+      </ul>
+    </article>
+
+    <article class="note-card">
+      <h3>Items to verify before cutting</h3>
+      <ul>
+        <li>Laser-check the 140″ peak and both wall heights.</li>
+        <li>Confirm the beam underside, exposed depth, width, and that its top face is concealed at the ridge.</li>
+        <li>Measure from the floor to the bottom surface of one stationary fan blade.</li>
+        <li>Confirm the 77″ fan-center position by projecting the hub vertically to the floor.</li>
+        <li>Have the electrician locate joists and confirm the required 6½-inch cutout and overhead clearance.</li>
+        <li>Confirm the selected dimmer with Feit’s compatibility guidance and test low-end behavior before installing all eight.</li>
+      </ul>
+    </article>
+  </section>
+
+  <p class="disclaimer">This is a geometric planning study, not a construction drawing or a substitute for an electrician’s field verification. Do not cut from the drawing alone.</p>
+
+  <footer>
+    Sources:
+    <a href="https://www.feit.com/collections/canless-recessed-lights/products/6-in-tethered-j-box-selectable-white-5cct-high-output-led-downlight-with-night-light-mode-ledr6xt-ho-nl-5cctca">Feit product page</a> ·
+    <a href="https://appshopfy.feit.com/storage/files/pdfs/LEDR6XT-HO-NL-5CCTCA_SpecSheet.pdf">Feit specification sheet</a> ·
+    <a href="https://images.salsify.com/image/upload/s--dr_VTq7a--/sgyrju6lcorzkho36s0g.pdf">Feit installation manual</a> ·
+    <a href="https://bigassfans.com/docs/haiku/haikul/cutsheet-haiku-l-en.pdf">Haiku L technical sheet</a>
+  </footer>
+</main>
+
+<script>
+  (() => {
+    "use strict";
+
+    const cfg = MASTER_ROOM_CONFIG;
+    const NS = "http://www.w3.org/2000/svg";
+    const fanYControl = document.getElementById("fan-y-control");
+    const fanZControl = document.getElementById("fan-z-control");
+    const beamControl = document.getElementById("beam-control");
+    const leftSlope =
+      (cfg.ceiling.peakHeight - cfg.ceiling.leftWallHeight) /
+      cfg.ridgeBeam.centerFromLeft;
+    const rightSlope =
+      (cfg.ceiling.peakHeight - cfg.ceiling.rightWallHeight) /
+      (cfg.room.width - cfg.ridgeBeam.centerFromLeft);
+
+    const svgElement = (name, attributes = {}, text = "") => {
+      const node = document.createElementNS(NS, name);
+      Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, value));
+      if (text) node.textContent = text;
+      return node;
+    };
+
+    const ceilingHeight = x => {
+      if (x <= cfg.ridgeBeam.centerFromLeft) {
+        return cfg.ceiling.leftWallHeight + leftSlope * x;
+      }
+      return cfg.ceiling.peakHeight -
+        rightSlope * (x - cfg.ridgeBeam.centerFromLeft);
+    };
+
+    const roomHeadHeight = x => (
+      x > cfg.ridgeBeam.leftFaceFromLeft &&
+      x < cfg.ridgeBeam.rightFaceFromLeft
+        ? cfg.ridgeBeam.undersideHeight
+        : ceilingHeight(x)
+    );
+
+    const lightAxis = light => {
+      const horizontal = light.side === "left" ? leftSlope : -rightSlope;
+      const magnitude = Math.hypot(horizontal, 1);
+      return { x: horizontal / magnitude, y: 0, z: -1 / magnitude };
+    };
+
+    const lightRecords = cfg.lights.map(light => ({
+      ...light,
+      z: ceilingHeight(light.x),
+      axis: lightAxis(light)
+    }));
+
+    const angleFromAxis = (light, point) => {
+      const dx = point.x - light.x;
+      const dy = point.y - light.y;
+      const dz = point.z - light.z;
+      const length = Math.hypot(dx, dy, dz);
+      if (!length) return 0;
+      const cosine = Math.max(-1, Math.min(1,
+        (dx * light.axis.x + dy * light.axis.y + dz * light.axis.z) / length
+      ));
+      return Math.acos(cosine) * 180 / Math.PI;
+    };
+
+    const pointInsideBeam = (light, point, fullBeamAngle) => {
+      const towardPoint =
+        (point.x - light.x) * light.axis.x +
+        (point.y - light.y) * light.axis.y +
+        (point.z - light.z) * light.axis.z;
+      return towardPoint > 0 && angleFromAxis(light, point) <= fullBeamAngle / 2;
+    };
+
+    const renderGrid = group => {
+      group.replaceChildren();
+      for (let x = 6; x < cfg.room.width; x += 6) {
+        group.appendChild(svgElement("line", {
+          x1: 40 + x, y1: 24, x2: 40 + x, y2: 24 + cfg.room.length,
+          class: x % 12 === 0 ? "grid12" : "grid6"
+        }));
+      }
+      for (let y = 6; y < cfg.room.length; y += 6) {
+        group.appendChild(svgElement("line", {
+          x1: 40, y1: 24 + y, x2: 40 + cfg.room.width, y2: 24 + y,
+          class: y % 12 === 0 ? "grid12" : "grid6"
+        }));
+      }
+    };
+
+    const renderLightSymbols = group => {
+      group.replaceChildren();
+      lightRecords.forEach(light => {
+        const cx = 40 + light.x;
+        const cy = 24 + light.y;
+        group.appendChild(svgElement("circle", {
+          cx, cy, r: 3.4, class: "light-symbol"
+        }));
+        group.appendChild(svgElement("circle", {
+          cx, cy, r: 1.25, class: "light-core"
+        }));
+        const labelX = light.side === "left" ? cx + 5 : cx - 5;
+        group.appendChild(svgElement("text", {
+          x: labelX,
+          y: cy,
+          "text-anchor": light.side === "left" ? "start" : "end",
+          class: "svg-small halo"
+        }, `L${light.number}`));
+      });
+    };
+
+    const renderFan = (group, fanY, showBlades = true) => {
+      group.replaceChildren();
+      const cx = 40 + cfg.fan.centerX;
+      const cy = 24 + fanY;
+      group.appendChild(svgElement("circle", {
+        cx, cy, r: cfg.fan.radius, class: "fan-sweep"
+      }));
+      if (showBlades) {
+        [0, 120, 240].forEach(angle => {
+          const radians = angle * Math.PI / 180;
+          const length = cfg.fan.radius * .82;
+          const width = 3.1;
+          const ux = Math.cos(radians);
+          const uy = Math.sin(radians);
+          const px = -uy * width;
+          const py = ux * width;
+          const points = [
+            [cx + px, cy + py],
+            [cx + ux * length + px * .42, cy + uy * length + py * .42],
+            [cx + ux * length - px * .42, cy + uy * length - py * .42],
+            [cx - px, cy - py]
+          ].map(point => point.join(",")).join(" ");
+          group.appendChild(svgElement("polygon", {
+            points, class: "fan-blade"
+          }));
+        });
+      }
+      group.appendChild(svgElement("circle", {
+        cx, cy, r: 3.2, class: "fan-hub"
+      }));
+      group.appendChild(svgElement("text", {
+        x: cx,
+        y: cy + cfg.fan.radius + 6,
+        "text-anchor": "middle",
+        class: "svg-small halo"
+      }, "52″ Haiku L"));
+    };
+
+    const coneBoundaryAtPlane = (light, planeZ, fullBeamAngle) => {
+      if (planeZ >= light.z) return [];
+      const d = [light.axis.x, 0, light.axis.z];
+      const e1 = [-d[2], 0, d[0]];
+      const e2 = [0, 1, 0];
+      const alpha = fullBeamAngle * Math.PI / 360;
+      const points = [];
+      for (let index = 0; index < 96; index += 1) {
+        const phi = index / 96 * Math.PI * 2;
+        const direction = [
+          Math.cos(alpha) * d[0] +
+            Math.sin(alpha) * (Math.cos(phi) * e1[0] + Math.sin(phi) * e2[0]),
+          Math.sin(alpha) * Math.sin(phi),
+          Math.cos(alpha) * d[2] + Math.sin(alpha) * Math.cos(phi) * e1[2]
+        ];
+        if (direction[2] >= 0) continue;
+        const distance = (planeZ - light.z) / direction[2];
+        points.push([
+          light.x + distance * direction[0],
+          light.y + distance * direction[1]
+        ]);
+      }
+      return points;
+    };
+
+    const fanCoverage = (fanY, fanZ, fullBeamAngle) => {
+      let samples = 0;
+      let covered = 0;
+      const crossingLights = new Set();
+      for (let dx = -cfg.fan.radius; dx <= cfg.fan.radius; dx += .75) {
+        for (let dy = -cfg.fan.radius; dy <= cfg.fan.radius; dy += .75) {
+          if (dx * dx + dy * dy > cfg.fan.radius * cfg.fan.radius) continue;
+          samples += 1;
+          const point = {
+            x: cfg.fan.centerX + dx,
+            y: fanY + dy,
+            z: fanZ
+          };
+          let any = false;
+          lightRecords.forEach(light => {
+            if (pointInsideBeam(light, point, fullBeamAngle)) {
+              any = true;
+              crossingLights.add(light.number);
+            }
+          });
+          if (any) covered += 1;
+        }
+      }
+      return {
+        percentage: samples ? covered / samples * 100 : 0,
+        crossingLights
+      };
+    };
+
+    const renderBladeFootprints = (group, fanY, fanZ, fullBeamAngle, crossingLights) => {
+      group.replaceChildren();
+      lightRecords.forEach(light => {
+        const polygon = coneBoundaryAtPlane(light, fanZ, fullBeamAngle);
+        if (!polygon.length) return;
+        group.appendChild(svgElement("polygon", {
+          points: polygon.map(point => `${40 + point[0]},${24 + point[1]}`).join(" "),
+          class: crossingLights.has(light.number) ? "beam-main beam-hit" : "beam-main"
+        }));
+      });
+    };
+
+    const renderFloorCoverage = (group, fullBeamAngle) => {
+      const paths = {
+        gap: "",
+        low: "",
+        medium: "",
+        high: ""
+      };
+      let samples = 0;
+      let covered = 0;
+      let minimum = 99;
+      const cell = 3;
+      for (let x = 0; x < cfg.room.width; x += cell) {
+        for (let y = 0; y < cfg.room.length; y += cell) {
+          const width = Math.min(cell, cfg.room.width - x);
+          const height = Math.min(cell, cfg.room.length - y);
+          const point = { x: x + width / 2, y: y + height / 2, z: 0 };
+          const count = lightRecords.filter(light => pointInsideBeam(light, point, fullBeamAngle)).length;
+          samples += 1;
+          if (count > 0) covered += 1;
+          minimum = Math.min(minimum, count);
+          const key = count === 0 ? "gap" : count <= 3 ? "low" : count <= 5 ? "medium" : "high";
+          paths[key] += `M${40 + x} ${24 + y}h${width}v${height}h-${width}Z`;
+        }
+      }
+      group.replaceChildren();
+      [
+        ["gap", "coverage-gap"],
+        ["low", "coverage-1"],
+        ["medium", "coverage-2"],
+        ["high", "coverage-3"]
+      ].forEach(([key, className]) => {
+        if (paths[key]) group.appendChild(svgElement("path", { d: paths[key], class: className }));
+      });
+      return {
+        percentage: samples ? covered / samples * 100 : 0,
+        minimum
+      };
+    };
+
+    const sectionPoint = (x, z) => [40 + x, 152 - z];
+
+    const renderSection = (fanZ, fullBeamAngle) => {
+      const beamGroup = document.getElementById("section-beams");
+      const lightsGroup = document.getElementById("section-lights");
+      const fanGroup = document.getElementById("section-fan");
+      beamGroup.replaceChildren();
+      lightsGroup.replaceChildren();
+      fanGroup.replaceChildren();
+
+      const representatives = [
+        lightRecords.find(light => light.number === 2),
+        lightRecords.find(light => light.number === 6)
+      ];
+
+      representatives.forEach(light => {
+        const halfAngle = fullBeamAngle * Math.PI / 360;
+        const axisAngle = Math.atan2(light.axis.z, light.axis.x);
+        const directions = [axisAngle - halfAngle, axisAngle + halfAngle].map(angle => ({
+          x: Math.cos(angle),
+          z: Math.sin(angle)
+        }));
+        const apex = sectionPoint(light.x, light.z);
+        const farDistance = 300;
+        const endpointA = sectionPoint(
+          light.x + directions[0].x * farDistance,
+          light.z + directions[0].z * farDistance
+        );
+        const endpointB = sectionPoint(
+          light.x + directions[1].x * farDistance,
+          light.z + directions[1].z * farDistance
+        );
+        beamGroup.appendChild(svgElement("path", {
+          d: `M ${apex[0]} ${apex[1]} L ${endpointA[0]} ${endpointA[1]} L ${endpointB[0]} ${endpointB[1]} Z`,
+          class: "beam-main"
+        }));
+
+        lightsGroup.appendChild(svgElement("circle", {
+          cx: apex[0], cy: apex[1], r: 3.6, class: "light-symbol"
+        }));
+        lightsGroup.appendChild(svgElement("circle", {
+          cx: apex[0], cy: apex[1], r: 1.25, class: "light-core"
+        }));
+        const axisEnd = sectionPoint(
+          light.x + light.axis.x * 28,
+          light.z + light.axis.z * 28
+        );
+        lightsGroup.appendChild(svgElement("line", {
+          x1: apex[0], y1: apex[1], x2: axisEnd[0], y2: axisEnd[1], class: "axis"
+        }));
+        lightsGroup.appendChild(svgElement("text", {
+          x: apex[0],
+          y: apex[1] - 7,
+          "text-anchor": "middle",
+          class: "svg-small halo"
+        }, light.side === "left" ? "L2 · 40″ row" : "L6 · 30″ from right"));
+      });
+
+      const fanLeft = sectionPoint(cfg.fan.centerX - cfg.fan.radius, fanZ);
+      const fanRight = sectionPoint(cfg.fan.centerX + cfg.fan.radius, fanZ);
+      fanGroup.appendChild(svgElement("line", {
+        x1: 40 + cfg.fan.centerX,
+        y1: 152 - cfg.ridgeBeam.undersideHeight,
+        x2: 40 + cfg.fan.centerX,
+        y2: 152 - fanZ,
+        class: "downrod"
+      }));
+      fanGroup.appendChild(svgElement("line", {
+        x1: fanLeft[0], y1: fanLeft[1],
+        x2: fanRight[0], y2: fanRight[1],
+        class: "blade-plane"
+      }));
+      fanGroup.appendChild(svgElement("circle", {
+        cx: 40 + cfg.fan.centerX,
+        cy: 152 - fanZ,
+        r: 3.2,
+        class: "fan-hub"
+      }));
+      fanGroup.appendChild(svgElement("text", {
+        x: 40 + cfg.fan.centerX,
+        y: 152 - fanZ + 9,
+        "text-anchor": "middle",
+        class: "svg-small halo"
+      }, `blade plane ≈ ${fanZ.toFixed(1)}″`));
+    };
+
+    const renderNightMode = fanZ => {
+      const glowGroup = document.getElementById("night-glows");
+      const ringsGroup = document.getElementById("night-rings");
+      const fanGroup = document.getElementById("night-fan");
+      glowGroup.replaceChildren();
+      ringsGroup.replaceChildren();
+      fanGroup.replaceChildren();
+
+      [40, 170].forEach(x => {
+        const point = sectionPoint(x, ceilingHeight(x));
+        glowGroup.appendChild(svgElement("circle", {
+          cx: point[0], cy: point[1], r: 24, class: "night-glow"
+        }));
+        ringsGroup.appendChild(svgElement("circle", {
+          cx: point[0], cy: point[1], r: 4, class: "night-ring"
+        }));
+      });
+
+      const fanY = 152 - fanZ;
+      const cx = 40 + cfg.fan.centerX;
+      fanGroup.appendChild(svgElement("line", {
+        x1: cx,
+        y1: 152 - cfg.ridgeBeam.undersideHeight,
+        x2: cx,
+        y2: fanY,
+        class: "downrod"
+      }));
+      fanGroup.appendChild(svgElement("line", {
+        x1: cx - cfg.fan.radius,
+        y1: fanY,
+        x2: cx + cfg.fan.radius,
+        y2: fanY,
+        class: "night-fan"
+      }));
+      fanGroup.appendChild(svgElement("circle", {
+        cx, cy: fanY, r: 3, class: "night-fan"
+      }));
+    };
+
+    const renderTvWallCoverage = fullBeamAngle => {
+      const coverageGroup = document.getElementById("tv-wall-coverage");
+      const paths = { one: "", medium: "", high: "" };
+      const cell = 2;
+
+      for (let x = 0; x < cfg.room.width; x += cell) {
+        const width = Math.min(cell, cfg.room.width - x);
+        const headHeight = roomHeadHeight(x + width / 2);
+        for (let z = 0; z < headHeight; z += cell) {
+          const height = Math.min(cell, headHeight - z);
+          const point = {
+            x: x + width / 2,
+            y: 0,
+            z: z + height / 2
+          };
+          const count = lightRecords.filter(
+            light => pointInsideBeam(light, point, fullBeamAngle)
+          ).length;
+          if (count === 0) continue;
+          const key = count === 1 ? "one" : count <= 3 ? "medium" : "high";
+          paths[key] +=
+            `M${40 + x} ${152 - z - height}h${width}v${height}h-${width}Z`;
+        }
+      }
+
+      coverageGroup.replaceChildren();
+      [
+        ["one", "tv-coverage-1"],
+        ["medium", "tv-coverage-2"],
+        ["high", "tv-coverage-3"]
+      ].forEach(([key, className]) => {
+        if (paths[key]) {
+          coverageGroup.appendChild(svgElement("path", {
+            d: paths[key],
+            class: className
+          }));
+        }
+      });
+
+      let screenSamples = 0;
+      let coveredSamples = 0;
+      let minimum = Infinity;
+      let maximum = 0;
+      const lightHits = new Map(lightRecords.map(light => [light.number, 0]));
+      const sampleStep = .5;
+      for (let x = cfg.tv.leftEdgeFromLeft; x <= cfg.tv.rightEdgeFromLeft; x += sampleStep) {
+        for (let z = cfg.tv.bottomHeight; z <= cfg.tv.topHeight; z += sampleStep) {
+          const point = { x, y: 0, z };
+          const hits = lightRecords.filter(
+            light => pointInsideBeam(light, point, fullBeamAngle)
+          );
+          screenSamples += 1;
+          if (hits.length > 0) coveredSamples += 1;
+          minimum = Math.min(minimum, hits.length);
+          maximum = Math.max(maximum, hits.length);
+          hits.forEach(light => {
+            lightHits.set(light.number, lightHits.get(light.number) + 1);
+          });
+        }
+      }
+
+      const dominant = [...lightHits.entries()]
+        .map(([number, hits]) => ({
+          number,
+          percentage: screenSamples ? hits / screenSamples * 100 : 0
+        }))
+        .sort((a, b) => b.percentage - a.percentage)
+        .slice(0, 2);
+      const percentage = screenSamples ? coveredSamples / screenSamples * 100 : 0;
+      document.getElementById("tv-main-value").textContent =
+        `${percentage.toFixed(0)}%`;
+      document.getElementById("tv-count-value").textContent =
+        `${Number.isFinite(minimum) ? minimum : 0}–${maximum}`;
+      document.getElementById("tv-dominant-value").textContent =
+        dominant.map(light => `L${light.number} ${light.percentage.toFixed(0)}%`).join(" · ");
+    };
+
+    const renderCoordinateTable = (crossingLights, fanZ, fullBeamAngle) => {
+      const body = document.getElementById("coordinate-table-body");
+      body.replaceChildren();
+      const groups = [
+        {
+          numbers: "L1–L4",
+          side: `Photo-left / ${cfg.ceiling.leftAngleDegrees.toFixed(2)}°`,
+          horizontal: "40″ from left wall",
+          alongSlope: `${(40 / Math.cos(cfg.ceiling.leftAngleDegrees * Math.PI / 180)).toFixed(1)}″`,
+          y: "22.9″ · 68.6″ · 114.4″ · 160.1″",
+          elevation: `${ceilingHeight(40).toFixed(1)}″`,
+          count: [1, 2, 3, 4].filter(number => crossingLights.has(number)).length
+        },
+        {
+          numbers: "L5–L8",
+          side: `Mirrored-closet / ${cfg.ceiling.rightAngleDegrees.toFixed(2)}°`,
+          horizontal: "30″ from right wall",
+          alongSlope: `${(30 / Math.cos(cfg.ceiling.rightAngleDegrees * Math.PI / 180)).toFixed(1)}″`,
+          y: "22.9″ · 68.6″ · 114.4″ · 160.1″",
+          elevation: `${ceilingHeight(170).toFixed(1)}″`,
+          count: [5, 6, 7, 8].filter(number => crossingLights.has(number)).length
+        }
+      ];
+      groups.forEach(group => {
+        const row = document.createElement("tr");
+        const values = [
+          group.numbers,
+          group.side,
+          group.horizontal,
+          group.alongSlope,
+          group.y,
+          group.elevation,
+          group.count === 0
+            ? `0 crossings at ${fanZ.toFixed(1)}″ / ${fullBeamAngle}°`
+            : `${group.count} nominal crossing${group.count === 1 ? "" : "s"}`
+        ];
+        values.forEach((value, index) => {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          if (index === values.length - 1) {
+            cell.className = group.count === 0 ? "risk-low" : "risk-strobe";
+          }
+          row.appendChild(cell);
+        });
+        body.appendChild(row);
+      });
+    };
+
+    const update = () => {
+      const fanY = Number(fanYControl.value);
+      const fanZ = Number(fanZControl.value);
+      const fullBeamAngle = Number(beamControl.value);
+      document.getElementById("fan-y-output").textContent = `${fanY}″`;
+      document.getElementById("fan-z-output").textContent = `${fanZ.toFixed(1).replace(".0", "")}″`;
+      document.getElementById("beam-output").textContent = `${fullBeamAngle}°`;
+      document.getElementById("blade-plan-height").textContent = `${fanZ.toFixed(1).replace(".0", "")}″`;
+
+      const fanMetrics = fanCoverage(fanY, fanZ, fullBeamAngle);
+      renderBladeFootprints(
+        document.getElementById("blade-beam-footprints"),
+        fanY,
+        fanZ,
+        fullBeamAngle,
+        fanMetrics.crossingLights
+      );
+      renderFan(document.getElementById("blade-plan-fan"), fanY);
+      renderFan(document.getElementById("floor-plan-fan"), fanY, false);
+
+      const floorMetrics = renderFloorCoverage(
+        document.getElementById("floor-coverage-map"),
+        fullBeamAngle
+      );
+
+      document.getElementById("fan-coverage-value").textContent =
+        `${fanMetrics.percentage.toFixed(1)}%`;
+      document.getElementById("fan-crossing-value").textContent =
+        `${fanMetrics.crossingLights.size} of 8 nominal beams cross the blade disk`;
+      document.getElementById("floor-coverage-value").textContent =
+        `${floorMetrics.percentage.toFixed(0)}%`;
+      document.getElementById("floor-minimum-value").textContent =
+        `Every sampled point is inside at least ${floorMetrics.minimum} nominal beam${floorMetrics.minimum === 1 ? "" : "s"}`;
+
+      const fanCard = document.getElementById("fan-metric-card");
+      fanCard.className = `coverage-metric ${fanMetrics.percentage > 0 ? "alert" : "good"}`;
+      const finding = document.getElementById("blade-plan-finding");
+      if (fanMetrics.percentage > 0) {
+        finding.className = "finding alert";
+        finding.innerHTML =
+          `<strong>Current warning:</strong> ${fanMetrics.crossingLights.size} nominal beam${fanMetrics.crossingLights.size === 1 ? "" : "s"} reach ${fanMetrics.percentage.toFixed(1)}% of the sampled fan disk.`;
+      } else {
+        finding.className = "finding";
+        finding.innerHTML =
+          "<strong>Working result:</strong> The proposed outward rows keep the fan outside all eight nominal main beams.";
+      }
+
+      renderSection(fanZ, fullBeamAngle);
+      renderNightMode(fanZ);
+      renderTvWallCoverage(fullBeamAngle);
+      renderCoordinateTable(fanMetrics.crossingLights, fanZ, fullBeamAngle);
+    };
+
+    renderGrid(document.getElementById("blade-plan-grid"));
+    renderGrid(document.getElementById("floor-plan-grid"));
+    renderLightSymbols(document.getElementById("blade-plan-lights"));
+    renderLightSymbols(document.getElementById("floor-plan-lights"));
+
+    [fanYControl, fanZControl, beamControl].forEach(control => {
+      control.addEventListener("input", update);
+    });
+
+    document.getElementById("reset-controls").addEventListener("click", () => {
+      fanYControl.value = cfg.fan.centerY;
+      fanZControl.value = cfg.fan.bladePlaneHeight;
+      beamControl.value = cfg.fixture.beamAngleDegrees;
+      update();
+    });
+
+    update();
+  })();
+</script>
+</body>
+</html>
