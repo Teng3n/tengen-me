@@ -1,6 +1,6 @@
 # Palworld status bridge
 
-This script runs on the Windows computer hosting Palworld. It reads the official REST API over localhost and sends only server availability, player counts, player names, and a timestamp to `tengen.me`.
+This script runs on the Windows computer hosting Palworld. It reads the official REST API over localhost and sends only server availability, player counts, player names, and a timestamp to `tengen.me`. It also collects two explicitly allowlisted owner actions: refresh the public status and ask Palworld to save the world.
 
 ## Palworld setup
 
@@ -25,3 +25,12 @@ In `PalWorldSettings.ini`, set `RESTAPIEnabled=True`, `RESTAPIPort=8212`, and a 
    ```
 
 `bridge-config.local.json` contains secrets and is excluded from Git.
+
+## Owner actions
+
+The bridge does not accept arbitrary commands. The only supported actions are:
+
+- **Refresh status** — immediately publishes the next sanitized snapshot.
+- **Save world** — calls Palworld's official local `POST /save` endpoint.
+
+Shutdown, restart, process execution, configuration changes, and log retrieval are intentionally not implemented. Each requested action is recorded in the private owner audit trail.

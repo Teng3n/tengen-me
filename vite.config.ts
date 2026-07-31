@@ -14,6 +14,13 @@ const cloudflareConfig = {
       id: "3b824e89a8d64c0cbc900174cc7b0a56",
     },
   ],
+  d1_databases: [
+    {
+      binding: "OWNER_DB",
+      database_name: "tengen-me-owner",
+      database_id: "8bbbf3fd-90f6-492e-9610-a091a1beaf4e",
+    },
+  ],
 };
 
 export default defineConfig(async () => {

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
+import { exportJWK, generateKeyPair, SignJWT } from "jose";
 
 const diagramSource = readFileSync(
   new URL("../office_room_diagram.html", import.meta.url),
@@ -485,7 +486,85 @@ test("admin route recognizes a Cloudflare Access identity", async () => {
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /owner@example\.com/);
-  assert.match(html, /Welcome back/);
+  assert.match(html, /Home operations, at a glance/);
+  assert.match(html, /Loading private systems/);
+});
+
+test("owner API fails closed without a valid Cloudflare Access token", async () => {
+  const unconfigured = await callWorker("/admin/api/dashboard");
+  assert.equal(unconfigured.status, 503);
+
+  const missingToken = await callWorker("/admin/api/dashboard", {}, {
+    ACCESS_TEAM_DOMAIN: "https://example.cloudflareaccess.com",
+    ACCESS_AUD: "owner-dashboard-audience",
+  });
+  assert.equal(missingToken.status, 401);
+});
+
+test("owner API validates a signed Cloudflare Access JWT before returning private data", async () => {
+  const issuer = "https://owner-test.cloudflareaccess.com";
+  const audience = "owner-dashboard-audience";
+  const { publicKey, privateKey } = await generateKeyPair("RS256");
+  const jwk = await exportJWK(publicKey);
+  jwk.kid = "owner-test-key";
+  const token = await new SignJWT({ email: "owner@example.com" })
+    .setProtectedHeader({ alg: "RS256", kid: jwk.kid })
+    .setIssuer(issuer)
+    .setAudience(audience)
+    .setSubject("owner-subject")
+    .setIssuedAt()
+    .setExpirationTime("5m")
+    .sign(privateKey);
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+    if (url === `${issuer}/cdn-cgi/access/certs`) {
+      return Response.json({ keys: [jwk] });
+    }
+    return originalFetch(input, init);
+  };
+
+  const emptyDb = {
+    prepare() {
+      const statement = {
+        bind() { return statement; },
+        async first() { return null; },
+        async all() { return { results: [], success: true }; },
+        async run() { return { success: true, meta: { changes: 0 } }; },
+      };
+      return statement;
+    },
+    async batch() { return []; },
+  };
+
+  try {
+    const response = await callWorker("/admin/api/dashboard", {
+      headers: { "cf-access-jwt-assertion": token },
+    }, {
+      ACCESS_TEAM_DOMAIN: issuer,
+      ACCESS_AUD: audience,
+      OWNER_DB: emptyDb,
+    });
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.equal(payload.owner.email, "owner@example.com");
+    assert.equal(payload.services.database.state, "operational");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("bridge action queue is unavailable without the bridge secret", async () => {
+  const nextAction = await callWorker("/api/server-status/actions/next");
+  assert.equal(nextAction.status, 401);
+
+  const completion = await callWorker("/api/server-status/actions/00000000-0000-0000-0000-000000000000/complete", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ status: "completed", message: "test" }),
+  });
+  assert.equal(completion.status, 401);
 });
 
 test("public status endpoint falls back safely before the first bridge update", async () => {

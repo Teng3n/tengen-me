@@ -1,0 +1,16 @@
+[Unit]
+Description=Update the tengen.me Cloudflare Access home IP
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/tengen-home-access.env
+ExecStart=/usr/local/lib/tengen-home-access/update-home-access.py
+User=tengen-access
+Group=tengen-access
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+RestrictSUIDSGID=true

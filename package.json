@@ -15,7 +15,8 @@
     "deploy": "npm run build && wrangler deploy --config dist/server/wrangler.json"
   },
   "dependencies": {
-    "next": "16.2.6",
+    "jose": "^6.2.6",
+    "next": "^16.2.12",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
@@ -35,6 +36,10 @@
     "vinext": "0.0.50",
     "vite": "8.0.13",
     "wrangler": "4.92.0"
+  },
+  "overrides": {
+    "postcss": "8.5.25",
+    "sharp": "0.35.3"
   },
   "type": "module"
 }

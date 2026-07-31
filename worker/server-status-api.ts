@@ -1,3 +1,6 @@
+import type { OwnerDatabase } from "./owner-data";
+import { recordStatusHistory } from "./owner-data";
+
 const STATUS_KEY = "server:palworld-home";
 const HEARTBEAT_AFTER_MS = 10 * 60 * 1000;
 const STALE_AFTER_MS = 15 * 60 * 1000;
@@ -11,9 +14,10 @@ export interface StatusKV {
 export interface ServerStatusEnv {
   STATUS_KV?: StatusKV;
   PALWORLD_BRIDGE_TOKEN?: string;
+  OWNER_DB?: OwnerDatabase;
 }
 
-type StoredStatus = {
+export type StoredStatus = {
   status: "online" | "offline";
   currentPlayers: number;
   maximumPlayers: number;
@@ -131,6 +135,18 @@ function safeTokenEqual(provided: string, expected: string): boolean {
   return difference === 0;
 }
 
+export function isAuthorizedBridgeRequest(request: Request, env: ServerStatusEnv): boolean {
+  const expectedToken = env.PALWORLD_BRIDGE_TOKEN;
+  const authorization = request.headers.get("authorization") ?? "";
+  const providedToken = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  return Boolean(expectedToken && providedToken && safeTokenEqual(providedToken, expectedToken));
+}
+
+export async function getStoredServerStatus(env: ServerStatusEnv): Promise<StoredStatus | null> {
+  if (!env.STATUS_KV) return null;
+  return parseStoredStatus(await env.STATUS_KV.get(STATUS_KEY));
+}
+
 function statusChanged(previous: StoredStatus, next: StoredStatus): boolean {
   if (
     previous.status !== next.status
@@ -151,10 +167,7 @@ export async function handleServerStatusGet(env: ServerStatusEnv): Promise<Respo
 }
 
 export async function handleServerStatusIngest(request: Request, env: ServerStatusEnv): Promise<Response> {
-  const expectedToken = env.PALWORLD_BRIDGE_TOKEN;
-  const authorization = request.headers.get("authorization") ?? "";
-  const providedToken = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
-  if (!expectedToken || !providedToken || !safeTokenEqual(providedToken, expectedToken)) {
+  if (!isAuthorizedBridgeRequest(request, env)) {
     return json({ error: "Unauthorized" }, 401, { "WWW-Authenticate": "Bearer" });
   }
   if (!env.STATUS_KV) return json({ error: "Status storage is unavailable" }, 503);
@@ -195,6 +208,18 @@ export async function handleServerStatusIngest(request: Request, env: ServerStat
   const heartbeatDue = !previous || Date.now() - Date.parse(previous.receivedAt) >= HEARTBEAT_AFTER_MS;
   if (!previous || statusChanged(previous, stored) || heartbeatDue) {
     await env.STATUS_KV.put(STATUS_KEY, JSON.stringify(stored), { expirationTtl: 86_400 });
+  }
+  try {
+    await recordStatusHistory(env.OWNER_DB, {
+      serverSlug: "palworld-home",
+      status: stored.status,
+      currentPlayers: stored.currentPlayers,
+      maximumPlayers: stored.maximumPlayers,
+      observedAt: stored.observedAt,
+      receivedAt: stored.receivedAt,
+    });
+  } catch {
+    // Public status ingestion remains available if private history storage is temporarily unavailable.
   }
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }

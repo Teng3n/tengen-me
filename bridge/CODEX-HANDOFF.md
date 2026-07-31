@@ -9,6 +9,8 @@ Finish the Palworld host-side setup so the server widget at `https://tengen.me` 
 - the names of online players; and
 - the time of the most recent successful check.
 
+The updated bridge also collects two private, allowlisted owner actions from tengen.me: publish a fresh status snapshot and call Palworld's official save-world endpoint. It never accepts arbitrary commands.
+
 The website, Cloudflare storage, authenticated ingest endpoint, and UI widget are already deployed. This handoff is only for the Windows computer that actually hosts Palworld.
 
 ## Current deployed state
@@ -19,6 +21,7 @@ The website, Cloudflare storage, authenticated ingest endpoint, and UI widget ar
 - Production website: `https://tengen.me`
 - Public status endpoint: `GET https://tengen.me/api/server-status`
 - Private ingest endpoint: `POST https://tengen.me/api/server-status/ingest`
+- Private action endpoints: `GET https://tengen.me/api/server-status/actions/next` and authenticated completion responses
 - Cloudflare Worker: `tengen-me`
 - Cloudflare KV binding: `STATUS_KV`
 - KV namespace: `tengen-me-server-status`
@@ -42,6 +45,7 @@ Before the host bridge sends its first update, the public endpoint correctly rep
 3. Do not commit `bridge-config.local.json` or reveal either secret it contains.
 4. Do not replace the bridge with a browser request directly to the Palworld REST API.
 5. The website must receive only status, counts, player names, and timestamps—never player IDs, IP addresses, account identifiers, or admin credentials.
+6. Preserve the action allowlist. Do not add shutdown, restart, shell execution, log retrieval, or configuration changes without a separate security review and a verified recovery mechanism.
 
 Palworld REST API reference:
 
@@ -152,6 +156,8 @@ Get-CimInstance Win32_Process -Filter "Name = 'powershell.exe'" | Select-Object 
 
 The bridge publishes every 60 seconds. The website polls every 30 seconds. If updates stop for more than roughly three minutes, the public endpoint intentionally reports the feed as offline/stale.
 
+After installing this revision, use the protected owner dashboard to queue **Refresh status** and **Save world** one at a time. Confirm the action advances from queued to completed and that the bridge log contains only the action name and safe result. Never print request headers or the bridge token.
+
 ## Troubleshooting order
 
 1. **`PALWORLD_ADMIN_PASSWORD is required`** — complete `bridge-config.local.json`; do not alter the script to embed it.
@@ -172,6 +178,7 @@ Do not consider the handoff complete until all of the following are true:
 - `https://tengen.me/api/server-status` reports a recent `online` snapshot.
 - The homepage widget displays the correct count and names.
 - The scheduled task survives a reboot or a controlled service restart.
+- Both allowlisted owner actions complete from the protected dashboard.
 - No secrets were committed, printed, or copied into a tracked file.
 
 When reporting completion, include the scheduled task status, the public API's sanitized response, and any non-secret paths changed. Do not include passwords or tokens.

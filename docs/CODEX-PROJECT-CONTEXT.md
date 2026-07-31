@@ -105,9 +105,11 @@ Current routes include:
 - `/projects` — projects page.
 - `/servers` — public server overview and privacy boundary explanation.
 - `/status` — public service/status summary.
-- `/admin` — owner surface designed for Cloudflare Access.
+- `/admin` — private owner operations console designed for Cloudflare Access.
 - `GET /api/server-status` — public sanitized server-status response.
 - `POST /api/server-status/ingest` — authenticated bridge ingestion endpoint.
+- `GET /api/server-status/actions/next` — bridge-token-protected allowlisted action polling.
+- `POST /api/server-status/actions/:id/complete` — bridge-token-protected action completion.
 
 Important implementation files:
 
@@ -131,6 +133,10 @@ The app contains:
 - an “Owner login” link to `/admin`;
 - logic that recognizes Cloudflare Access identity headers; and
 - a safe unauthenticated admin state containing no private controls or private data.
+
+The owner console now includes website/database/bridge health, thirty-day Palworld status history, links to the hidden room-lighting tools, a private maintenance checklist, and a ninety-day audit trail. The only host actions implemented are status refresh and Palworld's official save-world call. Owner APIs validate the signed Cloudflare Access JWT, including issuer and application audience, before reading private data or accepting mutations.
+
+Private owner data is stored in the Cloudflare D1 database `tengen-me-owner`, bound as `OWNER_DB`. Its schema is in `db/migrations/0001_owner_dashboard.sql`.
 
 The external Cloudflare Access application/policy for `tengen.me/admin*` must be verified before claiming the login is fully enforced in production. The intended policy allows only the owner. Do not build a parallel login system unless the owner explicitly changes this decision.
 
@@ -291,8 +297,11 @@ The repository was later moved from the MoP Codex project into `C:\Users\teng3\D
 
 1. Run and schedule the bridge on the actual Palworld host, then confirm live data on Tengen.me.
 2. Verify the Cloudflare Access application and owner-only policy for `/admin*` before describing authentication as complete.
-3. Decide future personal-site and admin features only as the owner requests them.
-4. Generalize the server-status model when a second real server integration is requested; do not prematurely expose broader home-network telemetry.
+3. Complete Zero Trust Free enrollment, then create the `/admin*` application with owner identity plus the current dynamic home IPv4 `/32`. Configure `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` for the Worker.
+4. Install `network/update-home-access.py` on the rebuilt Pi using a narrowly scoped Access policy token so dynamic ISP address changes update the required `/32` automatically.
+5. If Pi-hole is exposed to the phone through Tailscale, use the Pi as a selected Tailscale exit node when the phone must appear to originate from home; DNS-only use does not change the phone's public source IP.
+6. Decide future personal-site and admin features only as the owner requests them.
+7. Generalize the server-status model when a second real server integration is requested; do not prematurely expose broader home-network telemetry.
 
 ## Instructions to future Codex tasks
 
