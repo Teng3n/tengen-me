@@ -1,7 +1,6 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
-import { authenticateOwnerRequest } from "./access-auth";
 import {
   handleBridgeActionComplete,
   handleBridgeNextAction,
@@ -10,6 +9,11 @@ import {
   handleOwnerDashboardGet,
 } from "./owner-dashboard-api";
 import type { OwnerDatabase } from "./owner-data";
+import {
+  authorizeOwnerNetworkRequest,
+  handleHomeAccessHeartbeat,
+  withOwnerAuthorization,
+} from "./owner-network-auth";
 import {
   handleServerStatusGet,
   handleServerStatusIngest,
@@ -29,8 +33,7 @@ interface Env {
   STATUS_KV?: StatusKV;
   OWNER_DB?: OwnerDatabase;
   PALWORLD_BRIDGE_TOKEN?: string;
-  ACCESS_TEAM_DOMAIN?: string;
-  ACCESS_AUD?: string;
+  HOME_ACCESS_UPDATE_TOKEN?: string;
 }
 
 interface ExecutionContext {
@@ -48,8 +51,12 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
+    if (url.pathname === "/api/owner-network/heartbeat" && request.method === "POST") {
+      return handleHomeAccessHeartbeat(request, env);
+    }
+
     if (url.pathname.startsWith("/admin/api/")) {
-      const access = await authenticateOwnerRequest(request, env);
+      const access = await authorizeOwnerNetworkRequest(request, env);
       if (!access.ok) {
         return Response.json({ error: access.message }, {
           status: access.status,
@@ -68,6 +75,11 @@ const worker = {
         return handleChecklistUpdate(request, env, access.identity, checklistMatch[1]);
       }
       return new Response("Not found", { status: 404 });
+    }
+
+    if (/^\/admin(?:\/|$)/.test(url.pathname)) {
+      const access = await authorizeOwnerNetworkRequest(request, env);
+      return handler.fetch(withOwnerAuthorization(request, access.ok), env, ctx);
     }
 
     if (url.pathname === "/api/server-status/actions/next" && request.method === "GET") {

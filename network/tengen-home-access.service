@@ -1,5 +1,5 @@
 [Unit]
-Description=Update the tengen.me Cloudflare Access home IP
+Description=Update the tengen.me owner-console home IP
 After=network-online.target
 Wants=network-online.target
 

@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
-import { exportJWK, generateKeyPair, SignJWT } from "jose";
 
 const diagramSource = readFileSync(
   new URL("../office_room_diagram.html", import.meta.url),
@@ -226,7 +225,7 @@ function sampledMonitorCoverage(config, fixture, axis, cell = 1) {
   };
 }
 
-async function render(path = "/", headers = {}) {
+async function render(path = "/", headers = {}, env = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${path}`);
   const { default: worker } = await import(workerUrl.href);
@@ -237,9 +236,34 @@ async function render(path = "/", headers = {}) {
     }),
     {
       ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
+      ...env,
     },
     { waitUntil() {}, passThroughOnException() {} },
   );
+}
+
+function createOwnerDb(allowedCidr = null) {
+  const batches = [];
+  return {
+    batches,
+    prepare(query) {
+      let bindings = [];
+      const statement = {
+        query,
+        bind(...values) { bindings = values; statement.bindings = values; return statement; },
+        async first() {
+          if (query.includes("FROM owner_network_access")) {
+            return allowedCidr ? { ipv4_cidr: allowedCidr, last_seen_at: new Date().toISOString() } : null;
+          }
+          return null;
+        },
+        async all() { return { results: [], success: true }; },
+        async run() { return { success: true, meta: { changes: bindings.length ? 1 : 0 } }; },
+      };
+      return statement;
+    },
+    async batch(statements) { batches.push(statements); return statements.map(() => ({ success: true, meta: { changes: 1 } })); },
+  };
 }
 
 async function callWorker(path, init = {}, env = {}) {
@@ -471,88 +495,79 @@ test("office diagram geometry reflects the corrected fan drop", () => {
   assert.equal(rlsMonitor.fieldPercent, 100);
 });
 
-test("admin route reveals no private surface without Cloudflare Access", async () => {
+test("admin route reveals no private surface outside the approved home network", async () => {
   const response = await render("/admin");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /Owner access is being connected/);
+  assert.match(html, /Owner access is limited to the home network/);
   assert.match(html, /contains no private data or controls/);
 });
 
-test("admin route recognizes a Cloudflare Access identity", async () => {
+test("a forged page authorization header is stripped outside the approved network", async () => {
   const response = await render("/admin", {
-    "cf-access-authenticated-user-email": "owner@example.com",
+    "x-tengen-owner-authorized": "1",
   });
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /owner@example\.com/);
+  assert.match(html, /Owner access is limited to the home network/);
+  assert.doesNotMatch(html, /Home operations, at a glance/);
+});
+
+test("admin route recognizes the approved home IPv4 address", async () => {
+  const response = await render("/admin", {
+    "cf-connecting-ip": "172.115.212.10",
+  }, {
+    OWNER_DB: createOwnerDb("172.115.212.10/32"),
+  });
+  assert.equal(response.status, 200);
+  const html = await response.text();
   assert.match(html, /Home operations, at a glance/);
   assert.match(html, /Loading private systems/);
 });
 
-test("owner API fails closed without a valid Cloudflare Access token", async () => {
+test("owner API fails closed without a matching home network", async () => {
   const unconfigured = await callWorker("/admin/api/dashboard");
   assert.equal(unconfigured.status, 503);
 
-  const missingToken = await callWorker("/admin/api/dashboard", {}, {
-    ACCESS_TEAM_DOMAIN: "https://example.cloudflareaccess.com",
-    ACCESS_AUD: "owner-dashboard-audience",
+  const mismatched = await callWorker("/admin/api/dashboard", {
+    headers: { "cf-connecting-ip": "8.8.8.8" },
+  }, {
+    OWNER_DB: createOwnerDb("1.1.1.1/32"),
   });
-  assert.equal(missingToken.status, 401);
+  assert.equal(mismatched.status, 401);
 });
 
-test("owner API validates a signed Cloudflare Access JWT before returning private data", async () => {
-  const issuer = "https://owner-test.cloudflareaccess.com";
-  const audience = "owner-dashboard-audience";
-  const { publicKey, privateKey } = await generateKeyPair("RS256");
-  const jwk = await exportJWK(publicKey);
-  jwk.kid = "owner-test-key";
-  const token = await new SignJWT({ email: "owner@example.com" })
-    .setProtectedHeader({ alg: "RS256", kid: jwk.kid })
-    .setIssuer(issuer)
-    .setAudience(audience)
-    .setSubject("owner-subject")
-    .setIssuedAt()
-    .setExpirationTime("5m")
-    .sign(privateKey);
+test("owner API returns private data only for the approved home IPv4", async () => {
+  const response = await callWorker("/admin/api/dashboard", {
+    headers: { "cf-connecting-ip": "172.115.212.10" },
+  }, {
+    OWNER_DB: createOwnerDb("172.115.212.10/32"),
+  });
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.owner.label, "Home network");
+  assert.equal(payload.services.access.state, "operational");
+  assert.equal(payload.services.database.state, "operational");
+});
 
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (input, init) => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-    if (url === `${issuer}/cdn-cgi/access/certs`) {
-      return Response.json({ keys: [jwk] });
-    }
-    return originalFetch(input, init);
-  };
+test("home-IP heartbeat requires its secret and learns the caller address", async () => {
+  const db = createOwnerDb();
+  const unauthorized = await callWorker("/api/owner-network/heartbeat", {
+    method: "POST",
+    headers: { "cf-connecting-ip": "172.115.212.10" },
+  }, { OWNER_DB: db, HOME_ACCESS_UPDATE_TOKEN: "test-secret" });
+  assert.equal(unauthorized.status, 401);
 
-  const emptyDb = {
-    prepare() {
-      const statement = {
-        bind() { return statement; },
-        async first() { return null; },
-        async all() { return { results: [], success: true }; },
-        async run() { return { success: true, meta: { changes: 0 } }; },
-      };
-      return statement;
+  const response = await callWorker("/api/owner-network/heartbeat", {
+    method: "POST",
+    headers: {
+      authorization: "Bearer test-secret",
+      "cf-connecting-ip": "172.115.212.10",
     },
-    async batch() { return []; },
-  };
-
-  try {
-    const response = await callWorker("/admin/api/dashboard", {
-      headers: { "cf-access-jwt-assertion": token },
-    }, {
-      ACCESS_TEAM_DOMAIN: issuer,
-      ACCESS_AUD: audience,
-      OWNER_DB: emptyDb,
-    });
-    assert.equal(response.status, 200);
-    const payload = await response.json();
-    assert.equal(payload.owner.email, "owner@example.com");
-    assert.equal(payload.services.database.state, "operational");
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+  }, { OWNER_DB: db, HOME_ACCESS_UPDATE_TOKEN: "test-secret" });
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, changed: true, cidr: "172.115.212.10/32" });
+  assert.equal(db.batches.length, 1);
 });
 
 test("bridge action queue is unavailable without the bridge secret", async () => {

@@ -1,6 +1,6 @@
-import type { OwnerIdentity } from "./access-auth";
 import type { OwnerDatabase } from "./owner-data";
 import { writeAudit } from "./owner-data";
+import type { OwnerIdentity } from "./owner-network-auth";
 import { getStoredServerStatus, type StatusKV } from "./server-status-api";
 
 export interface OwnerDashboardEnv {
@@ -106,8 +106,9 @@ export async function handleOwnerDashboardGet(env: OwnerDashboardEnv, identity: 
 
     return json({
       generatedAt: new Date(now).toISOString(),
-      owner: { email: identity.email },
+      owner: { label: identity.label },
       services: {
+        access: { state: "operational", detail: "This request came through the approved home network." },
         website: { state: "operational", detail: "This authenticated request reached the production Worker." },
         database: { state: "operational", detail: "Owner history and controls are available." },
         bridge: {
@@ -172,7 +173,7 @@ export async function handleChecklistUpdate(
   if (!result.meta?.changes) return json({ error: "Checklist item not found" }, 404);
   await writeAudit(
     db,
-    identity.email,
+    identity.label,
     "checklist.updated",
     checklistId,
     "completed",
@@ -209,11 +210,11 @@ export async function handleOwnerActionCreate(request: Request, env: OwnerDashbo
     db.prepare(
       `INSERT INTO owner_actions (id, action, status, requested_by, requested_at)
        VALUES (?, ?, 'queued', ?, CURRENT_TIMESTAMP)`,
-    ).bind(actionId, body.action, identity.email),
+    ).bind(actionId, body.action, identity.label),
     db.prepare(
       `INSERT INTO owner_audit_log (actor, event_type, target, outcome, detail, created_at)
        VALUES (?, 'server.action.requested', ?, 'queued', ?, CURRENT_TIMESTAMP)`,
-    ).bind(identity.email, actionId, body.action),
+    ).bind(identity.label, actionId, body.action),
   ]);
   return json({ ok: true, actionId, status: "queued" }, 202);
 }

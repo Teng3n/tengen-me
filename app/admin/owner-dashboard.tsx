@@ -33,8 +33,8 @@ type ToolLink = { href: string; label: string; detail: string };
 
 type DashboardData = {
   generatedAt: string;
-  owner: { email: string };
-  services: { website: Service; database: Service; bridge: Service };
+  owner: { label: string };
+  services: { access: Service; website: Service; database: Service; bridge: Service };
   server: null | {
     status: "online" | "offline";
     currentPlayers: number;
@@ -76,7 +76,7 @@ function ServiceCard({ label, service }: { label: string; service: Service }) {
   );
 }
 
-export function OwnerDashboard({ email }: { email: string }) {
+export function OwnerDashboard({ ownerLabel }: { ownerLabel: string }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
@@ -168,13 +168,13 @@ export function OwnerDashboard({ email }: { email: string }) {
   return (
     <div className="owner-dashboard">
       <div className="owner-session-bar">
-        <div><span className="owner-state-dot owner-state-operational" /><strong>Protected owner session</strong><span>{email}</span></div>
-        <a href="/cdn-cgi/access/logout">Sign out →</a>
+        <div><span className="owner-state-dot owner-state-operational" /><strong>Protected owner session</strong><span>{ownerLabel} verified</span></div>
       </div>
 
       {error ? <div className="owner-alert" role="alert">{error}</div> : null}
 
       <section className="owner-service-grid" aria-label="Service health">
+        <ServiceCard label="Home IP gate" service={data.services.access} />
         <ServiceCard label="Website and API" service={data.services.website} />
         <ServiceCard label="Owner database" service={data.services.database} />
         <ServiceCard label="Palworld bridge" service={data.services.bridge} />
