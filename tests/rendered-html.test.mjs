@@ -323,6 +323,10 @@ test("unlinked office diagram serves the expanded four-view fixture study", asyn
   assert.match(html, /C-RLS6/);
   assert.match(html, /D-HLBSL/);
   assert.match(html, /D-RLS6/);
+  assert.match(html, /id="installer-plan-heading"/);
+  assert.match(html, /80″ LIGHT–LIGHT/);
+  assert.match(html, /72″ LIGHT–LIGHT/);
+  assert.match(html, /33\.7″ from each side wall/);
   assert.equal((html.match(/data-diagram-legend=/g) ?? []).length, 10);
   for (const diagram of [
     "A1-HLBSL", "A2-HLBSL", "A1-RLS6", "A2-RLS6",
@@ -371,11 +375,16 @@ test("unlinked master room diagram serves the vaulted-ceiling lighting study", a
   assert.match(html, /id="section-heading"/);
   assert.match(html, /id="night-heading"/);
   assert.match(html, /id="tv-wall-heading"/);
+  assert.match(html, /id="installer-plan-heading"/);
   assert.match(html, /id="analysis-heading"/);
   assert.match(html, /22\.84/);
   assert.match(html, /18\.52/);
   assert.match(html, /exposed beam underside 131/);
   assert.match(html, /beam top is concealed/i);
+  assert.match(html, /130″ LIGHT–LIGHT/);
+  assert.match(html, /22⅞″/);
+  assert.match(html, /Low likelihood/);
+  assert.match(html, /reflects only the wall behind the bed/i);
   assert.doesNotMatch(html, /href=["']\/master-room-diagram["']/i);
 });
 

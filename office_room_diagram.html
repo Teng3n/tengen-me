@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Office Room Lighting Study — Revision 08</title>
+  <title>Office Room Lighting Study — Revision 09</title>
 
   <!--
     ================================================================
@@ -14,7 +14,7 @@
   -->
   <script>
     const DRAWING_CONFIG = Object.freeze({
-      revision: "08",
+      revision: "09",
       drawingDate: "2026-07-29",
       units: "inches",
       room: {
@@ -329,6 +329,11 @@
       font-size: 12.5px;
     }
     .finding strong { color: #84271f; }
+    .finding.installer-note {
+      border-left-color: var(--confirmed);
+      background: #f0f8f4;
+    }
+    .finding.installer-note strong { color: var(--confirmed); }
 
     .analysis-section { margin-top: 22px; break-inside: avoid; page-break-inside: avoid; }
     .analysis-intro { margin: -5px 0 10px; color: var(--muted); font-size: 12px; }
@@ -379,6 +384,8 @@
     .swatch-provisional { border-top: 4px solid var(--provisional); }
     .swatch-shadow { border: 2px dashed var(--shadow-risk); background: rgba(180,35,24,.18); }
     .swatch-old { border-top: 2px dashed var(--old-geometry); }
+    .swatch-light { height: 10px; border: 2px solid var(--light); border-radius: 50%; }
+    .swatch-dimension { height: 2px; border-top: 2px solid #33414d; }
 
     .disclaimer {
       margin: 18px 0 0;
@@ -425,7 +432,7 @@
 <main>
   <header class="main-page-only">
     <h1>Office Room — Lighting, Fan, and Glare Study</h1>
-    <p class="subtitle">Drawing revision 08 · 29 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
+    <p class="subtitle">Drawing revision 09 · 30 July 2026 · All drawing coordinates and geometry use inches · Not for construction</p>
   </header>
 
   <section class="main-page-only" aria-labelledby="measurement-summary">
@@ -462,6 +469,88 @@
   <nav class="study-nav main-page-only" aria-label="Office lighting study pages">
     <a href="/office-room-diagram-details">Detailed analysis →</a>
   </nav>
+
+  <section class="drawing-card main-page-only" aria-labelledby="installer-plan-heading">
+    <div class="drawing-header">
+      <h2 id="installer-plan-heading">Installer layout · Office light-center coordinates</h2>
+      <div class="drawing-meta">Top-down control plan · Dimension chains run between finished wall faces and fixture centers</div>
+    </div>
+
+    <svg id="installer-plan-svg" viewBox="0 0 230 205" role="img" aria-labelledby="installer-plan-title installer-plan-desc">
+      <title id="installer-plan-title">Installer coordinate plan for the four office lights</title>
+      <desc id="installer-plan-desc">A 144 by 132 inch room with two light columns 32 inches from each side wall, 80 inches apart, and two rows 30 inches from the end walls and 72 inches apart.</desc>
+      <defs>
+        <marker id="installer-arrow-office" markerWidth="5" markerHeight="5" refX="2.5" refY="2.5" orient="auto-start-reverse" markerUnits="strokeWidth">
+          <path d="M 5 0 L 0 2.5 L 5 5 z" fill="#33414d"/>
+        </marker>
+      </defs>
+
+      <rect class="room-fill" x="43" y="32" width="144" height="132"/>
+      <line class="reference" x1="75" y1="32" x2="75" y2="164"/>
+      <line class="reference" x1="155" y1="32" x2="155" y2="164"/>
+      <line class="reference" x1="43" y1="62" x2="187" y2="62"/>
+      <line class="reference" x1="43" y1="134" x2="187" y2="134"/>
+
+      <circle class="fan-sweep" cx="115" cy="98" r="30"/>
+      <circle class="fan-hub" cx="115" cy="98" r="3"/>
+      <text class="svg-small halo" x="115" y="105" text-anchor="middle">EXISTING FAN CENTER (72,66)</text>
+
+      <g aria-label="Four light centers">
+        <circle class="light-symbol" cx="75" cy="62" r="3.5"/><circle class="light-core" cx="75" cy="62" r="1.2"/>
+        <circle class="light-symbol" cx="155" cy="62" r="3.5"/><circle class="light-core" cx="155" cy="62" r="1.2"/>
+        <circle class="light-symbol" cx="75" cy="134" r="3.5"/><circle class="light-core" cx="75" cy="134" r="1.2"/>
+        <circle class="light-symbol" cx="155" cy="134" r="3.5"/><circle class="light-core" cx="155" cy="134" r="1.2"/>
+        <text class="svg-label halo" x="80" y="58">L1 · (32,30)</text>
+        <text class="svg-label halo" x="160" y="58">L2 · (112,30)</text>
+        <text class="svg-label halo" x="80" y="139">L3 · (32,102)</text>
+        <text class="svg-label halo" x="160" y="139">L4 · (112,102)</text>
+      </g>
+
+      <rect class="wall" x="43" y="32" width="144" height="132"/>
+
+      <g aria-label="Horizontal wall-to-light and light-to-light dimension chain">
+        <line class="extension" x1="43" y1="32" x2="43" y2="14"/>
+        <line class="extension" x1="75" y1="32" x2="75" y2="14"/>
+        <line class="extension" x1="155" y1="32" x2="155" y2="14"/>
+        <line class="extension" x1="187" y1="32" x2="187" y2="14"/>
+        <line class="dimension" style="marker-start:url(#installer-arrow-office);marker-end:url(#installer-arrow-office)" x1="43" y1="18" x2="75" y2="18"/>
+        <line class="dimension" style="marker-start:url(#installer-arrow-office);marker-end:url(#installer-arrow-office)" x1="75" y1="18" x2="155" y2="18"/>
+        <line class="dimension" style="marker-start:url(#installer-arrow-office);marker-end:url(#installer-arrow-office)" x1="155" y1="18" x2="187" y2="18"/>
+        <text class="svg-dim halo" x="59" y="12" text-anchor="middle">32″</text>
+        <text class="svg-dim halo" x="115" y="12" text-anchor="middle">80″ LIGHT–LIGHT</text>
+        <text class="svg-dim halo" x="171" y="12" text-anchor="middle">32″</text>
+      </g>
+
+      <g aria-label="Vertical wall-to-light and light-to-light dimension chain">
+        <line class="extension" x1="43" y1="32" x2="20" y2="32"/>
+        <line class="extension" x1="43" y1="62" x2="20" y2="62"/>
+        <line class="extension" x1="43" y1="134" x2="20" y2="134"/>
+        <line class="extension" x1="43" y1="164" x2="20" y2="164"/>
+        <line class="dimension" style="marker-start:url(#installer-arrow-office);marker-end:url(#installer-arrow-office)" x1="26" y1="32" x2="26" y2="62"/>
+        <line class="dimension" style="marker-start:url(#installer-arrow-office);marker-end:url(#installer-arrow-office)" x1="26" y1="62" x2="26" y2="134"/>
+        <line class="dimension" style="marker-start:url(#installer-arrow-office);marker-end:url(#installer-arrow-office)" x1="26" y1="134" x2="26" y2="164"/>
+        <text class="svg-dim halo" x="17" y="47" text-anchor="middle" transform="rotate(-90 17 47)">30″</text>
+        <text class="svg-dim halo" x="17" y="98" text-anchor="middle" transform="rotate(-90 17 98)">72″ LIGHT–LIGHT</text>
+        <text class="svg-dim halo" x="17" y="149" text-anchor="middle" transform="rotate(-90 17 149)">30″</text>
+      </g>
+
+      <text class="svg-wall-label halo" x="115" y="27" text-anchor="middle">SIDEYARD WALL</text>
+      <text class="svg-wall-label halo" x="115" y="169" text-anchor="middle">CLOSET WALL</text>
+      <text class="svg-wall-label halo" x="48" y="98" text-anchor="middle" transform="rotate(-90 48 98)">BATHROOM WALL</text>
+      <text class="svg-wall-label halo" x="182" y="98" text-anchor="middle" transform="rotate(90 182 98)">WINDOW WALL</text>
+      <text class="svg-small" x="43" y="181">ORIGIN: SIDEYARD × BATHROOM INTERIOR CORNER</text>
+      <text class="svg-small" x="43" y="187">ROOM: 144″ × 132″ · ALL NUMBERS LOCATE FIXTURE CENTERS</text>
+    </svg>
+
+    <aside class="diagram-legend" aria-label="Office installer plan legend">
+      <h3>Legend</h3>
+      <div class="legend-item"><span class="swatch swatch-light"></span><span>Fixture center and L-number</span></div>
+      <div class="legend-item"><span class="swatch swatch-dimension"></span><span>Finished-wall-to-center or center-to-center dimension</span></div>
+      <div class="legend-item"><span class="swatch swatch-fan"></span><span>Existing 60″ fan sweep for field reference</span></div>
+    </aside>
+
+    <p class="finding installer-note"><strong>Installer transfer note:</strong> The drawing dimensions are horizontal plan distances. On the 18.26° ceiling, the X-direction tape distances are approximately 33.7″ from each side wall to its light column and 84.2″ between columns. The Y chain remains 30″ / 72″ / 30″ on the ceiling. Establishing the horizontal grid on the floor and transferring it with a laser is the least ambiguous method.</p>
+  </section>
 
   <section class="drawing-card main-page-only" aria-labelledby="plan-heading">
     <div class="drawing-header">

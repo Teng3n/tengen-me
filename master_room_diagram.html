@@ -7,7 +7,7 @@
 
   <script>
     const MASTER_ROOM_CONFIG = Object.freeze({
-      revision: "01",
+      revision: "02",
       drawingDate: "2026-07-30",
       units: "inches",
       room: {
@@ -447,6 +447,12 @@
       stroke-width: .3;
       vector-effect: non-scaling-stroke;
     }
+    .reference {
+      stroke: #64737f;
+      stroke-width: .38;
+      stroke-dasharray: 3 2;
+      vector-effect: non-scaling-stroke;
+    }
 
     .night-ceiling {
       fill: #2c292d;
@@ -560,6 +566,7 @@
       border: 2px solid #ffae57;
       background: rgba(255,155,61,.25);
     }
+    .swatch-dimension { height: 2px; border-top: 2px solid #33414d; }
 
     .finding {
       margin: 12px 0 0;
@@ -673,7 +680,7 @@
 <main>
   <header>
     <h1>Master Room — Vaulted-Ceiling Lighting and Fan Study</h1>
-    <p class="subtitle">Drawing revision 01 · 30 July 2026 · Eight Feit night-light wafers · All dimensions in inches · Not for construction</p>
+    <p class="subtitle">Drawing revision 02 · 30 July 2026 · Eight Feit night-light wafers · All dimensions in inches · Not for construction</p>
   </header>
 
   <section aria-labelledby="measurement-summary">
@@ -687,6 +694,7 @@
           <li>Eight Feit LEDR6XT/HO/NL/5CCTCA fixtures at 1,200 lumens each.</li>
           <li>Feit downlight: 5CCT, 90+ CRI, dimmable, with 2200K night-light ring.</li>
           <li>Proposed layout: four fixtures on each ceiling plane.</li>
+          <li>From the current seated bed position, the dark TV reflects the wall behind the bed but no portion of the ceiling.</li>
         </ul>
       </article>
 
@@ -739,6 +747,108 @@
         <small>Approximately 37.8 raw lumens/sq. ft.; use a compatible LED dimmer</small>
       </article>
     </div>
+  </section>
+
+  <section class="drawing-card" aria-labelledby="installer-plan-heading">
+    <div class="drawing-header">
+      <h2 id="installer-plan-heading">Installer layout · Master-room light-center coordinates</h2>
+      <div class="drawing-meta">Top-down control plan · Dimension chains run between finished wall faces and fixture centers</div>
+    </div>
+
+    <svg id="installer-plan-svg" viewBox="0 0 300 250" role="img" aria-labelledby="installer-plan-title installer-plan-desc">
+      <title id="installer-plan-title">Installer coordinate plan for the eight master-room lights</title>
+      <desc id="installer-plan-desc">A 200 by 183 inch room with two light columns. The left column is 40 inches from the left wall, the right column is 30 inches from the right wall, and the columns are 130 inches apart. Four rows are evenly spaced along the room.</desc>
+      <defs>
+        <marker id="installer-arrow-master" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto-start-reverse">
+          <path d="M 0 0 L 6 3 L 0 6 Z" fill="#33414d"></path>
+        </marker>
+      </defs>
+
+      <rect class="room-fill" x="50" y="38" width="200" height="183"></rect>
+      <rect class="ridge-beam-plan" x="151.98" y="38" width="5" height="183"></rect>
+      <line class="ridge" x1="154.48" y1="38" x2="154.48" y2="221"></line>
+
+      <line class="reference" x1="90" y1="38" x2="90" y2="221"></line>
+      <line class="reference" x1="220" y1="38" x2="220" y2="221"></line>
+      <line class="reference" x1="50" y1="60.875" x2="250" y2="60.875"></line>
+      <line class="reference" x1="50" y1="106.625" x2="250" y2="106.625"></line>
+      <line class="reference" x1="50" y1="152.375" x2="250" y2="152.375"></line>
+      <line class="reference" x1="50" y1="198.125" x2="250" y2="198.125"></line>
+
+      <circle class="fan-sweep" cx="154.48" cy="115" r="26"></circle>
+      <circle class="fan-hub" cx="154.48" cy="115" r="3.2"></circle>
+      <text class="svg-small halo" x="154.48" y="122" text-anchor="middle">FAN CENTER (104.48,77)</text>
+
+      <g aria-label="Eight light centers">
+        <circle class="light-symbol" cx="90" cy="60.875" r="3.5"></circle><circle class="light-core" cx="90" cy="60.875" r="1.2"></circle>
+        <circle class="light-symbol" cx="90" cy="106.625" r="3.5"></circle><circle class="light-core" cx="90" cy="106.625" r="1.2"></circle>
+        <circle class="light-symbol" cx="90" cy="152.375" r="3.5"></circle><circle class="light-core" cx="90" cy="152.375" r="1.2"></circle>
+        <circle class="light-symbol" cx="90" cy="198.125" r="3.5"></circle><circle class="light-core" cx="90" cy="198.125" r="1.2"></circle>
+        <circle class="light-symbol" cx="220" cy="60.875" r="3.5"></circle><circle class="light-core" cx="220" cy="60.875" r="1.2"></circle>
+        <circle class="light-symbol" cx="220" cy="106.625" r="3.5"></circle><circle class="light-core" cx="220" cy="106.625" r="1.2"></circle>
+        <circle class="light-symbol" cx="220" cy="152.375" r="3.5"></circle><circle class="light-core" cx="220" cy="152.375" r="1.2"></circle>
+        <circle class="light-symbol" cx="220" cy="198.125" r="3.5"></circle><circle class="light-core" cx="220" cy="198.125" r="1.2"></circle>
+        <text class="svg-label halo" x="95" y="57">L1 · (40,22⅞)</text>
+        <text class="svg-label halo" x="95" y="103">L2 · (40,68⅝)</text>
+        <text class="svg-label halo" x="95" y="149">L3 · (40,114⅜)</text>
+        <text class="svg-label halo" x="95" y="195">L4 · (40,160⅛)</text>
+        <text class="svg-label halo" x="215" y="57" text-anchor="end">L5 · (170,22⅞)</text>
+        <text class="svg-label halo" x="215" y="103" text-anchor="end">L6 · (170,68⅝)</text>
+        <text class="svg-label halo" x="215" y="149" text-anchor="end">L7 · (170,114⅜)</text>
+        <text class="svg-label halo" x="215" y="195" text-anchor="end">L8 · (170,160⅛)</text>
+      </g>
+
+      <rect class="room-wall" x="50" y="38" width="200" height="183"></rect>
+
+      <g aria-label="Horizontal wall-to-light and light-to-light dimension chain">
+        <line class="extension" x1="50" y1="38" x2="50" y2="14"></line>
+        <line class="extension" x1="90" y1="38" x2="90" y2="14"></line>
+        <line class="extension" x1="220" y1="38" x2="220" y2="14"></line>
+        <line class="extension" x1="250" y1="38" x2="250" y2="14"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="50" y1="20" x2="90" y2="20"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="90" y1="20" x2="220" y2="20"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="220" y1="20" x2="250" y2="20"></line>
+        <text class="svg-dim halo" x="70" y="13" text-anchor="middle">40″</text>
+        <text class="svg-dim halo" x="155" y="13" text-anchor="middle">130″ LIGHT–LIGHT</text>
+        <text class="svg-dim halo" x="235" y="13" text-anchor="middle">30″</text>
+      </g>
+
+      <g aria-label="Vertical wall-to-light and light-to-light dimension chain">
+        <line class="extension" x1="50" y1="38" x2="21" y2="38"></line>
+        <line class="extension" x1="50" y1="60.875" x2="21" y2="60.875"></line>
+        <line class="extension" x1="50" y1="106.625" x2="21" y2="106.625"></line>
+        <line class="extension" x1="50" y1="152.375" x2="21" y2="152.375"></line>
+        <line class="extension" x1="50" y1="198.125" x2="21" y2="198.125"></line>
+        <line class="extension" x1="50" y1="221" x2="21" y2="221"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="38" x2="29" y2="60.875"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="60.875" x2="29" y2="106.625"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="106.625" x2="29" y2="152.375"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="152.375" x2="29" y2="198.125"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="198.125" x2="29" y2="221"></line>
+        <text class="svg-dim halo" x="17" y="49.4" text-anchor="middle" transform="rotate(-90 17 49.4)">22⅞″</text>
+        <text class="svg-dim halo" x="17" y="83.75" text-anchor="middle" transform="rotate(-90 17 83.75)">45¾″</text>
+        <text class="svg-dim halo" x="17" y="129.5" text-anchor="middle" transform="rotate(-90 17 129.5)">45¾″</text>
+        <text class="svg-dim halo" x="17" y="175.25" text-anchor="middle" transform="rotate(-90 17 175.25)">45¾″</text>
+        <text class="svg-dim halo" x="17" y="209.6" text-anchor="middle" transform="rotate(-90 17 209.6)">22⅞″</text>
+      </g>
+
+      <text class="svg-wall-label halo" x="150" y="33" text-anchor="middle">TV WALL</text>
+      <text class="svg-wall-label halo" x="150" y="226" text-anchor="middle">OPPOSITE WALL</text>
+      <text class="svg-wall-label halo" x="55" y="129.5" text-anchor="middle" transform="rotate(-90 55 129.5)">PHOTO-LEFT WALL</text>
+      <text class="svg-wall-label halo" x="245" y="129.5" text-anchor="middle" transform="rotate(90 245 129.5)">MIRRORED-CLOSET WALL</text>
+      <text class="svg-small" x="50" y="238">ORIGIN: TV-WALL × PHOTO-LEFT INTERIOR CORNER · ROOM 200″ × 183″</text>
+      <text class="svg-small" x="50" y="244">ALL DIMENSIONS LOCATE FIXTURE CENTERS; X IS LEFT→RIGHT, Y IS TV WALL→OPPOSITE WALL</text>
+    </svg>
+
+    <div class="diagram-legend" aria-label="Master-room installer plan legend">
+      <h3>Legend for installer layout</h3>
+      <div class="legend-item"><span class="swatch swatch-light"></span>Fixture center and L-number</div>
+      <div class="legend-item"><span class="swatch swatch-dimension"></span>Finished-wall-to-center or center-to-center dimension</div>
+      <div class="legend-item"><span class="swatch swatch-fan"></span>52″ fan sweep for field reference</div>
+      <div class="legend-item"><span class="swatch swatch-beam"></span>Approximately 5″-wide ridge beam projection</div>
+    </div>
+
+    <p class="finding caution"><strong>Installer transfer note:</strong> These are horizontal plan dimensions. The left light row is approximately 43.4″ up its 22.84° ceiling plane from the photo-left wall, and the right row is approximately 31.6″ up its 18.52° plane from the mirrored-closet wall. Do not pull a 130″ tape across the ridge beam; establish the X positions on the floor and transfer each row vertically with a laser. The Y chain is parallel to the ridge and remains 22⅞″ / 45¾″ / 45¾″ / 45¾″ / 22⅞″ on the ceiling.</p>
   </section>
 
   <section class="drawing-card" aria-labelledby="blade-plan-heading">
@@ -929,10 +1039,10 @@
         <strong id="tv-count-value">2–6</strong>
         <small id="tv-dominant-value">The first two fixture stations dominate</small>
       </article>
-      <article class="coverage-metric caution">
-        <span>Viewer-visible reflection</span>
-        <strong>Pending</strong>
-        <small>Requires TV tilt/projection and the viewing-eye position</small>
+      <article class="coverage-metric good">
+        <span>Hard ceiling-fixture reflection</span>
+        <strong>Low likelihood</strong>
+        <small>Current seated view reflects the wall behind the bed, with no ceiling visible</small>
       </article>
     </div>
 
@@ -969,7 +1079,7 @@
       <div class="legend-item"><span class="swatch swatch-beam"></span>Exposed ridge beam</div>
     </div>
 
-    <p class="finding alert"><strong>Screen-wash finding:</strong> The broad Feit wafers illuminate the entire provisional screen within the nominal main-beam region. This establishes a contrast concern, but a mirror-like reflection into the bed cannot be calculated until the screen angle and viewing-eye position are known.</p>
+    <p class="finding caution"><strong>TV finding:</strong> The broad Feit wafers illuminate the entire provisional screen within the nominal main-beam region, so some diffuse screen wash and reduced contrast remain possible. However, your real seated-view observation is strong geometric evidence against a hard reflected image of a ceiling fixture: the TV currently reflects only the wall behind the bed and no part of either ceiling plane. Recheck after mounting if the TV tilt or viewing height changes.</p>
   </section>
 
   <section class="analysis-section" aria-labelledby="analysis-heading">
