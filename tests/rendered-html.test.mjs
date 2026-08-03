@@ -411,6 +411,26 @@ test("unlinked master room diagram serves the vaulted-ceiling lighting study", a
   assert.match(html, /Low likelihood/);
   assert.match(html, /reflects only the wall behind the bed/i);
   assert.doesNotMatch(html, /href=["']\/master-room-diagram["']/i);
+  assert.doesNotMatch(html, /centered-comparison-heading/);
+});
+
+test("separate centered-plane master room mock-up compares fan, floor, and side-wall coverage", async () => {
+  const response = await render("/master-room-diagram-centered");
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
+
+  const html = await response.text();
+  assert.match(html, /Centered Ceiling-Plane Lighting Alternative/);
+  assert.match(html, /id="centered-comparison-heading"/);
+  assert.match(html, /id="sidewall-heading"/);
+  assert.match(html, /x: 52\.24/);
+  assert.match(html, /x: 152\.24/);
+  assert.match(html, /100\.00″/);
+  assert.match(html, /Current 40″ \/ 30″ positions/);
+  assert.match(html, /Centered-layout warning/);
+  assert.match(html, /Side-wall result/);
+  assert.match(html, /aria-labelledby="installer-plan-heading" hidden/);
+  assert.doesNotMatch(html, /href=["']\/master-room-diagram-centered["']/i);
 });
 
 test("office diagram geometry reflects the corrected fan drop", () => {
