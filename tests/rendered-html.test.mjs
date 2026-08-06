@@ -28,9 +28,9 @@ function sampledFanCoverage(config, drop, fixture, axis) {
   let samples = 0;
   let mainSamples = 0;
 
-  for (let y = 36; y <= 96; y += 0.5) {
-    for (let x = 42; x <= 102; x += 0.5) {
-      if (Math.hypot(x - 72, y - 66) > 30) continue;
+  for (let y = config.fan.center.y - config.fan.radius; y <= config.fan.center.y + config.fan.radius; y += 0.5) {
+    for (let x = config.fan.center.x - config.fan.radius; x <= config.fan.center.x + config.fan.radius; x += 0.5) {
+      if (Math.hypot(x - config.fan.center.x, y - config.fan.center.y) > config.fan.radius) continue;
       samples += 1;
       const inMain = config.lights.centers.some((light) => {
         const lightAxis = resolveAxis(axis, light);
@@ -334,7 +334,7 @@ test("unlinked office diagram serves the expanded four-view fixture study", asyn
   assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
 
   const html = await response.text();
-  assert.match(html, /Revision 08/);
+  assert.match(html, /Revision 10/);
   assert.match(html, /pitchPositionsDegrees: \{ 1: 27, 2: 18, 3: 18, 4: 18 \}/);
   assert.match(html, /29\.1″ overall height/);
   assert.match(html, /HLBSL609FS5/);
@@ -349,9 +349,9 @@ test("unlinked office diagram serves the expanded four-view fixture study", asyn
   assert.match(html, /D-HLBSL/);
   assert.match(html, /D-RLS6/);
   assert.match(html, /id="installer-plan-heading"/);
-  assert.match(html, /80″ LIGHT–LIGHT/);
-  assert.match(html, /72″ LIGHT–LIGHT/);
-  assert.match(html, /33\.7″ from each side wall/);
+  assert.match(html, /68″ LIGHT–LIGHT/);
+  assert.match(html, /80\.6″ LIGHT–LIGHT/);
+  assert.match(html, /34\.3″ from each side wall/);
   assert.equal((html.match(/data-diagram-legend=/g) ?? []).length, 10);
   for (const diagram of [
     "A1-HLBSL", "A2-HLBSL", "A1-RLS6", "A2-RLS6",
@@ -447,9 +447,9 @@ test("office diagram geometry reflects the corrected fan drop", () => {
     return { x: Math.sin(angle), y: 0, z: -Math.cos(angle) };
   };
 
-  assert.equal(fanCeiling, 120.25);
-  assert.equal(fanCeiling - config.fan.analysisDropFromCeiling, 91.15);
-  assert.equal(fanCeiling - config.fan.previousAssumedBladeDrop, 98.25);
+  assert.equal(fanCeiling, 122.7);
+  assert.equal(fanCeiling - config.fan.analysisDropFromCeiling, 93.6);
+  assert.equal(fanCeiling - config.fan.previousAssumedBladeDrop, 100.7);
 
   const oldWaferOverlap = sampledFanCoverage(
     config,
@@ -470,7 +470,7 @@ test("office diagram geometry reflects the corrected fan drop", () => {
     rlsAxis,
   );
 
-  assert.ok(oldWaferOverlap > 13 && oldWaferOverlap < 15);
+  assert.ok(oldWaferOverlap > 18 && oldWaferOverlap < 20);
   assert.ok(correctedWaferOverlap > 66 && correctedWaferOverlap < 68);
   assert.equal(correctedRlsOverlap, 0);
 
@@ -478,7 +478,7 @@ test("office diagram geometry reflects the corrected fan drop", () => {
   const rlsFloor = sampledRoomCoverage(config, config.baselineLights, rlsAxis);
   assert.equal(waferFloor.mainPercent, 100);
   assert.equal(waferFloor.fieldPercent, 100);
-  assert.ok(rlsFloor.mainPercent > 99 && rlsFloor.mainPercent < 100);
+  assert.ok(rlsFloor.mainPercent > 98 && rlsFloor.mainPercent < 99);
   assert.equal(rlsFloor.fieldPercent, 100);
 
   const waferWindowWall = sampledWindowWallCoverage(
@@ -487,10 +487,10 @@ test("office diagram geometry reflects the corrected fan drop", () => {
   const rlsWindowWall = sampledWindowWallCoverage(
     config, config.baselineLights, rlsAxis,
   );
-  assert.ok(waferWindowWall.mainPercent > 66 && waferWindowWall.mainPercent < 68);
-  assert.ok(waferWindowWall.fieldPercent > 87 && waferWindowWall.fieldPercent < 89);
-  assert.ok(rlsWindowWall.mainPercent > 21 && rlsWindowWall.mainPercent < 23);
-  assert.ok(rlsWindowWall.fieldPercent > 61 && rlsWindowWall.fieldPercent < 63);
+  assert.ok(waferWindowWall.mainPercent > 65 && waferWindowWall.mainPercent < 67);
+  assert.ok(waferWindowWall.fieldPercent > 88 && waferWindowWall.fieldPercent < 90);
+  assert.ok(rlsWindowWall.mainPercent > 11 && rlsWindowWall.mainPercent < 12);
+  assert.ok(rlsWindowWall.fieldPercent > 59 && rlsWindowWall.fieldPercent < 61);
 
   const waferBathroomWall = sampledBathroomWallCoverage(
     config, config.lights, waferAxis,
@@ -500,8 +500,8 @@ test("office diagram geometry reflects the corrected fan drop", () => {
   );
   assert.ok(waferBathroomWall.mainPercent > 82 && waferBathroomWall.mainPercent < 84);
   assert.ok(waferBathroomWall.fieldPercent > 94 && waferBathroomWall.fieldPercent < 96);
-  assert.ok(rlsBathroomWall.mainPercent > 16 && rlsBathroomWall.mainPercent < 18);
-  assert.ok(rlsBathroomWall.fieldPercent > 46 && rlsBathroomWall.fieldPercent < 48);
+  assert.ok(rlsBathroomWall.mainPercent > 25 && rlsBathroomWall.mainPercent < 26);
+  assert.ok(rlsBathroomWall.fieldPercent > 50 && rlsBathroomWall.fieldPercent < 52);
 
   const waferMonitor = sampledMonitorCoverage(
     config, config.lights, waferAxis,
@@ -511,7 +511,7 @@ test("office diagram geometry reflects the corrected fan drop", () => {
   );
   assert.equal(waferMonitor.mainPercent, 100);
   assert.equal(waferMonitor.fieldPercent, 100);
-  assert.ok(rlsMonitor.mainPercent > 0 && rlsMonitor.mainPercent < 2);
+  assert.ok(rlsMonitor.mainPercent > 13 && rlsMonitor.mainPercent < 14);
   assert.equal(rlsMonitor.fieldPercent, 100);
 });
 
