@@ -155,6 +155,7 @@ type ElectricityAnalytics = {
     periodEnd: string;
     label: string;
     usageKwh: number;
+    usageKind: "measured" | "forecast";
     electricCost: number;
     costKind: "actual" | "modeled" | "forecast";
     exportedSolarKwh: number | null;
@@ -293,7 +294,7 @@ function comparisonYearLabel(year: number, currentYear: number) {
   return `${year} · ${difference} years ago`;
 }
 
-function YearUsageLineChart({
+function YearUsageBarChart({
   series,
   kind,
 }: {
@@ -351,21 +352,29 @@ function YearUsageLineChart({
       <div className={kind === "daily" ? "owner-year-periods" : undefined}>
         {plotRanges.map((range) => {
           const point = (xValue: number, value: number) => ({
-            x: left + ((xValue - range.start) / (range.end - range.start)) * plotWidth,
+            x: left + ((xValue - range.start + 0.5) / (range.end - range.start + 1)) * plotWidth,
             y: top + plotHeight - (value / maxKwh) * plotHeight,
           });
+          const slotWidth = plotWidth / (range.end - range.start + 1);
+          const groupWidth = Math.min(kind === "daily" ? slotWidth * 1.25 : 58, slotWidth * 0.86);
+          const barWidth = groupWidth / Math.max(1, series.length - 0.65);
+          const barStep = series.length > 1 ? (groupWidth - barWidth) / (series.length - 1) : 0;
+          const barX = (xValue: number, year: number) => {
+            const seriesIndex = series.findIndex((candidate) => candidate.year === year);
+            return point(xValue, 0).x - groupWidth / 2 + seriesIndex * barStep;
+          };
           const xTicks = comparisonMonthLabels
             .map((label, monthIndex) => ({
               label,
               monthIndex,
-              x: kind === "daily" ? calendarDayIndex(`2000-${String(monthIndex + 1).padStart(2, "0")}-01`) : monthIndex,
+              x: kind === "daily" ? calendarDayIndex(`2000-${String(monthIndex + 1).padStart(2, "0")}-15`) : monthIndex,
             }))
             .filter((tick) => tick.monthIndex >= range.firstMonth && tick.monthIndex <= range.lastMonth);
 
           return (
             <section className={kind === "daily" ? "owner-year-period" : undefined} key={range.label || kind}>
               {range.label ? <h4>{range.label}</h4> : null}
-              <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${kind === "daily" ? `${range.label} daily` : "Monthly"} electricity usage by calendar position and year`}>
+              <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${kind === "daily" ? `${range.label} daily` : "Monthly"} electricity usage bar comparison by calendar position and year`}>
                 {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
                   const y = top + plotHeight * ratio;
                   return (
@@ -376,33 +385,23 @@ function YearUsageLineChart({
                   );
                 })}
                 <text className="owner-chart-axis-title" x={14} y={top + plotHeight / 2} transform={`rotate(-90 14 ${top + plotHeight / 2})`} textAnchor="middle">{kind === "daily" ? "kWh / day" : "kWh / month"}</text>
-                {visibleSeries.map((item) => {
-                  const index = series.findIndex((candidate) => candidate.year === item.year);
-                  const rangePoints = item.points.filter((value) => value.x >= range.start && value.x <= range.end);
-                  const path = rangePoints.map((value, pointIndex) => {
-                    const p = point(value.x, value.value);
-                    return `${pointIndex ? "L" : "M"}${p.x.toFixed(1)},${p.y.toFixed(1)}`;
-                  }).join(" ");
-                  return path
-                    ? <path key={item.year} className={`owner-chart-line owner-chart-year-line owner-chart-year-series-${Math.min(index, 3)}`} d={path} />
-                    : null;
-                })}
-                {visibleSeries.flatMap((item) => {
+                {[...visibleSeries].reverse().flatMap((item) => {
                   const index = series.findIndex((candidate) => candidate.year === item.year);
                   return item.points
                     .filter((value) => value.x >= range.start && value.x <= range.end)
                     .map((value) => {
                       const p = point(value.x, value.value);
                       return (
-                        <circle
+                        <rect
                           key={`${item.year}-${value.label}`}
-                          className={`${kind === "daily" ? "owner-chart-hit-point" : "owner-chart-year-point"} owner-chart-year-series-${Math.min(index, 3)}`}
-                          cx={p.x}
-                          cy={p.y}
-                          r={kind === "daily" ? 6 : 4}
+                          className={`owner-chart-year-bar owner-chart-year-series-${Math.min(index, 3)}`}
+                          x={barX(value.x, item.year)}
+                          y={p.y}
+                          width={barWidth}
+                          height={Math.max(1, top + plotHeight - p.y)}
                         >
                           <title>{value.label}: {value.value.toFixed(1)} kWh{value.partial ? " (month to date)" : ""}</title>
-                        </circle>
+                        </rect>
                       );
                     });
                 })}
@@ -424,7 +423,8 @@ type CalendarComparisonPoint = {
   label: string;
   primaryValue: number;
   secondaryValue: number;
-  estimated?: boolean;
+  primaryEstimated?: boolean;
+  secondaryEstimated?: boolean;
 };
 
 function CalendarYearOverlayChart({
@@ -436,6 +436,7 @@ function CalendarYearOverlayChart({
   primaryStep,
   secondaryStep,
   secondaryKind,
+  estimateLegend,
   description,
 }: {
   points: CalendarComparisonPoint[];
@@ -446,9 +447,10 @@ function CalendarYearOverlayChart({
   primaryStep: number;
   secondaryStep: number;
   secondaryKind: "money" | "kwh";
+  estimateLegend?: string;
   description: string;
 }) {
-  const years = [...new Set(points.map((point) => point.year))].sort((a, b) => b - a).slice(0, 4);
+  const years = [...new Set(points.map((point) => point.year))].filter((year) => year >= 2024).sort((a, b) => b - a).slice(0, 4);
   const [visibleYears, setVisibleYears] = useState(() => new Set(years));
   const visiblePoints = points.filter((point) => visibleYears.has(point.year) && years.includes(point.year));
   if (!points.length) return <p className="owner-chart-empty">No comparison history is available yet.</p>;
@@ -502,7 +504,7 @@ function CalendarYearOverlayChart({
       <div className="owner-chart-legend owner-chart-calendar-metric-legend" aria-hidden="true">
         <span><i className="owner-chart-primary-bar" />{primaryLegend}</span>
         <span><i className="owner-chart-secondary-line" />{secondaryLegend}</span>
-        <span><i className="owner-chart-estimated" />Modeled / forecast</span>
+        {estimateLegend ? <span><i className="owner-chart-estimated" />{estimateLegend}</span> : null}
       </div>
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={description}>
         {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
@@ -522,13 +524,13 @@ function CalendarYearOverlayChart({
           return (
           <rect
             key={`${point.year}-${point.monthIndex}-bar`}
-            className={`owner-calendar-bar owner-calendar-year-series-${yearIndex}${point.estimated ? " owner-calendar-estimated" : ""}`}
+            className={`owner-calendar-bar owner-calendar-year-series-${yearIndex}${point.primaryEstimated ? " owner-calendar-estimated" : ""}`}
             x={x(point.monthIndex, point.year) - barWidth / 2}
             y={primaryY(point.primaryValue)}
             width={barWidth}
             height={Math.max(2, top + plotHeight - primaryY(point.primaryValue))}
           >
-            <title>{point.label}: {kwhFormatter.format(point.primaryValue)} kWh; {formatSecondary(point.secondaryValue)}{point.estimated ? " (modeled / forecast)" : ""}</title>
+            <title>{point.label}: {kwhFormatter.format(point.primaryValue)} kWh{point.primaryEstimated ? " (forecast)" : " (measured)"}; {formatSecondary(point.secondaryValue)}{point.secondaryEstimated ? " (modeled / forecast)" : ""}</title>
           </rect>
           );
         })}
@@ -540,8 +542,8 @@ function CalendarYearOverlayChart({
         {visiblePoints.map((point) => {
           const yearIndex = years.indexOf(point.year);
           return (
-            <circle key={`${point.year}-${point.monthIndex}-point`} className={`owner-calendar-point owner-calendar-year-series-${yearIndex}${point.estimated ? " owner-calendar-estimated" : ""}`} cx={x(point.monthIndex, point.year)} cy={secondaryY(point.secondaryValue)} r="4">
-              <title>{point.label}: {formatSecondary(point.secondaryValue)}{point.estimated ? " (modeled / forecast)" : ""}</title>
+            <circle key={`${point.year}-${point.monthIndex}-point`} className={`owner-calendar-point owner-calendar-year-series-${yearIndex}${point.secondaryEstimated ? " owner-calendar-estimated" : ""}`} cx={x(point.monthIndex, point.year)} cy={secondaryY(point.secondaryValue)} r="4">
+              <title>{point.label}: {formatSecondary(point.secondaryValue)}{point.secondaryEstimated ? " (modeled / forecast)" : " (actual)"}</title>
             </circle>
           );
         })}
@@ -584,7 +586,8 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
     label: bill.label,
     primaryValue: bill.usageKwh,
     secondaryValue: bill.electricCost,
-    estimated: bill.costKind !== "actual",
+    primaryEstimated: bill.usageKind === "forecast",
+    secondaryEstimated: bill.costKind !== "actual",
   }));
   const solarCalendarPoints: CalendarComparisonPoint[] = analytics.solar.history.map((item) => ({
     year: Number(item.periodEnd.slice(0, 4)),
@@ -681,11 +684,11 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
       <div className="owner-energy-chart-grid">
         <article className="owner-energy-chart-block owner-energy-chart-wide">
           <div className="owner-chart-heading"><h3>Daily usage by year</h3><span>Two six-month views · shared scale and year toggles</span></div>
-          <YearUsageLineChart series={dailyYearSeries} kind="daily" />
+          <YearUsageBarChart series={dailyYearSeries} kind="daily" />
         </article>
         <article className="owner-energy-chart-block owner-energy-chart-wide">
           <div className="owner-chart-heading"><h3>Month-to-month usage by year</h3><span>January through December aligned across every available year</span></div>
-          <YearUsageLineChart series={monthlyYearSeries} kind="monthly" />
+          <YearUsageBarChart series={monthlyYearSeries} kind="monthly" />
           <p className="owner-chart-footnote">The current month is month-to-date; completed prior-year months show full totals.</p>
         </article>
         <article className="owner-energy-chart-block owner-energy-chart-wide">
@@ -699,9 +702,10 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
             primaryStep={500}
             secondaryStep={100}
             secondaryKind="money"
+            estimateLegend="Modeled cost / forecast"
             description="Twelve-month calendar comparison with delivered electricity bars and gross electric cost lines grouped by year"
           />
-          <p className="owner-chart-footnote">Costs through April 2026 are actual Electricity Cost values from your workbook. June is modeled from your 1,170 kWh figure; August is forecast. August is {percentChange(analytics.cycle.projectedVsPreviousSummerPercent)} versus August 2025 usage.</p>
+          <p className="owner-chart-footnote">June and August usage are completed SmartStats meter totals. Cost points remain marked separately: workbook bills are actual, while a point without a final utility cost uses the Standard Domestic model. August usage is {percentChange(analytics.cycle.projectedVsPreviousSummerPercent)} versus August 2025.</p>
         </article>
         <article className="owner-energy-chart-block owner-energy-breakdown">
           <div className="owner-chart-heading"><h3>Standard Domestic model</h3><span>Projected 60-day bill · before solar</span></div>

@@ -180,6 +180,7 @@ export type ElectricityAnalytics = {
     periodEnd: string;
     label: string;
     usageKwh: number;
+    usageKind: "measured" | "forecast";
     electricCost: number;
     costKind: "actual" | "modeled" | "forecast";
     exportedSolarKwh: number | null;
@@ -522,6 +523,7 @@ async function loadElectricityAnalytics(
       periodEnd: bill.period_end,
       label: billLabel(bill.period_end),
       usageKwh: round(bill.delivered_kwh),
+      usageKind: "measured",
       electricCost: round(bill.electric_cost ?? standardDomesticCost(bill.delivered_kwh, 60).total),
       costKind: bill.cost_kind,
       exportedSolarKwh: bill.exported_solar_kwh === null ? null : round(bill.exported_solar_kwh),
@@ -532,12 +534,13 @@ async function loadElectricityAnalytics(
       periodStart: CURRENT_CYCLE_START,
       periodEnd: CURRENT_CYCLE_END,
       label: billLabel(CURRENT_CYCLE_END),
-      usageKwh: round(projectedKwh),
+      usageKwh: round(daysRemaining === 0 ? usageToDateKwh : projectedKwh),
+      usageKind: daysRemaining === 0 ? "measured" : "forecast",
       electricCost: projectedCost.total,
-      costKind: "forecast",
+      costKind: daysRemaining === 0 ? "modeled" : "forecast",
       exportedSolarKwh: null,
       solarBankKwh: null,
-      source: "SmartStats forecast",
+      source: daysRemaining === 0 ? "SmartStats measured billing-period usage" : "SmartStats forecast",
     },
   ];
   const solarHistory = storedBills.flatMap((bill) => {
@@ -699,7 +702,9 @@ async function loadElectricityAnalytics(
       history: solarHistory,
     },
     methodology: {
-      forecast: `Actual usage through ${asOfDate}, plus the most recent ${recentRows.length}-day average for the ${daysRemaining} remaining days.`,
+      forecast: daysRemaining === 0
+        ? `Billing-period usage is a completed SmartStats meter total through ${asOfDate}.`
+        : `Actual usage through ${asOfDate}, plus the most recent ${recentRows.length}-day average for the ${daysRemaining} remaining days.`,
       cost: "Anaheim Standard Domestic calculator logic: a 60-day bimonthly customer charge and lifeline allowance, basic and above-lifeline energy charges, underground surcharge, PCA, EMA, and California energy surcharge. Solar is never deducted.",
       ac: `Nest runtime is complete beginning July 25, 2026, so this billing cycle uses a full-cycle extrapolation rather than displaying the tracked-period subtotal. Matched whole-home meter use is regressed against runtime to learn a ${round(acModel?.baselineDailyKwh ?? 0, 1)} kWh/day non-AC baseline and an AC share of tracked electricity. That share and its 95% model interval are applied to the projected ${round(projectedKwh)} kWh cycle, then priced at the Standard Domestic above-lifeline marginal rate. The next billing cycle will have complete APU and Nest coverage from day one.`,
       solar: "Exported solar and bank balances come from the Utilities workbook through April 21, 2026. The current SmartStats importer does not yet extract received energy or the bank, so later bank values remain unknown until another bill or spreadsheet update is added.",

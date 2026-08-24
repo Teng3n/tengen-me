@@ -242,14 +242,11 @@ a { color: inherit; text-decoration: none; }
 .owner-chart-year-button { display: inline-flex; align-items: center; gap: 7px; padding: 4px 0; border: 0; background: transparent; font: inherit; font-weight: 700; text-transform: inherit; letter-spacing: inherit; cursor: pointer; }
 .owner-chart-year-button[aria-pressed="false"] { opacity: .46; text-decoration: line-through; }
 .owner-chart-year-button:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
-.owner-chart-year-button i { width: 24px; height: 0; background: transparent; border-top: 3px solid currentColor; }
+.owner-chart-year-button i { width: 18px; height: 8px; background: currentColor; border: 1px solid currentColor; }
 .owner-chart-year-button.owner-chart-year-series-0 { color: var(--year-current); }
 .owner-chart-year-button.owner-chart-year-series-1 { color: var(--year-previous); }
 .owner-chart-year-button.owner-chart-year-series-2 { color: var(--year-older); }
 .owner-chart-year-button.owner-chart-year-series-3 { color: var(--year-oldest); }
-.owner-chart-year-button.owner-chart-year-series-1 i { border-top-style: dashed; }
-.owner-chart-year-button.owner-chart-year-series-2 i { border-top-style: dotted; }
-.owner-chart-year-button.owner-chart-year-series-3 i { border-top-style: double; }
 .owner-year-periods { display: grid; gap: 28px; margin-top: 18px; }
 .owner-year-period { min-width: 0; }
 .owner-year-period + .owner-year-period { padding-top: 22px; border-top: 1px solid var(--line); }
@@ -270,6 +267,11 @@ a { color: inherit; text-decoration: none; }
 .owner-chart-year-point.owner-chart-year-series-2 { stroke: var(--year-older); }
 .owner-chart-year-point.owner-chart-year-series-3 { stroke: var(--year-oldest); }
 .owner-chart-hit-point { fill: transparent; stroke: transparent; pointer-events: all; }
+.owner-chart-year-bar { stroke-width: 1; vector-effect: non-scaling-stroke; }
+.owner-chart-year-bar.owner-chart-year-series-0 { fill: color-mix(in srgb, var(--year-current) 76%, transparent); stroke: var(--year-current); stroke-width: 1.5; }
+.owner-chart-year-bar.owner-chart-year-series-1 { fill: color-mix(in srgb, var(--year-previous) 70%, transparent); stroke: var(--year-previous); }
+.owner-chart-year-bar.owner-chart-year-series-2 { fill: color-mix(in srgb, var(--year-older) 68%, transparent); stroke: var(--year-older); }
+.owner-chart-year-bar.owner-chart-year-series-3 { fill: color-mix(in srgb, var(--year-oldest) 68%, transparent); stroke: var(--year-oldest); }
 .owner-overlay-chart .owner-chart-legend { margin-bottom: 7px; }
 .owner-chart-calendar-metric-legend { margin-top: 2px; }
 .owner-chart-legend .owner-chart-primary-bar { height: 8px; background: var(--muted); }
