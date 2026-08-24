@@ -4,6 +4,7 @@ const METER_KEY = "apu-main";
 const CURRENT_CYCLE_START = "2026-06-20";
 const CURRENT_CYCLE_END = "2026-08-19";
 const AC_FULL_TRACKING_START = "2026-07-25";
+const LIVE_NEST_MONTHLY_START = "2026-08";
 const HISTORY_START = "2024-01-01";
 const ELECTRICITY_CACHE_MS = 15 * 60 * 1000;
 
@@ -53,6 +54,13 @@ type UtilityBillRow = {
   solar_bank_kwh: number | null;
   electric_cost: number | null;
   cost_kind: "actual" | "modeled";
+  source: string;
+};
+
+type MonthlyNestRuntimeRow = {
+  month: string;
+  heating_runtime_hours: number;
+  cooling_runtime_hours: number;
   source: string;
 };
 
@@ -107,6 +115,15 @@ export type ElectricityAnalytics = {
     recentTrendPercent: number;
     trend: "spiking" | "easing" | "steady";
     trendLabel: string;
+    monthlyCooling: Array<{
+      month: string;
+      year: number;
+      monthIndex: number;
+      coolingHours: number;
+      estimatedKwh: number;
+      sourceKind: "nest-report" | "live-nest";
+      partial: boolean;
+    }>;
   };
   trends: {
     asOfDate: string;
@@ -376,11 +393,26 @@ async function loadBillHistory(ownerDb: OwnerDatabase | undefined) {
   }
 }
 
+async function loadNestMonthlyRuntimeHistory(ownerDb: OwnerDatabase | undefined) {
+  if (!ownerDb) return [] as MonthlyNestRuntimeRow[];
+  try {
+    const result = await ownerDb.prepare(
+      `SELECT month, heating_runtime_hours, cooling_runtime_hours, source
+       FROM nest_monthly_runtime_history
+       WHERE month >= '2024-01' AND month < ?
+       ORDER BY month`,
+    ).bind(LIVE_NEST_MONTHLY_START).all<MonthlyNestRuntimeRow>();
+    return result.results;
+  } catch {
+    return [] as MonthlyNestRuntimeRow[];
+  }
+}
+
 async function loadElectricityAnalytics(
   householdDb: OwnerDatabase,
   ownerDb: OwnerDatabase | undefined,
 ): Promise<ElectricityAnalytics | null> {
-  const [dailyResult, monthlyResult, coolingResult, storedBills] = await Promise.all([
+  const [dailyResult, monthlyResult, coolingResult, storedBills, storedNestMonths] = await Promise.all([
     householdDb.prepare(
       `SELECT local_date, total_kwh
        FROM electricity_daily_statistics
@@ -401,11 +433,12 @@ async function loadElectricityAnalytics(
     householdDb.prepare(
       `SELECT local_date, SUM(cooling_runtime_seconds) AS cooling_runtime_seconds
        FROM daily_statistics
-       WHERE local_date BETWEEN ? AND ?
+       WHERE local_date >= ?
        GROUP BY local_date
        ORDER BY local_date`,
-    ).bind(AC_FULL_TRACKING_START, CURRENT_CYCLE_END).all<DailyCoolingRow>(),
+    ).bind(AC_FULL_TRACKING_START).all<DailyCoolingRow>(),
     loadBillHistory(ownerDb),
+    loadNestMonthlyRuntimeHistory(ownerDb),
   ]);
 
   const currentRows = dailyResult.results.filter(
@@ -451,6 +484,36 @@ async function loadElectricityAnalytics(
   );
   const trackedRows = currentRows.filter((row) => row.local_date >= AC_FULL_TRACKING_START);
   const acModel = fitAcUsage(trackedRows, coolingByDate);
+  const liveCoolingByMonth = new Map<string, number>();
+  for (const row of coolingResult.results) {
+    const month = row.local_date.slice(0, 7);
+    if (month < LIVE_NEST_MONTHLY_START) continue;
+    liveCoolingByMonth.set(
+      month,
+      (liveCoolingByMonth.get(month) ?? 0) + row.cooling_runtime_seconds / 3600,
+    );
+  }
+  const latestCoolingMonth = coolingResult.results.at(-1)?.local_date.slice(0, 7) ?? null;
+  const monthlyCooling = acModel ? [
+    ...storedNestMonths.map((row) => ({
+      month: row.month,
+      year: Number(row.month.slice(0, 4)),
+      monthIndex: Number(row.month.slice(5, 7)) - 1,
+      coolingHours: round(row.cooling_runtime_hours, 1),
+      estimatedKwh: round(row.cooling_runtime_hours * acModel.kwhPerRuntimeHour),
+      sourceKind: "nest-report" as const,
+      partial: false,
+    })),
+    ...[...liveCoolingByMonth.entries()].map(([month, coolingHours]) => ({
+      month,
+      year: Number(month.slice(0, 4)),
+      monthIndex: Number(month.slice(5, 7)) - 1,
+      coolingHours: round(coolingHours, 1),
+      estimatedKwh: round(coolingHours * acModel.kwhPerRuntimeHour),
+      sourceKind: "live-nest" as const,
+      partial: month === latestCoolingMonth,
+    })),
+  ].sort((left, right) => left.month.localeCompare(right.month)) : [];
   const trackedCoolingHours = acModel?.totalCoolingHours ?? 0;
   const trackedUsageKwh = trackedRows.reduce((total, row) => total + row.total_kwh, 0);
   const midpoint = Math.max(1, Math.floor(trackedRows.length / 2));
@@ -650,6 +713,7 @@ async function loadElectricityAnalytics(
       recentTrendPercent: round(recentTrendPercent, 1),
       trend: acTrend,
       trendLabel: acTrend === "spiking" ? "Recent AC spike" : acTrend === "easing" ? "AC use is easing" : "AC use is steady",
+      monthlyCooling,
     } : null,
     trends: {
       asOfDate: latestMeterDate,
@@ -713,7 +777,7 @@ async function loadElectricityAnalytics(
         ? `Billing-period usage is a completed SmartStats meter total through ${asOfDate}.`
         : `Actual usage through ${asOfDate}, plus the most recent ${recentRows.length}-day average for the ${daysRemaining} remaining days.`,
       cost: "Anaheim Standard Domestic calculator logic: a 60-day bimonthly customer charge and lifeline allowance, basic and above-lifeline energy charges, underground surcharge, PCA, EMA, and California energy surcharge. Solar is never deducted.",
-      ac: `Nest runtime is complete beginning July 25, 2026, so this billing cycle uses a full-cycle extrapolation rather than displaying the tracked-period subtotal. Matched whole-home meter use is regressed against runtime to learn a ${round(acModel?.baselineDailyKwh ?? 0, 1)} kWh/day non-AC baseline and an AC share of tracked electricity. That share and its 95% model interval are applied to the ${storedCurrentBill ? "completed" : "projected"} ${round(cycleKwh)} kWh cycle, then priced at the Standard Domestic above-lifeline marginal rate. The next billing cycle will have complete APU and Nest coverage from day one.`,
+      ac: `Nest runtime is complete beginning July 25, 2026, so this billing cycle uses a full-cycle extrapolation rather than displaying the tracked-period subtotal. Matched whole-home meter use is regressed against runtime to learn a ${round(acModel?.baselineDailyKwh ?? 0, 1)} kWh/day non-AC baseline and ${round(acModel?.kwhPerRuntimeHour ?? 0, 2)} kWh per cooling-runtime hour. Historical monthly runtime comes from Nest email reports through July 2026; live Nest daily totals supply August 2026 onward. Historical AC kWh is estimated from runtime and is not a dedicated circuit measurement.`,
       solar: "Exported solar and bank balances come from the Utilities workbook through August 19, 2026. SmartStats supplies live delivered usage; received energy and bank totals are updated from each completed bill row.",
     },
   };

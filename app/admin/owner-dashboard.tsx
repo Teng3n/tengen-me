@@ -82,6 +82,15 @@ type ElectricityAnalytics = {
     recentTrendPercent: number;
     trend: "spiking" | "easing" | "steady";
     trendLabel: string;
+    monthlyCooling: Array<{
+      month: string;
+      year: number;
+      monthIndex: number;
+      coolingHours: number;
+      estimatedKwh: number;
+      sourceKind: "nest-report" | "live-nest";
+      partial: boolean;
+    }>;
   };
   trends: {
     asOfDate: string;
@@ -224,6 +233,7 @@ function ServiceCard({ label, service }: { label: string; service: Service }) {
 }
 
 const kwhFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+const runtimeFormatter = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 const moneyFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 function shortDate(value: string) {
@@ -443,6 +453,124 @@ function YearUsageBarChart({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+type CoolingRuntimePoint = NonNullable<ElectricityAnalytics["ac"]>["monthlyCooling"][number];
+
+function CoolingRuntimeChart({
+  points,
+  kwhPerRuntimeHour,
+}: {
+  points: CoolingRuntimePoint[];
+  kwhPerRuntimeHour: number;
+}) {
+  const years = [...new Set(points.map((point) => point.year))].sort((left, right) => right - left).slice(0, 3);
+  const [visibleYears, setVisibleYears] = useState(() => new Set(years));
+  const visiblePoints = points.filter((point) => visibleYears.has(point.year) && years.includes(point.year));
+  if (!points.length) return <p className="owner-chart-empty">No historical cooling runtime is available yet.</p>;
+  const currentYear = Math.max(...years);
+  const width = 960;
+  const height = 320;
+  const left = 72;
+  const right = 86;
+  const top = 24;
+  const bottom = 52;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const maxHours = Math.max(
+    50,
+    Math.ceil(Math.max(...visiblePoints.map((point) => point.coolingHours), 50) / 50) * 50,
+  );
+  const slotWidth = plotWidth / comparisonMonthLabels.length;
+  const groupWidth = Math.min(60, slotWidth * 0.82);
+  const barWidth = Math.min(24, groupWidth / Math.max(1, years.length - 0.35));
+  const barStep = years.length > 1 ? (groupWidth - barWidth) / (years.length - 1) : 0;
+  const x = (monthIndex: number, year: number) => {
+    const yearIndex = years.indexOf(year);
+    return left + slotWidth * monthIndex + slotWidth / 2 - groupWidth / 2 + barWidth / 2 + yearIndex * barStep;
+  };
+  const y = (hours: number) => top + plotHeight - (hours / maxHours) * plotHeight;
+  const annualTotals = years.map((year) => {
+    const yearPoints = points.filter((point) => point.year === year);
+    const coolingHours = yearPoints.reduce((total, point) => total + point.coolingHours, 0);
+    return {
+      year,
+      coolingHours,
+      estimatedKwh: yearPoints.reduce((total, point) => total + point.estimatedKwh, 0),
+      partial: yearPoints.some((point) => point.partial) || yearPoints.length < 12,
+    };
+  });
+  const toggleYear = (year: number) => {
+    setVisibleYears((current) => {
+      if (current.has(year) && current.size === 1) return current;
+      const next = new Set(current);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  };
+
+  return (
+    <div className="owner-usage-chart owner-cooling-runtime-chart">
+      <dl className="owner-cooling-year-summary">
+        {annualTotals.map((total) => (
+          <div key={total.year}>
+            <dt>{total.year}{total.partial ? " to date" : " total"}</dt>
+            <dd>{runtimeFormatter.format(total.coolingHours)} <span>cooling hr</span></dd>
+            <small>About {kwhFormatter.format(total.estimatedKwh)} estimated AC kWh</small>
+          </div>
+        ))}
+      </dl>
+      <div className="owner-chart-legend owner-chart-year-legend" aria-label="Toggle comparison years">
+        {years.map((year, index) => (
+          <button
+            key={year}
+            type="button"
+            className={`owner-chart-year-button owner-chart-year-series-${index}`}
+            aria-pressed={visibleYears.has(year)}
+            onClick={() => toggleYear(year)}
+          >
+            <i />
+            {comparisonYearLabel(year, currentYear)}
+          </button>
+        ))}
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Year-over-year monthly Nest cooling runtime bars with estimated AC electricity scale">
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+          const gridY = top + plotHeight * ratio;
+          const hours = maxHours * (1 - ratio);
+          return (
+            <g key={ratio}>
+              <line className="owner-chart-gridline" x1={left} x2={width - right} y1={gridY} y2={gridY} />
+              <text className="owner-chart-axis" x={left - 10} y={gridY + 4} textAnchor="end">{runtimeFormatter.format(hours)}</text>
+              <text className="owner-chart-axis" x={width - right + 10} y={gridY + 4} textAnchor="start">{kwhFormatter.format(hours * kwhPerRuntimeHour)}</text>
+            </g>
+          );
+        })}
+        <text className="owner-chart-axis-title" x={15} y={top + plotHeight / 2} transform={`rotate(-90 15 ${top + plotHeight / 2})`} textAnchor="middle">cooling runtime hours</text>
+        <text className="owner-chart-axis-title" x={width - 14} y={top + plotHeight / 2} transform={`rotate(90 ${width - 14} ${top + plotHeight / 2})`} textAnchor="middle">estimated AC kWh</text>
+        {[...visiblePoints].reverse().map((point) => {
+          const pointY = y(point.coolingHours);
+          const label = new Date(`${point.month}-01T12:00:00`).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+          return (
+            <rect
+              key={point.month}
+              className={`owner-chart-year-bar owner-chart-year-series-${years.indexOf(point.year)}${point.partial ? " owner-cooling-partial" : ""}`}
+              x={x(point.monthIndex, point.year) - barWidth / 2}
+              y={pointY}
+              width={barWidth}
+              height={Math.max(2, top + plotHeight - pointY)}
+            >
+              <title>{label}: {runtimeFormatter.format(point.coolingHours)} cooling hr · about {kwhFormatter.format(point.estimatedKwh)} estimated AC kWh{point.partial ? " (month to date)" : ""}</title>
+            </rect>
+          );
+        })}
+        {comparisonMonthLabels.map((label, monthIndex) => (
+          <text key={label} className="owner-chart-axis" x={left + slotWidth * monthIndex + slotWidth / 2} y={height - 14} textAnchor="middle">{label}</text>
+        ))}
+      </svg>
     </div>
   );
 }
@@ -1034,6 +1162,13 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
           <YearUsageBarChart series={monthlyYearSeries} kind="monthly" />
           <p className="owner-chart-footnote">The current month is month-to-date; completed prior-year months show full totals.</p>
         </article>
+        {analytics.ac?.monthlyCooling.length ? (
+          <article className="owner-energy-chart-block owner-energy-chart-wide">
+            <div className="owner-chart-heading"><h3>Cooling runtime + estimated AC energy</h3><span>Nest reports through July 2026 · live Nest from August 2026</span></div>
+            <CoolingRuntimeChart points={analytics.ac.monthlyCooling} kwhPerRuntimeHour={analytics.ac.kwhPerRuntimeHour} />
+            <p className="owner-chart-footnote"><strong>How to read it:</strong> bars use the left axis for Nest cooling-runtime hours. The right axis converts the same height into estimated AC electricity using the measured {analytics.ac.kwhPerRuntimeHour.toFixed(2)} kWh per runtime hour. Historical runtime is reported by Nest; AC kWh is modeled, not separately metered.</p>
+          </article>
+        ) : null}
         <article className="owner-energy-chart-block owner-energy-chart-wide">
           <div className="owner-chart-heading"><h3>Bill-to-bill usage + electric cost</h3><span>Six billing periods · 2024, 2025, and 2026 grouped beneath each</span></div>
           <BillingPeriodYearOverlayChart

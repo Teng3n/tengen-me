@@ -273,6 +273,7 @@ a { color: inherit; text-decoration: none; }
 .owner-chart-year-bar.owner-chart-year-series-2 { fill: color-mix(in srgb, var(--year-older) 68%, transparent); stroke: var(--year-older); }
 .owner-chart-year-bar.owner-chart-year-series-3 { fill: color-mix(in srgb, var(--year-oldest) 68%, transparent); stroke: var(--year-oldest); }
 .owner-chart-year-bar, .owner-calendar-bar, .owner-calendar-point { cursor: help; }
+.owner-chart-year-bar.owner-cooling-partial { fill-opacity: .5; stroke-width: 2; stroke-dasharray: 5 3; }
 .owner-billing-tabs { display: flex; gap: 7px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 3px; }
 .owner-billing-tabs button { flex: 1 0 auto; min-height: 34px; padding: 7px 12px; border: 1px solid var(--line-strong); background: var(--card); color: var(--dim); font-family: var(--font-geist-mono); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; cursor: pointer; }
 .owner-billing-tabs button[aria-selected="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); }
@@ -307,6 +308,14 @@ a { color: inherit; text-decoration: none; }
 .owner-calendar-point.owner-calendar-year-series-0 { fill: var(--calendar-series); }
 .owner-calendar-point.owner-calendar-estimated { stroke-dasharray: 2 2; }
 .owner-bank-movement-chart svg { min-width: 980px; }
+.owner-cooling-runtime-chart svg { min-width: 760px; }
+.owner-cooling-year-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 0 18px; border: 1px solid var(--line); }
+.owner-cooling-year-summary > div { min-width: 0; padding: 15px 16px; border-right: 1px solid var(--line); }
+.owner-cooling-year-summary > div:last-child { border-right: 0; }
+.owner-cooling-year-summary dt { color: var(--dim); font-family: var(--font-geist-mono); font-size: 8px; text-transform: uppercase; letter-spacing: .09em; }
+.owner-cooling-year-summary dd { margin: 9px 0 4px; color: var(--muted); font-size: 18px; font-weight: 700; letter-spacing: -.025em; }
+.owner-cooling-year-summary dd span { font-size: 10px; font-weight: 500; }
+.owner-cooling-year-summary small { color: var(--dim); font-size: 9px; }
 .owner-bank-movement-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0 0 18px; border: 1px solid var(--line); }
 .owner-bank-movement-summary > div { min-width: 0; padding: 15px 16px; border-right: 1px solid var(--line); }
 .owner-bank-movement-summary > div:last-child { border-right: 0; }
@@ -494,6 +503,9 @@ a { color: inherit; text-decoration: none; }
   .owner-chart-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
   .owner-chart-heading span { text-align: left; }
   .owner-chart-legend { justify-content: flex-start; flex-wrap: wrap; }
+  .owner-cooling-year-summary { grid-template-columns: 1fr; }
+  .owner-cooling-year-summary > div { border-right: 0; border-bottom: 1px solid var(--line); }
+  .owner-cooling-year-summary > div:last-child { border-bottom: 0; }
   .owner-bank-movement-summary { grid-template-columns: 1fr 1fr; }
   .owner-bank-movement-summary > div:nth-child(even) { border-right: 0; }
   .owner-cycle-chart { gap: 5px; }
