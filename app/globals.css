@@ -292,21 +292,7 @@ a { color: inherit; text-decoration: none; }
 .owner-chart-legend .owner-chart-secondary-line { height: 0; background: transparent; border-top: 3px solid var(--ink); }
 .owner-chart-legend .owner-chart-estimated { height: 8px; border: 2px dashed var(--dim); background: transparent; }
 .owner-chart-legend .owner-chart-missing { width: 9px; height: 9px; border: 2px solid var(--dim); border-radius: 50%; background: var(--card); }
-.owner-billing-history-chart svg { min-width: 980px; }
-.owner-billing-history-chart .owner-chart-primary-bar { background: var(--year-previous); }
-.owner-billing-history-chart .owner-chart-secondary-line { border-color: var(--year-current); }
-.owner-history-bar { fill: color-mix(in srgb, var(--year-previous) 72%, transparent); stroke: var(--year-previous); stroke-width: 1.4; vector-effect: non-scaling-stroke; cursor: help; }
-.owner-history-line { stroke: var(--year-current); stroke-width: 3; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.owner-history-point { fill: var(--card); stroke: var(--year-current); stroke-width: 2.5; vector-effect: non-scaling-stroke; cursor: help; }
-.owner-history-estimated { stroke-dasharray: 5 4; opacity: .82; }
-.owner-history-bar.owner-history-estimated { fill: color-mix(in srgb, var(--year-previous) 34%, transparent); stroke-width: 2; }
 .owner-history-missing { fill: var(--card); stroke: var(--dim); stroke-width: 2; vector-effect: non-scaling-stroke; cursor: help; }
-.owner-history-axis-label { font-size: 13px; }
-.owner-billing-history-solar .owner-chart-primary-bar { background: var(--year-older); }
-.owner-billing-history-solar .owner-chart-secondary-line { border-color: var(--year-oldest); }
-.owner-billing-history-solar .owner-history-bar { fill: color-mix(in srgb, var(--year-older) 72%, transparent); stroke: var(--year-older); }
-.owner-billing-history-solar .owner-history-line { stroke: var(--year-oldest); }
-.owner-billing-history-solar .owner-history-point { stroke: var(--year-oldest); }
 .owner-calendar-year-series-0 { --calendar-series: var(--year-current); }
 .owner-calendar-year-series-1 { --calendar-series: var(--year-previous); }
 .owner-calendar-year-series-2 { --calendar-series: var(--year-older); }

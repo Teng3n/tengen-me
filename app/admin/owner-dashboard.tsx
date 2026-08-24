@@ -584,7 +584,8 @@ function BillingCycleTabsChart({
 }
 
 type BillingHistoryPoint = {
-  periodEnd: string;
+  year: number;
+  periodIndex: number;
   label: string;
   primaryValue: number | null;
   secondaryValue: number | null;
@@ -592,7 +593,9 @@ type BillingHistoryPoint = {
   secondaryEstimated?: boolean;
 };
 
-function BillingHistoryOverlayChart({
+const billingPeriodLabels = ["Feb bill", "Apr bill", "Jun bill", "Aug bill", "Oct bill", "Dec bill"];
+
+function BillingPeriodYearOverlayChart({
   points,
   primaryLegend,
   secondaryLegend,
@@ -615,30 +618,60 @@ function BillingHistoryOverlayChart({
   estimateLegend?: string;
   description: string;
 }) {
-  const history = points.filter((point) => point.periodEnd >= "2024-01-01").sort((a, b) => a.periodEnd.localeCompare(b.periodEnd));
-  if (!history.length) return <p className="owner-chart-empty">No billing history is available yet.</p>;
-  const width = 1200;
-  const height = 370;
+  const years = [...new Set(points.map((point) => point.year))].filter((year) => year >= 2024).sort((a, b) => b - a).slice(0, 3);
+  const [visibleYears, setVisibleYears] = useState(() => new Set(years));
+  const visiblePoints = points.filter((point) => visibleYears.has(point.year) && years.includes(point.year));
+  if (!points.length) return <p className="owner-chart-empty">No billing history is available yet.</p>;
+  const width = 960;
+  const height = 340;
   const left = 86;
   const right = 96;
   const top = 24;
-  const bottom = 88;
+  const bottom = 54;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const primaryValues = history.flatMap((point) => point.primaryValue === null ? [] : [point.primaryValue]);
-  const secondaryValues = history.flatMap((point) => point.secondaryValue === null ? [] : [point.secondaryValue]);
+  const primaryValues = visiblePoints.flatMap((point) => point.primaryValue === null ? [] : [point.primaryValue]);
+  const secondaryValues = visiblePoints.flatMap((point) => point.secondaryValue === null ? [] : [point.secondaryValue]);
   const maxPrimary = Math.max(primaryStep, Math.ceil(Math.max(...primaryValues, primaryStep) / primaryStep) * primaryStep);
   const maxSecondary = Math.max(secondaryStep, Math.ceil(Math.max(...secondaryValues, secondaryStep) / secondaryStep) * secondaryStep);
-  const slotWidth = plotWidth / history.length;
-  const barWidth = Math.min(34, slotWidth * 0.5);
-  const x = (index: number) => left + slotWidth * index + slotWidth / 2;
+  const slotWidth = plotWidth / billingPeriodLabels.length;
+  const groupWidth = Math.min(92, slotWidth * 0.76);
+  const barWidth = Math.min(30, groupWidth / Math.max(1, years.length - 0.35));
+  const barStep = years.length > 1 ? (groupWidth - barWidth) / (years.length - 1) : 0;
+  const x = (periodIndex: number, year: number) => {
+    const yearIndex = years.indexOf(year);
+    return left + slotWidth * periodIndex + slotWidth / 2 - groupWidth / 2 + barWidth / 2 + yearIndex * barStep;
+  };
   const primaryY = (value: number) => top + plotHeight - (value / maxPrimary) * plotHeight;
   const secondaryY = (value: number) => top + plotHeight - (value / maxSecondary) * plotHeight;
   const formatSecondary = (value: number) => secondaryKind === "money" ? moneyFormatter.format(value) : `${kwhFormatter.format(value)} kWh`;
-  const hasMissing = history.some((point) => point.primaryValue === null || point.secondaryValue === null);
+  const hasMissing = visiblePoints.some((point) => point.primaryValue === null || point.secondaryValue === null);
+  const toggleYear = (year: number) => {
+    setVisibleYears((current) => {
+      if (current.has(year) && current.size === 1) return current;
+      const next = new Set(current);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  };
 
   return (
-    <div className={`owner-usage-chart owner-overlay-chart owner-billing-history-chart${secondaryKind === "kwh" ? " owner-billing-history-solar" : ""}`}>
+    <div className="owner-usage-chart owner-overlay-chart owner-calendar-overlay-chart">
+      <div className="owner-chart-legend owner-chart-year-legend" aria-label="Toggle comparison years">
+        {years.map((year, index) => (
+          <button
+            key={year}
+            type="button"
+            className={`owner-chart-year-button owner-chart-year-series-${index}`}
+            aria-pressed={visibleYears.has(year)}
+            onClick={() => toggleYear(year)}
+          >
+            <i />
+            {comparisonYearLabel(year, years[0])}
+          </button>
+        ))}
+      </div>
       <div className="owner-chart-legend owner-chart-calendar-metric-legend" aria-hidden="true">
         <span><i className="owner-chart-primary-bar" />{primaryLegend}</span>
         <span><i className="owner-chart-secondary-line" />{secondaryLegend}</span>
@@ -658,11 +691,11 @@ function BillingHistoryOverlayChart({
         })}
         <text className="owner-chart-axis-title" x={15} y={top + plotHeight / 2} transform={`rotate(-90 15 ${top + plotHeight / 2})`} textAnchor="middle">{primaryAxis}</text>
         <text className="owner-chart-axis-title" x={width - 14} y={top + plotHeight / 2} transform={`rotate(90 ${width - 14} ${top + plotHeight / 2})`} textAnchor="middle">{secondaryAxis}</text>
-        {history.map((point, index) => point.primaryValue === null ? null : (
+        {visiblePoints.map((point) => point.primaryValue === null ? null : (
           <rect
-            key={`${point.periodEnd}-bar`}
-            className={`owner-history-bar${point.primaryEstimated ? " owner-history-estimated" : ""}`}
-            x={x(index) - barWidth / 2}
+            key={`${point.year}-${point.periodIndex}-bar`}
+            className={`owner-calendar-bar owner-calendar-year-series-${years.indexOf(point.year)}${point.primaryEstimated ? " owner-calendar-estimated" : ""}`}
+            x={x(point.periodIndex, point.year) - barWidth / 2}
             y={primaryY(point.primaryValue)}
             width={barWidth}
             height={Math.max(2, top + plotHeight - primaryY(point.primaryValue))}
@@ -670,38 +703,26 @@ function BillingHistoryOverlayChart({
             <title>{point.label}: {kwhFormatter.format(point.primaryValue)} kWh{point.primaryEstimated ? " (forecast)" : " (measured)"}{point.secondaryValue === null ? "; secondary value not imported" : `; ${formatSecondary(point.secondaryValue)}${point.secondaryEstimated ? " (modeled / forecast)" : " (actual)"}`}</title>
           </rect>
         ))}
-        {history.slice(1).map((point, index) => {
-          const previous = history[index];
-          if (previous.secondaryValue === null || point.secondaryValue === null) return null;
-          return (
-            <line
-              key={`${previous.periodEnd}-${point.periodEnd}-line`}
-              className={`owner-history-line${previous.secondaryEstimated || point.secondaryEstimated ? " owner-history-estimated" : ""}`}
-              x1={x(index)}
-              y1={secondaryY(previous.secondaryValue)}
-              x2={x(index + 1)}
-              y2={secondaryY(point.secondaryValue)}
-            />
-          );
+        {years.filter((year) => visibleYears.has(year)).map((year) => {
+          const yearPoints = visiblePoints
+            .filter((point) => point.year === year && point.secondaryValue !== null)
+            .sort((a, b) => a.periodIndex - b.periodIndex);
+          const path = yearPoints.map((point, pointIndex) => `${pointIndex ? "L" : "M"}${x(point.periodIndex, point.year).toFixed(1)},${secondaryY(point.secondaryValue!).toFixed(1)}`).join(" ");
+          return <path key={`${year}-line`} className={`owner-chart-line owner-calendar-line owner-calendar-year-series-${years.indexOf(year)}`} d={path} />;
         })}
-        {history.map((point, index) => point.secondaryValue === null ? null : (
-            <circle key={`${point.periodEnd}-point`} className={`owner-history-point${point.secondaryEstimated ? " owner-history-estimated" : ""}`} cx={x(index)} cy={secondaryY(point.secondaryValue)} r="6">
+        {visiblePoints.map((point) => point.secondaryValue === null ? null : (
+            <circle key={`${point.year}-${point.periodIndex}-point`} className={`owner-calendar-point owner-calendar-year-series-${years.indexOf(point.year)}${point.secondaryEstimated ? " owner-calendar-estimated" : ""}`} cx={x(point.periodIndex, point.year)} cy={secondaryY(point.secondaryValue)} r="6">
               <title>{point.label}: {formatSecondary(point.secondaryValue)}{point.secondaryEstimated ? " (modeled / forecast)" : " (actual)"}</title>
             </circle>
         ))}
-        {history.map((point, index) => point.primaryValue !== null && point.secondaryValue !== null ? null : (
-          <circle key={`${point.periodEnd}-missing`} className="owner-history-missing" cx={x(index)} cy={top + plotHeight + 12} r="5">
+        {visiblePoints.map((point) => point.primaryValue !== null && point.secondaryValue !== null ? null : (
+          <circle key={`${point.year}-${point.periodIndex}-missing`} className="owner-history-missing" cx={x(point.periodIndex, point.year)} cy={top + plotHeight + 10} r="5">
             <title>{point.label}: {point.primaryValue === null && point.secondaryValue === null ? "solar export and bank balance not imported" : point.primaryValue === null ? `${primaryLegend} not imported` : `${secondaryLegend} not imported`}</title>
           </circle>
         ))}
-        {history.map((point, index) => {
-          const date = new Date(`${point.periodEnd}T12:00:00`);
-          return (
-            <text key={`${point.periodEnd}-label`} className="owner-chart-axis owner-history-axis-label" x={x(index)} y={height - 54} textAnchor="end" transform={`rotate(-42 ${x(index)} ${height - 54})`}>
-              {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ’{String(date.getFullYear()).slice(-2)}
-            </text>
-          );
-        })}
+        {billingPeriodLabels.map((label, periodIndex) => (
+          <text key={label} className="owner-chart-axis" x={left + slotWidth * periodIndex + slotWidth / 2} y={height - 14} textAnchor="middle">{label}</text>
+        ))}
       </svg>
     </div>
   );
@@ -746,7 +767,8 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
     })),
   }));
   const billingHistoryPoints: BillingHistoryPoint[] = analytics.billingHistory.map((bill, index, bills) => ({
-    periodEnd: bill.periodEnd,
+    year: Number(bill.periodEnd.slice(0, 4)),
+    periodIndex: (Number(bill.periodEnd.slice(5, 7)) - 2) / 2,
     label: bill.label,
     primaryValue: bill.usageKwh,
     secondaryValue: index === bills.length - 1 && bill.costKind !== "actual" ? null : bill.electricCost,
@@ -754,7 +776,8 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
     secondaryEstimated: bill.costKind !== "actual",
   }));
   const solarHistoryPoints: BillingHistoryPoint[] = analytics.billingHistory.map((bill) => ({
-    periodEnd: bill.periodEnd,
+    year: Number(bill.periodEnd.slice(0, 4)),
+    periodIndex: (Number(bill.periodEnd.slice(5, 7)) - 2) / 2,
     label: bill.label,
     primaryValue: bill.exportedSolarKwh,
     secondaryValue: bill.solarBankKwh,
@@ -855,8 +878,8 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
           <p className="owner-chart-footnote">The current month is month-to-date; completed prior-year months show full totals.</p>
         </article>
         <article className="owner-energy-chart-block owner-energy-chart-wide">
-          <div className="owner-chart-heading"><h3>Bill-to-bill usage + electric cost</h3><span>Every completed billing cycle · chronological since 2024</span></div>
-          <BillingHistoryOverlayChart
+          <div className="owner-chart-heading"><h3>Bill-to-bill usage + electric cost</h3><span>Six billing periods · 2024, 2025, and 2026 grouped beneath each</span></div>
+          <BillingPeriodYearOverlayChart
             points={billingHistoryPoints}
             primaryLegend="Delivered usage"
             secondaryLegend="Gross electric cost"
@@ -866,9 +889,9 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
             secondaryStep={100}
             secondaryKind="money"
             estimateLegend="Modeled cost / forecast"
-            description="Chronological billing-cycle history with delivered electricity bars and gross electric cost line"
+            description="Year-over-year billing-period comparison with delivered electricity bars and gross electric cost lines"
           />
-          <p className="owner-chart-footnote"><strong>How to read it:</strong> each x-axis date is the bill end date. Bars use the left axis for delivered kWh; the line uses the right axis for gross electric cost. June 19 and August 20 usage are completed SmartStats totals. The August cost is intentionally left unplotted until the received bill amount is imported, rather than showing a model as though it were final. August usage is {percentChange(analytics.cycle.projectedVsPreviousSummerPercent)} versus August 2025.</p>
+          <p className="owner-chart-footnote"><strong>How to read it:</strong> each billing-period slot groups the 2026, 2025, and 2024 usage bars beneath it. Bars use the left axis for delivered kWh; matching year-colored lines use the right axis for gross electric cost. The August 2026 cost remains unplotted until the received bill amount is imported. August usage is {percentChange(analytics.cycle.projectedVsPreviousSummerPercent)} versus August 2025.</p>
         </article>
         <article className="owner-energy-chart-block owner-energy-breakdown">
           <div className="owner-chart-heading"><h3>Standard Domestic model</h3><span>Projected 60-day bill · before solar</span></div>
@@ -892,8 +915,8 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
           <p className="owner-chart-footnote">SmartStats delivered usage is live. Exported energy and bank balance are historical through the latest workbook row, so this value is deliberately marked as last-known—not current.</p>
         </article>
         <article className="owner-energy-chart-block owner-energy-chart-wide">
-          <div className="owner-chart-heading"><h3>Solar export + bank history</h3><span>Every billing cycle · chronological since 2024</span></div>
-          <BillingHistoryOverlayChart
+          <div className="owner-chart-heading"><h3>Solar export + bank history</h3><span>Six billing periods · 2024, 2025, and 2026 grouped beneath each</span></div>
+          <BillingPeriodYearOverlayChart
             points={solarHistoryPoints}
             primaryLegend="Exported solar"
             secondaryLegend="Bank balance"
@@ -902,9 +925,9 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
             primaryStep={500}
             secondaryStep={1000}
             secondaryKind="kwh"
-            description="Chronological billing-cycle history with exported solar bars and solar bank balance line"
+            description="Year-over-year billing-period comparison with exported solar bars and solar bank balance lines"
           />
-          <p className="owner-chart-footnote"><strong>How to read it:</strong> each x-axis date is the bill end date. Bars use the left axis for exported kWh during each bill; the line uses the right axis for the cumulative bank balance at that bill. The June 19, 2026 slot is now present; its missing marker means the bill exists but its export and bank figures have not yet been imported. Export is excess energy Anaheim received from the property, not total panel production.</p>
+          <p className="owner-chart-footnote"><strong>How to read it:</strong> each billing-period slot groups the 2026, 2025, and 2024 export bars beneath it. Bars use the left axis for exported kWh; matching year-colored lines use the right axis for the cumulative bank balance. A hollow marker means that year&apos;s bill exists but its solar values have not been imported. Export is excess energy Anaheim received from the property, not total panel production.</p>
         </article>
       </div>
 
