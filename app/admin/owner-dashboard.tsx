@@ -342,7 +342,7 @@ function YearUsageLineChart({
           <button
             key={item.year}
             type="button"
-            className="owner-chart-year-button"
+            className={`owner-chart-year-button owner-chart-year-series-${Math.min(index, 3)}`}
             aria-pressed={visibleYears.has(item.year)}
             onClick={() => toggleYear(item.year)}
           >
