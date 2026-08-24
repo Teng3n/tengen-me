@@ -728,6 +728,113 @@ function BillingPeriodYearOverlayChart({
   );
 }
 
+type SolarBankMovementPoint = {
+  periodEnd: string;
+  label: string;
+  usageKwh: number;
+  exportedKwh: number | null;
+  bankKwh: number | null;
+  netKwh: number | null;
+};
+
+function SolarBankMovementChart({ points }: { points: SolarBankMovementPoint[] }) {
+  const history = points.filter((point) => point.periodEnd >= "2024-01-01").sort((a, b) => a.periodEnd.localeCompare(b.periodEnd));
+  const recorded = history.filter((point) => point.netKwh !== null && point.bankKwh !== null);
+  if (!history.length || !recorded.length) return <p className="owner-chart-empty">No solar bank movement history is available yet.</p>;
+  const positive = recorded.filter((point) => point.netKwh! > 0);
+  const negative = recorded.filter((point) => point.netKwh! < 0);
+  const netMovement = recorded.reduce((sum, point) => sum + point.netKwh!, 0);
+  const totalUsage = recorded.reduce((sum, point) => sum + point.usageKwh, 0);
+  const latestRecorded = recorded.at(-1)!;
+  const width = 1200;
+  const height = 390;
+  const left = 88;
+  const right = 98;
+  const top = 28;
+  const bottom = 92;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const maxNet = Math.max(500, Math.ceil(Math.max(...recorded.map((point) => Math.abs(point.netKwh!)), 500) / 500) * 500);
+  const maxBank = Math.max(1000, Math.ceil(Math.max(...recorded.map((point) => point.bankKwh!), 1000) / 1000) * 1000);
+  const slotWidth = plotWidth / history.length;
+  const barWidth = Math.min(38, slotWidth * 0.56);
+  const zeroY = top + plotHeight / 2;
+  const x = (index: number) => left + slotWidth * index + slotWidth / 2;
+  const netY = (value: number) => top + ((maxNet - value) / (maxNet * 2)) * plotHeight;
+  const bankY = (value: number) => top + plotHeight - (value / maxBank) * plotHeight;
+  const signedKwh = (value: number) => `${value > 0 ? "+" : ""}${kwhFormatter.format(value)} kWh`;
+
+  return (
+    <div className="owner-usage-chart owner-bank-movement-chart">
+      <dl className="owner-bank-movement-summary">
+        <div className="owner-bank-summary-positive"><dt>Added to bank</dt><dd>{positive.length} bills</dd><small>About {positive.length * 2} months</small></div>
+        <div className="owner-bank-summary-negative"><dt>Drew from bank</dt><dd>{negative.length} bills</dd><small>About {negative.length * 2} months</small></div>
+        <div><dt>Net movement</dt><dd className={netMovement >= 0 ? "owner-bank-positive-text" : "owner-bank-negative-text"}>{signedKwh(netMovement)}</dd><small>Across recorded cycles</small></div>
+        <div><dt>Recorded usage</dt><dd>{kwhFormatter.format(totalUsage)} kWh</dd><small>{recorded.length} complete bills</small></div>
+        <div><dt>Closing bank</dt><dd>{kwhFormatter.format(latestRecorded.bankKwh!)} kWh</dd><small>Through {shortDate(latestRecorded.periodEnd)}</small></div>
+      </dl>
+      <div className="owner-chart-legend owner-bank-movement-legend" aria-hidden="true">
+        <span><i className="owner-bank-added" />Added to bank</span>
+        <span><i className="owner-bank-drawn" />Drew from bank</span>
+        <span><i className="owner-bank-balance-line" />Closing bank</span>
+        <span><i className="owner-chart-missing" />Not imported</span>
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Chronological solar bank movement by billing cycle with net impact bars and closing bank balance line">
+        {[maxNet, maxNet / 2, 0, -maxNet / 2, -maxNet].map((value) => {
+          const y = netY(value);
+          return (
+            <g key={value}>
+              <line className={value === 0 ? "owner-bank-zero-line" : "owner-chart-gridline"} x1={left} x2={width - right} y1={y} y2={y} />
+              <text className="owner-chart-axis" x={left - 10} y={y + 4} textAnchor="end">{value > 0 ? "+" : ""}{kwhFormatter.format(value)}</text>
+            </g>
+          );
+        })}
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
+          <text key={ratio} className="owner-chart-axis" x={width - right + 10} y={top + plotHeight * ratio + 4} textAnchor="start">{kwhFormatter.format(maxBank * (1 - ratio))}</text>
+        ))}
+        <text className="owner-chart-axis-title" x={15} y={top + plotHeight / 2} transform={`rotate(-90 15 ${top + plotHeight / 2})`} textAnchor="middle">net bank change kWh</text>
+        <text className="owner-chart-axis-title" x={width - 14} y={top + plotHeight / 2} transform={`rotate(90 ${width - 14} ${top + plotHeight / 2})`} textAnchor="middle">closing bank kWh</text>
+        {history.map((point, index) => point.netKwh === null ? null : (
+          <rect
+            key={`${point.periodEnd}-net`}
+            className={point.netKwh >= 0 ? "owner-bank-net-positive" : "owner-bank-net-negative"}
+            x={x(index) - barWidth / 2}
+            y={point.netKwh >= 0 ? netY(point.netKwh) : zeroY}
+            width={barWidth}
+            height={Math.max(2, Math.abs(netY(point.netKwh) - zeroY))}
+          >
+            <title>{point.label}: used {kwhFormatter.format(point.usageKwh)} kWh; exported {kwhFormatter.format(point.exportedKwh!)} kWh; {signedKwh(point.netKwh)} {point.netKwh >= 0 ? "added to" : "drawn from"} bank; closing bank {kwhFormatter.format(point.bankKwh!)} kWh</title>
+          </rect>
+        ))}
+        {history.slice(1).map((point, index) => {
+          const previous = history[index];
+          if (previous.bankKwh === null || point.bankKwh === null) return null;
+          return <line key={`${previous.periodEnd}-${point.periodEnd}-bank`} className="owner-bank-balance-segment" x1={x(index)} y1={bankY(previous.bankKwh)} x2={x(index + 1)} y2={bankY(point.bankKwh)} />;
+        })}
+        {history.map((point, index) => point.bankKwh === null ? null : (
+          <circle key={`${point.periodEnd}-bank`} className="owner-bank-balance-point" cx={x(index)} cy={bankY(point.bankKwh)} r="6">
+            <title>{point.label}: closing bank {kwhFormatter.format(point.bankKwh)} kWh</title>
+          </circle>
+        ))}
+        {history.map((point, index) => point.netKwh !== null && point.bankKwh !== null ? null : (
+          <circle key={`${point.periodEnd}-missing`} className="owner-history-missing" cx={x(index)} cy={zeroY} r="5">
+            <title>{point.label}: solar export and bank balance not imported</title>
+          </circle>
+        ))}
+        {history.map((point, index) => {
+          const date = new Date(`${point.periodEnd}T12:00:00`);
+          return (
+            <text key={`${point.periodEnd}-label`} className="owner-chart-axis owner-bank-axis-label" x={x(index)} y={height - 56} textAnchor="end" transform={`rotate(-42 ${x(index)} ${height - 56})`}>
+              {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ’{String(date.getFullYear()).slice(-2)}
+            </text>
+          );
+        })}
+      </svg>
+      <p className="owner-chart-footnote">Each bar is exported solar minus delivered electricity for that bill. Green added energy to the bank; red used more electricity than was exported and drew the difference from the bank. Hover any bar for usage, export, net movement, and closing balance.</p>
+    </div>
+  );
+}
+
 function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
   const availableDailyYears = analytics.yearlyDaily.map((item) => item.year).filter((year) => year >= 2024).sort((a, b) => b - a);
   const allDailyRows = analytics.yearlyDaily.flatMap((item) => item.days);
@@ -781,6 +888,14 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
     label: bill.label,
     primaryValue: bill.exportedSolarKwh,
     secondaryValue: bill.solarBankKwh,
+  }));
+  const solarBankMovementPoints: SolarBankMovementPoint[] = analytics.billingHistory.map((bill) => ({
+    periodEnd: bill.periodEnd,
+    label: bill.label,
+    usageKwh: bill.usageKwh,
+    exportedKwh: bill.exportedSolarKwh,
+    bankKwh: bill.solarBankKwh,
+    netKwh: bill.exportedSolarKwh === null ? null : bill.exportedSolarKwh - bill.usageKwh,
   }));
   const projectedTotal = analytics.cost.lifelineKwh + analytics.cost.aboveLifelineKwh;
   const lifelinePercent = projectedTotal > 0 ? analytics.cost.lifelineKwh / projectedTotal * 100 : 0;
@@ -928,6 +1043,10 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
             description="Year-over-year billing-period comparison with exported solar bars and solar bank balance lines"
           />
           <p className="owner-chart-footnote"><strong>How to read it:</strong> each billing-period slot groups the 2026, 2025, and 2024 export bars beneath it. Bars use the left axis for exported kWh; matching year-colored lines use the right axis for the cumulative bank balance. A hollow marker means that year&apos;s bill exists but its solar values have not been imported. Export is excess energy Anaheim received from the property, not total panel production.</p>
+        </article>
+        <article className="owner-energy-chart-block owner-energy-chart-wide">
+          <div className="owner-chart-heading"><h3>Solar bank movement by billing cycle</h3><span>Net export minus usage · chronological since 2024</span></div>
+          <SolarBankMovementChart points={solarBankMovementPoints} />
         </article>
       </div>
 
