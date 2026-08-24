@@ -271,20 +271,23 @@ a { color: inherit; text-decoration: none; }
 .owner-chart-year-point.owner-chart-year-series-3 { stroke: var(--year-oldest); }
 .owner-chart-hit-point { fill: transparent; stroke: transparent; pointer-events: all; }
 .owner-overlay-chart .owner-chart-legend { margin-bottom: 7px; }
-.owner-chart-legend .owner-chart-usage-bar, .owner-chart-legend .owner-chart-solar-bar { height: 8px; background: var(--year-previous); }
-.owner-chart-legend .owner-chart-cost-line { background: var(--year-current); }
-.owner-chart-legend .owner-chart-bank-line { height: 0; background: transparent; border-top: 3px dashed var(--year-oldest); }
-.owner-chart-legend .owner-chart-solar-bar { background: var(--year-older); }
-.owner-chart-legend .owner-chart-estimated { height: 8px; border: 2px dashed var(--year-previous); background: transparent; }
-.owner-overlay-bar { fill: color-mix(in srgb, var(--year-previous) 76%, transparent); stroke: var(--year-previous); }
-.owner-overlay-bar.owner-overlay-modeled { fill: color-mix(in srgb, var(--year-previous) 42%, transparent); stroke: var(--year-previous); stroke-dasharray: 3 3; }
-.owner-overlay-bar.owner-overlay-partial, .owner-overlay-bar.owner-overlay-forecast { fill: color-mix(in srgb, var(--year-previous) 36%, transparent); stroke: var(--year-previous); stroke-width: 2; stroke-dasharray: 5 3; }
-.owner-chart-line-cost { stroke: var(--year-current); stroke-width: 3; }
-.owner-chart-cost-point { fill: var(--card); stroke: var(--year-current); stroke-width: 2; vector-effect: non-scaling-stroke; }
-.owner-chart-cost-point.owner-overlay-modeled, .owner-chart-cost-point.owner-overlay-partial, .owner-chart-cost-point.owner-overlay-forecast { fill: var(--year-current); }
-.owner-solar-export-bar { fill: color-mix(in srgb, var(--year-older) 72%, transparent); stroke: var(--year-older); }
-.owner-chart-line-bank { stroke: var(--year-oldest); stroke-width: 3; stroke-dasharray: 9 5; }
-.owner-chart-bank-point { fill: var(--card); stroke: var(--year-oldest); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.owner-chart-calendar-metric-legend { margin-top: 2px; }
+.owner-chart-legend .owner-chart-primary-bar { height: 8px; background: var(--muted); }
+.owner-chart-legend .owner-chart-secondary-line { height: 0; background: transparent; border-top: 3px solid var(--ink); }
+.owner-chart-legend .owner-chart-estimated { height: 8px; border: 2px dashed var(--dim); background: transparent; }
+.owner-calendar-year-series-0 { --calendar-series: var(--year-current); }
+.owner-calendar-year-series-1 { --calendar-series: var(--year-previous); }
+.owner-calendar-year-series-2 { --calendar-series: var(--year-older); }
+.owner-calendar-year-series-3 { --calendar-series: var(--year-oldest); }
+.owner-calendar-bar { fill: color-mix(in srgb, var(--calendar-series) 72%, transparent); stroke: var(--calendar-series); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.owner-calendar-bar.owner-calendar-estimated { fill: color-mix(in srgb, var(--calendar-series) 34%, transparent); stroke-width: 2; stroke-dasharray: 5 3; }
+.owner-calendar-line { stroke: var(--calendar-series); stroke-width: 3; }
+.owner-calendar-line.owner-calendar-year-series-1 { stroke-dasharray: 10 5; }
+.owner-calendar-line.owner-calendar-year-series-2 { stroke-dasharray: 2 5; }
+.owner-calendar-line.owner-calendar-year-series-3 { stroke-dasharray: 10 4 2 4; }
+.owner-calendar-point { fill: var(--card); stroke: var(--calendar-series); stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.owner-calendar-point.owner-calendar-year-series-0 { fill: var(--calendar-series); }
+.owner-calendar-point.owner-calendar-estimated { stroke-dasharray: 2 2; }
 .owner-chart-empty { margin: 40px 0; color: var(--dim); font-size: 12px; }
 .owner-cycle-chart { min-height: 245px; display: flex; align-items: stretch; gap: 10px; padding-top: 8px; }
 .owner-cycle-column { min-width: 0; flex: 1; display: grid; grid-template-rows: auto 1fr auto; gap: 8px; text-align: center; }

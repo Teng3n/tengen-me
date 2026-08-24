@@ -418,37 +418,90 @@ function YearUsageLineChart({
   );
 }
 
-type UsageCostPoint = {
+type CalendarComparisonPoint = {
+  year: number;
+  monthIndex: number;
   label: string;
-  usageKwh: number;
-  cost: number;
-  kind: "actual" | "modeled" | "forecast" | "partial";
+  primaryValue: number;
+  secondaryValue: number;
+  estimated?: boolean;
 };
 
-function UsageCostOverlayChart({ points, description }: { points: UsageCostPoint[]; description: string }) {
+function CalendarYearOverlayChart({
+  points,
+  primaryLegend,
+  secondaryLegend,
+  primaryAxis,
+  secondaryAxis,
+  primaryStep,
+  secondaryStep,
+  secondaryKind,
+  description,
+}: {
+  points: CalendarComparisonPoint[];
+  primaryLegend: string;
+  secondaryLegend: string;
+  primaryAxis: string;
+  secondaryAxis: string;
+  primaryStep: number;
+  secondaryStep: number;
+  secondaryKind: "money" | "kwh";
+  description: string;
+}) {
+  const years = [...new Set(points.map((point) => point.year))].sort((a, b) => b - a).slice(0, 4);
+  const [visibleYears, setVisibleYears] = useState(() => new Set(years));
+  const visiblePoints = points.filter((point) => visibleYears.has(point.year) && years.includes(point.year));
+  if (!points.length) return <p className="owner-chart-empty">No comparison history is available yet.</p>;
   const width = 960;
-  const height = 310;
+  const height = 320;
   const left = 62;
   const right = 62;
   const top = 24;
   const bottom = 48;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const maxUsage = Math.max(100, Math.ceil(Math.max(...points.map((point) => point.usageKwh)) / 500) * 500);
-  const maxCost = Math.max(50, Math.ceil(Math.max(...points.map((point) => point.cost)) / 100) * 100);
-  const slotWidth = plotWidth / Math.max(1, points.length);
-  const barWidth = Math.min(40, slotWidth * 0.58);
-  const x = (index: number) => left + slotWidth * index + slotWidth / 2;
-  const usageY = (value: number) => top + plotHeight - (value / maxUsage) * plotHeight;
-  const costY = (value: number) => top + plotHeight - (value / maxCost) * plotHeight;
-  const costPath = points.map((point, index) => `${index ? "L" : "M"}${x(index).toFixed(1)},${costY(point.cost).toFixed(1)}`).join(" ");
-  const labelEvery = Math.max(1, Math.ceil(points.length / 8));
+  const maxPrimary = Math.max(primaryStep, Math.ceil(Math.max(...visiblePoints.map((point) => point.primaryValue), primaryStep) / primaryStep) * primaryStep);
+  const maxSecondary = Math.max(secondaryStep, Math.ceil(Math.max(...visiblePoints.map((point) => point.secondaryValue), secondaryStep) / secondaryStep) * secondaryStep);
+  const slotWidth = plotWidth / 12;
+  const groupWidth = Math.min(58, slotWidth * 0.82);
+  const barWidth = Math.min(22, groupWidth / Math.max(1, years.length - 0.5));
+  const barStep = years.length > 1 ? (groupWidth - barWidth) / (years.length - 1) : 0;
+  const x = (monthIndex: number, year: number) => {
+    const yearIndex = years.indexOf(year);
+    return left + slotWidth * monthIndex + slotWidth / 2 - groupWidth / 2 + barWidth / 2 + yearIndex * barStep;
+  };
+  const primaryY = (value: number) => top + plotHeight - (value / maxPrimary) * plotHeight;
+  const secondaryY = (value: number) => top + plotHeight - (value / maxSecondary) * plotHeight;
+  const formatSecondary = (value: number) => secondaryKind === "money" ? moneyFormatter.format(value) : `${kwhFormatter.format(value)} kWh`;
+  const toggleYear = (year: number) => {
+    setVisibleYears((current) => {
+      if (current.has(year) && current.size === 1) return current;
+      const next = new Set(current);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  };
 
   return (
-    <div className="owner-usage-chart owner-overlay-chart">
-      <div className="owner-chart-legend" aria-hidden="true">
-        <span><i className="owner-chart-usage-bar" />Usage</span>
-        <span><i className="owner-chart-cost-line" />Gross electric cost</span>
+    <div className="owner-usage-chart owner-overlay-chart owner-calendar-overlay-chart">
+      <div className="owner-chart-legend owner-chart-year-legend" aria-label="Toggle comparison years">
+        {years.map((year, index) => (
+          <button
+            key={year}
+            type="button"
+            className={`owner-chart-year-button owner-chart-year-series-${index}`}
+            aria-pressed={visibleYears.has(year)}
+            onClick={() => toggleYear(year)}
+          >
+            <i />
+            {comparisonYearLabel(year, years[0])}
+          </button>
+        ))}
+      </div>
+      <div className="owner-chart-legend owner-chart-calendar-metric-legend" aria-hidden="true">
+        <span><i className="owner-chart-primary-bar" />{primaryLegend}</span>
+        <span><i className="owner-chart-secondary-line" />{secondaryLegend}</span>
         <span><i className="owner-chart-estimated" />Modeled / forecast</span>
       </div>
       <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={description}>
@@ -457,96 +510,43 @@ function UsageCostOverlayChart({ points, description }: { points: UsageCostPoint
           return (
             <g key={ratio}>
               <line className="owner-chart-gridline" x1={left} x2={width - right} y1={y} y2={y} />
-              <text className="owner-chart-axis" x={left - 10} y={y + 4} textAnchor="end">{kwhFormatter.format(maxUsage * (1 - ratio))}</text>
-              <text className="owner-chart-axis owner-chart-axis-cost" x={width - right + 10} y={y + 4} textAnchor="start">${Math.round(maxCost * (1 - ratio))}</text>
+              <text className="owner-chart-axis" x={left - 10} y={y + 4} textAnchor="end">{kwhFormatter.format(maxPrimary * (1 - ratio))}</text>
+              <text className="owner-chart-axis owner-chart-axis-cost" x={width - right + 10} y={y + 4} textAnchor="start">{secondaryKind === "money" ? "$" : ""}{kwhFormatter.format(maxSecondary * (1 - ratio))}</text>
             </g>
           );
         })}
-        <text className="owner-chart-axis-title" x={15} y={top + plotHeight / 2} transform={`rotate(-90 15 ${top + plotHeight / 2})`} textAnchor="middle">usage kWh</text>
-        <text className="owner-chart-axis-title" x={width - 14} y={top + plotHeight / 2} transform={`rotate(90 ${width - 14} ${top + plotHeight / 2})`} textAnchor="middle">gross cost</text>
-        {points.map((point, index) => (
-          <rect
-            key={`${point.label}-bar`}
-            className={`owner-overlay-bar owner-overlay-${point.kind}`}
-            x={x(index) - barWidth / 2}
-            y={usageY(point.usageKwh)}
-            width={barWidth}
-            height={Math.max(2, top + plotHeight - usageY(point.usageKwh))}
-          >
-            <title>{point.label}: {kwhFormatter.format(point.usageKwh)} kWh; {moneyFormatter.format(point.cost)} gross cost ({point.kind})</title>
-          </rect>
-        ))}
-        <path className="owner-chart-line owner-chart-line-cost" d={costPath} />
-        {points.map((point, index) => (
-          <circle key={`${point.label}-cost`} className={`owner-chart-cost-point owner-overlay-${point.kind}`} cx={x(index)} cy={costY(point.cost)} r="4">
-            <title>{point.label}: {moneyFormatter.format(point.cost)} gross electric cost</title>
-          </circle>
-        ))}
-        {points.map((point, index) => (
-          index % labelEvery === 0 || index === points.length - 1
-            ? <text key={`${point.label}-label`} className="owner-chart-axis" x={x(index)} y={height - 14} textAnchor="middle">{point.label}{point.kind === "forecast" || point.kind === "partial" ? "*" : ""}</text>
-            : null
-        ))}
-      </svg>
-    </div>
-  );
-}
-
-function SolarBankChart({ solar }: { solar: ElectricityAnalytics["solar"] }) {
-  const points = solar.history;
-  if (!points.length) return <p className="owner-chart-empty">No solar-bank history is available yet.</p>;
-  const width = 960;
-  const height = 300;
-  const left = 62;
-  const right = 62;
-  const top = 24;
-  const bottom = 48;
-  const plotWidth = width - left - right;
-  const plotHeight = height - top - bottom;
-  const maxExport = Math.max(500, Math.ceil(Math.max(...points.map((point) => point.exportedKwh)) / 500) * 500);
-  const maxBank = Math.max(1000, Math.ceil(Math.max(...points.map((point) => point.bankKwh)) / 1000) * 1000);
-  const slotWidth = plotWidth / points.length;
-  const barWidth = Math.min(38, slotWidth * 0.55);
-  const x = (index: number) => left + slotWidth * index + slotWidth / 2;
-  const exportY = (value: number) => top + plotHeight - (value / maxExport) * plotHeight;
-  const bankY = (value: number) => top + plotHeight - (value / maxBank) * plotHeight;
-  const bankPath = points.map((point, index) => `${index ? "L" : "M"}${x(index).toFixed(1)},${bankY(point.bankKwh).toFixed(1)}`).join(" ");
-  const labelEvery = Math.max(1, Math.ceil(points.length / 8));
-
-  return (
-    <div className="owner-usage-chart owner-overlay-chart">
-      <div className="owner-chart-legend" aria-hidden="true">
-        <span><i className="owner-chart-solar-bar" />Exported solar</span>
-        <span><i className="owner-chart-bank-line" />Bank balance</span>
-      </div>
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Exported solar and solar bank balance by utility billing period">
-        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-          const y = top + plotHeight * ratio;
+        <text className="owner-chart-axis-title" x={15} y={top + plotHeight / 2} transform={`rotate(-90 15 ${top + plotHeight / 2})`} textAnchor="middle">{primaryAxis}</text>
+        <text className="owner-chart-axis-title" x={width - 14} y={top + plotHeight / 2} transform={`rotate(90 ${width - 14} ${top + plotHeight / 2})`} textAnchor="middle">{secondaryAxis}</text>
+        {visiblePoints.map((point) => {
+          const yearIndex = years.indexOf(point.year);
           return (
-            <g key={ratio}>
-              <line className="owner-chart-gridline" x1={left} x2={width - right} y1={y} y2={y} />
-              <text className="owner-chart-axis" x={left - 10} y={y + 4} textAnchor="end">{kwhFormatter.format(maxExport * (1 - ratio))}</text>
-              <text className="owner-chart-axis" x={width - right + 10} y={y + 4} textAnchor="start">{kwhFormatter.format(maxBank * (1 - ratio))}</text>
-            </g>
+          <rect
+            key={`${point.year}-${point.monthIndex}-bar`}
+            className={`owner-calendar-bar owner-calendar-year-series-${yearIndex}${point.estimated ? " owner-calendar-estimated" : ""}`}
+            x={x(point.monthIndex, point.year) - barWidth / 2}
+            y={primaryY(point.primaryValue)}
+            width={barWidth}
+            height={Math.max(2, top + plotHeight - primaryY(point.primaryValue))}
+          >
+            <title>{point.label}: {kwhFormatter.format(point.primaryValue)} kWh; {formatSecondary(point.secondaryValue)}{point.estimated ? " (modeled / forecast)" : ""}</title>
+          </rect>
           );
         })}
-        <text className="owner-chart-axis-title" x={15} y={top + plotHeight / 2} transform={`rotate(-90 15 ${top + plotHeight / 2})`} textAnchor="middle">exported kWh</text>
-        <text className="owner-chart-axis-title" x={width - 14} y={top + plotHeight / 2} transform={`rotate(90 ${width - 14} ${top + plotHeight / 2})`} textAnchor="middle">bank kWh</text>
-        {points.map((point, index) => (
-          <rect key={`${point.periodEnd}-export`} className="owner-solar-export-bar" x={x(index) - barWidth / 2} y={exportY(point.exportedKwh)} width={barWidth} height={Math.max(2, top + plotHeight - exportY(point.exportedKwh))}>
-            <title>{point.label}: {kwhFormatter.format(point.exportedKwh)} kWh exported</title>
-          </rect>
-        ))}
-        <path className="owner-chart-line owner-chart-line-bank" d={bankPath} />
-        {points.map((point, index) => (
-          <circle key={`${point.periodEnd}-bank`} className="owner-chart-bank-point" cx={x(index)} cy={bankY(point.bankKwh)} r="4">
-            <title>{point.label}: {kwhFormatter.format(point.bankKwh)} kWh bank balance</title>
-          </circle>
-        ))}
-        {points.map((point, index) => (
-          index % labelEvery === 0 || index === points.length - 1
-            ? <text key={`${point.periodEnd}-label`} className="owner-chart-axis" x={x(index)} y={height - 14} textAnchor="middle">{point.label}</text>
-            : null
+        {years.filter((year) => visibleYears.has(year)).map((year) => {
+          const yearPoints = visiblePoints.filter((point) => point.year === year).sort((a, b) => a.monthIndex - b.monthIndex);
+          const path = yearPoints.map((point, pointIndex) => `${pointIndex ? "L" : "M"}${x(point.monthIndex, year).toFixed(1)},${secondaryY(point.secondaryValue).toFixed(1)}`).join(" ");
+          return <path key={`${year}-line`} className={`owner-chart-line owner-calendar-line owner-calendar-year-series-${years.indexOf(year)}`} d={path} />;
+        })}
+        {visiblePoints.map((point) => {
+          const yearIndex = years.indexOf(point.year);
+          return (
+            <circle key={`${point.year}-${point.monthIndex}-point`} className={`owner-calendar-point owner-calendar-year-series-${yearIndex}${point.estimated ? " owner-calendar-estimated" : ""}`} cx={x(point.monthIndex, point.year)} cy={secondaryY(point.secondaryValue)} r="4">
+              <title>{point.label}: {formatSecondary(point.secondaryValue)}{point.estimated ? " (modeled / forecast)" : ""}</title>
+            </circle>
+          );
+        })}
+        {comparisonMonthLabels.map((label, monthIndex) => (
+          <text key={label} className="owner-chart-axis" x={left + slotWidth * monthIndex + slotWidth / 2} y={height - 14} textAnchor="middle">{label}</text>
         ))}
       </svg>
     </div>
@@ -578,11 +578,20 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
       partial: month.partial,
     })),
   }));
-  const billingPoints: UsageCostPoint[] = analytics.billingHistory.slice(-12).map((bill) => ({
+  const billingCalendarPoints: CalendarComparisonPoint[] = analytics.billingHistory.map((bill) => ({
+    year: Number(bill.periodEnd.slice(0, 4)),
+    monthIndex: Number(bill.periodEnd.slice(5, 7)) - 1,
     label: bill.label,
-    usageKwh: bill.usageKwh,
-    cost: bill.electricCost,
-    kind: bill.costKind,
+    primaryValue: bill.usageKwh,
+    secondaryValue: bill.electricCost,
+    estimated: bill.costKind !== "actual",
+  }));
+  const solarCalendarPoints: CalendarComparisonPoint[] = analytics.solar.history.map((item) => ({
+    year: Number(item.periodEnd.slice(0, 4)),
+    monthIndex: Number(item.periodEnd.slice(5, 7)) - 1,
+    label: item.label,
+    primaryValue: item.exportedKwh,
+    secondaryValue: item.bankKwh,
   }));
   const projectedTotal = analytics.cost.lifelineKwh + analytics.cost.aboveLifelineKwh;
   const lifelinePercent = projectedTotal > 0 ? analytics.cost.lifelineKwh / projectedTotal * 100 : 0;
@@ -680,8 +689,18 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
           <p className="owner-chart-footnote">The current month is month-to-date; completed prior-year months show full totals.</p>
         </article>
         <article className="owner-energy-chart-block owner-energy-chart-wide">
-          <div className="owner-chart-heading"><h3>Bill-to-bill usage + electric cost</h3><span>Workbook actuals · current bill forecast</span></div>
-          <UsageCostOverlayChart points={billingPoints} description="Bimonthly delivered electricity bars overlaid with actual or modeled gross electric cost" />
+          <div className="owner-chart-heading"><h3>Bill-to-bill usage + electric cost</h3><span>January–December · years grouped by bill-ending month</span></div>
+          <CalendarYearOverlayChart
+            points={billingCalendarPoints}
+            primaryLegend="Delivered usage"
+            secondaryLegend="Gross electric cost"
+            primaryAxis="usage kWh"
+            secondaryAxis="gross cost"
+            primaryStep={500}
+            secondaryStep={100}
+            secondaryKind="money"
+            description="Twelve-month calendar comparison with delivered electricity bars and gross electric cost lines grouped by year"
+          />
           <p className="owner-chart-footnote">Costs through April 2026 are actual Electricity Cost values from your workbook. June is modeled from your 1,170 kWh figure; August is forecast. August is {percentChange(analytics.cycle.projectedVsPreviousSummerPercent)} versus August 2025 usage.</p>
         </article>
         <article className="owner-energy-chart-block owner-energy-breakdown">
@@ -706,8 +725,18 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
           <p className="owner-chart-footnote">SmartStats delivered usage is live. Exported energy and bank balance are historical through the latest workbook row, so this value is deliberately marked as last-known—not current.</p>
         </article>
         <article className="owner-energy-chart-block owner-energy-chart-wide">
-          <div className="owner-chart-heading"><h3>Solar export + bank history</h3><span>Separate informational series · no cost offset</span></div>
-          <SolarBankChart solar={analytics.solar} />
+          <div className="owner-chart-heading"><h3>Solar export + bank history</h3><span>January–December · years grouped by bill-ending month</span></div>
+          <CalendarYearOverlayChart
+            points={solarCalendarPoints}
+            primaryLegend="Exported solar"
+            secondaryLegend="Bank balance"
+            primaryAxis="exported kWh"
+            secondaryAxis="bank kWh"
+            primaryStep={500}
+            secondaryStep={1000}
+            secondaryKind="kwh"
+            description="Twelve-month calendar comparison with exported solar bars and solar bank balance lines grouped by year"
+          />
           <p className="owner-chart-footnote">Export is excess energy Anaheim received from the property; it is not total panel production. The bank line is the cumulative kWh credit shown in your records.</p>
         </article>
       </div>
