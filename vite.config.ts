@@ -20,6 +20,11 @@ const cloudflareConfig = {
       database_name: "tengen-me-owner",
       database_id: "8bbbf3fd-90f6-492e-9610-a091a1beaf4e",
     },
+    {
+      binding: "HOUSEHOLD_DB",
+      database_name: "household-hub",
+      database_id: "5321e9d2-d92a-4e93-84e9-198476be5b88",
+    },
   ],
 };
 

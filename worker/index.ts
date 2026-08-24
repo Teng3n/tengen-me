@@ -32,6 +32,7 @@ interface Env {
   };
   STATUS_KV?: StatusKV;
   OWNER_DB?: OwnerDatabase;
+  HOUSEHOLD_DB?: OwnerDatabase;
   PALWORLD_BRIDGE_TOKEN?: string;
   HOME_ACCESS_UPDATE_TOKEN?: string;
 }

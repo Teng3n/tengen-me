@@ -2,9 +2,11 @@ import type { OwnerDatabase } from "./owner-data";
 import { writeAudit } from "./owner-data";
 import type { OwnerIdentity } from "./owner-network-auth";
 import { getStoredServerStatus, type StatusKV } from "./server-status-api";
+import { getElectricityAnalytics } from "./electricity-analytics";
 
 export interface OwnerDashboardEnv {
   OWNER_DB?: OwnerDatabase;
+  HOUSEHOLD_DB?: OwnerDatabase;
   STATUS_KV?: StatusKV;
 }
 
@@ -77,7 +79,7 @@ export async function handleOwnerDashboardGet(env: OwnerDashboardEnv, identity: 
   if (!db) return json({ error: "Owner storage is unavailable" }, 503);
 
   try {
-    const [historyResult, checklistResult, actionResult, auditResult, storedStatus] = await Promise.all([
+    const [historyResult, checklistResult, actionResult, auditResult, storedStatus, electricity] = await Promise.all([
       db.prepare(
         `SELECT id, status, current_players, maximum_players, observed_at, received_at
          FROM server_status_history WHERE server_slug = 'palworld-home'
@@ -96,6 +98,7 @@ export async function handleOwnerDashboardGet(env: OwnerDashboardEnv, identity: 
          FROM owner_audit_log ORDER BY created_at DESC LIMIT 20`,
       ).all<AuditRow>(),
       getStoredServerStatus(env),
+      getElectricityAnalytics(env.HOUSEHOLD_DB, db).catch(() => null),
     ]);
 
     const now = Date.now();
@@ -139,6 +142,7 @@ export async function handleOwnerDashboardGet(env: OwnerDashboardEnv, identity: 
         completed_at: timestampToIso(action.completed_at),
       })),
       audit: auditResult.results.map((event) => ({ ...event, created_at: timestampToIso(event.created_at) })),
+      electricity,
       tools: [
         { href: "/office-room-diagram", label: "Office lighting plan", detail: "Installer and beam-coverage views" },
         { href: "/office-room-diagram-details", label: "Office lighting analysis", detail: "Detailed calculations and comparisons" },
