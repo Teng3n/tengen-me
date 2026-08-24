@@ -836,7 +836,7 @@ function SolarBankMovementChart({ points }: { points: SolarBankMovementPoint[] }
             width={barWidth}
             height={Math.max(2, Math.abs(netY(point.netKwh) - zeroY))}
           >
-            <title>{point.label}: used {kwhFormatter.format(point.usageKwh)} kWh; exported {kwhFormatter.format(point.exportedKwh!)} kWh; {signedKwh(point.netKwh)} {point.netKwh >= 0 ? "added to" : "drawn from"} bank; closing bank {kwhFormatter.format(point.bankKwh!)} kWh</title>
+            <title>{point.label}: {signedKwh(point.netKwh)}</title>
           </rect>
         ))}
         {years.filter((year) => visibleYears.has(year)).map((year) => {
@@ -848,7 +848,7 @@ function SolarBankMovementChart({ points }: { points: SolarBankMovementPoint[] }
         })}
         {visiblePoints.map((point) => point.bankKwh === null ? null : (
           <circle key={`${point.year}-${point.periodIndex}-bank`} className={`owner-calendar-point owner-calendar-year-series-${years.indexOf(point.year)}`} cx={x(point.periodIndex, point.year)} cy={bankY(point.bankKwh)} r="6">
-            <title>{point.label}: closing bank {kwhFormatter.format(point.bankKwh)} kWh</title>
+            <title>{point.label}: {kwhFormatter.format(point.bankKwh)} kWh</title>
           </circle>
         ))}
         {visiblePoints.map((point) => point.netKwh !== null && point.bankKwh !== null ? null : (
@@ -860,7 +860,7 @@ function SolarBankMovementChart({ points }: { points: SolarBankMovementPoint[] }
           <text key={label} className="owner-chart-axis" x={left + slotWidth * periodIndex + slotWidth / 2} y={height - 14} textAnchor="middle">{label}</text>
         ))}
       </svg>
-      <p className="owner-chart-footnote">Each billing-period slot groups the 2026, 2025, and 2024 net-impact bars beneath it. Bars above zero added to the bank; bars below zero drew from it. Matching year-colored lines show the closing bank balance. Hover any bar for usage, export, net movement, and closing balance.</p>
+      <p className="owner-chart-footnote">Each billing-period slot groups the 2026, 2025, and 2024 net-impact bars beneath it. Bars above zero added to the bank; bars below zero drew from it. Matching year-colored lines show the closing bank balance. Hover a bar or line point for its value.</p>
     </div>
   );
 }
