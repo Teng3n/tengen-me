@@ -2,7 +2,7 @@ import type { OwnerDatabase } from "./owner-data";
 
 const METER_KEY = "apu-main";
 const CURRENT_CYCLE_START = "2026-06-20";
-const CURRENT_CYCLE_END = "2026-08-20";
+const CURRENT_CYCLE_END = "2026-08-19";
 const AC_FULL_TRACKING_START = "2026-07-25";
 const HISTORY_START = "2024-01-01";
 const ELECTRICITY_CACHE_MS = 15 * 60 * 1000;
@@ -422,6 +422,8 @@ async function loadElectricityAnalytics(
   const recentRows = currentRows.slice(-Math.min(14, currentRows.length));
   const recentDailyKwh = recentRows.reduce((total, row) => total + row.total_kwh, 0) / recentRows.length;
   const projectedKwh = usageToDateKwh + recentDailyKwh * daysRemaining;
+  const storedCurrentBill = storedBills.find((bill) => bill.period_end === CURRENT_CYCLE_END) ?? null;
+  const cycleKwh = storedCurrentBill?.delivered_kwh ?? (daysRemaining === 0 ? usageToDateKwh : projectedKwh);
 
   const fallbackCycleTotals = completedCycles.map((cycle) => ({
     ...cycle,
@@ -435,9 +437,14 @@ async function loadElectricityAnalytics(
     : inclusiveDays(fallbackCycleTotals.at(-1)!.start, fallbackCycleTotals.at(-1)!.end);
   const previousSummerBillKwh = previousSummerStoredBill?.delivered_kwh || fallbackCycleTotals[0]!.kwh;
 
-  const projectedCost = standardDomesticCost(projectedKwh, 60);
+  const projectedCostModel = standardDomesticCost(cycleKwh, 60);
+  const projectedCost = {
+    ...projectedCostModel,
+    total: storedCurrentBill?.electric_cost ?? projectedCostModel.total,
+  };
   const estimatedServiceDaysToDate = Math.max(1, Math.round(daysElapsed / totalDays * 60));
-  const grossToDate = standardDomesticCost(usageToDateKwh, estimatedServiceDaysToDate).total;
+  const grossToDate = storedCurrentBill?.electric_cost
+    ?? standardDomesticCost(usageToDateKwh, estimatedServiceDaysToDate).total;
 
   const coolingByDate = new Map(
     coolingResult.results.map((row) => [row.local_date, row.cooling_runtime_seconds / 3600]),
@@ -466,13 +473,13 @@ async function loadElectricityAnalytics(
   const trackedAcShare = trackedUsageKwh > 0 ? estimatedAcKwh / trackedUsageKwh : 0;
   const trackedAcShareLow = trackedUsageKwh > 0 ? (acModel?.estimatedKwhLow ?? 0) / trackedUsageKwh : 0;
   const trackedAcShareHigh = trackedUsageKwh > 0 ? (acModel?.estimatedKwhHigh ?? 0) / trackedUsageKwh : 0;
-  const projectedCycleAcKwh = projectedKwh * Math.min(1, trackedAcShare);
-  const projectedCycleAcKwhLow = projectedKwh * Math.min(1, trackedAcShareLow);
-  const projectedCycleAcKwhHigh = projectedKwh * Math.min(1, trackedAcShareHigh);
+  const projectedCycleAcKwh = cycleKwh * Math.min(1, trackedAcShare);
+  const projectedCycleAcKwhLow = cycleKwh * Math.min(1, trackedAcShareLow);
+  const projectedCycleAcKwhHigh = cycleKwh * Math.min(1, trackedAcShareHigh);
   const hasFullCycleTracking = AC_FULL_TRACKING_START <= CURRENT_CYCLE_START
     && (acModel?.trackedDays ?? 0) >= daysElapsed;
 
-  const projectionVsPreviousBillPercent = ((projectedKwh / previousBillKwh) - 1) * 100;
+  const projectionVsPreviousBillPercent = ((cycleKwh / previousBillKwh) - 1) * 100;
   const risk = projectionVsPreviousBillPercent >= 50
     ? "high"
     : projectionVsPreviousBillPercent >= 15 ? "elevated" : "normal";
@@ -517,9 +524,8 @@ async function loadElectricityAnalytics(
         partial: row.partial,
       })),
   }));
-  const storedCurrentBill = storedBills.find((bill) => bill.period_end === CURRENT_CYCLE_END) ?? null;
   const billingHistory: ElectricityAnalytics["billingHistory"] = [
-    ...storedBills.filter((bill) => bill.period_end !== CURRENT_CYCLE_END).map((bill) => ({
+    ...storedBills.map((bill) => ({
       periodStart: bill.period_start,
       periodEnd: bill.period_end,
       label: billLabel(bill.period_end),
@@ -531,24 +537,18 @@ async function loadElectricityAnalytics(
       solarBankKwh: bill.solar_bank_kwh === null ? null : round(bill.solar_bank_kwh),
       source: bill.source,
     })),
-    {
+    ...(storedCurrentBill ? [] : [{
       periodStart: CURRENT_CYCLE_START,
       periodEnd: CURRENT_CYCLE_END,
       label: billLabel(CURRENT_CYCLE_END),
-      usageKwh: round(daysRemaining === 0 ? usageToDateKwh : projectedKwh),
+      usageKwh: round(cycleKwh),
       usageKind: daysRemaining === 0 ? "measured" : "forecast",
-      electricCost: round(storedCurrentBill?.electric_cost ?? projectedCost.total),
-      costKind: storedCurrentBill?.electric_cost !== null && storedCurrentBill?.electric_cost !== undefined
-        ? storedCurrentBill.cost_kind
-        : daysRemaining === 0 ? "modeled" : "forecast",
-      exportedSolarKwh: storedCurrentBill?.exported_solar_kwh === null || storedCurrentBill?.exported_solar_kwh === undefined
-        ? null
-        : round(storedCurrentBill.exported_solar_kwh),
-      solarBankKwh: storedCurrentBill?.solar_bank_kwh === null || storedCurrentBill?.solar_bank_kwh === undefined
-        ? null
-        : round(storedCurrentBill.solar_bank_kwh),
-      source: storedCurrentBill?.source ?? (daysRemaining === 0 ? "SmartStats measured billing-period usage" : "SmartStats forecast"),
-    },
+      electricCost: round(projectedCost.total),
+      costKind: daysRemaining === 0 ? "modeled" : "forecast",
+      exportedSolarKwh: null,
+      solarBankKwh: null,
+      source: daysRemaining === 0 ? "SmartStats measured billing-period usage" : "SmartStats forecast",
+    }]),
   ];
   const solarHistory = storedBills.flatMap((bill) => {
     if (bill.exported_solar_kwh === null || bill.solar_bank_kwh === null) return [];
@@ -605,17 +605,17 @@ async function loadElectricityAnalytics(
       daysElapsed,
       daysRemaining,
       totalDays,
-      usageToDateKwh: round(usageToDateKwh),
-      averageDailyKwh: round(usageToDateKwh / daysElapsed),
-      projectedKwh: round(projectedKwh),
+      usageToDateKwh: round(storedCurrentBill ? cycleKwh : usageToDateKwh),
+      averageDailyKwh: round(cycleKwh / Math.max(1, storedCurrentBill ? totalDays : daysElapsed)),
+      projectedKwh: round(cycleKwh),
       previousBillKwh: round(previousBillKwh),
       previousBillAverageDailyKwh: round(previousBillKwh / previousBillDays),
       previousSummerBillKwh: round(previousSummerBillKwh),
       projectedVsPreviousBillPercent: round(projectionVsPreviousBillPercent, 1),
-      projectedVsPreviousSummerPercent: round(((projectedKwh / previousSummerBillKwh) - 1) * 100, 1),
-      usageToDateVsPreviousBillPercent: round(((usageToDateKwh / previousBillKwh) - 1) * 100, 1),
+      projectedVsPreviousSummerPercent: round(((cycleKwh / previousSummerBillKwh) - 1) * 100, 1),
+      usageToDateVsPreviousBillPercent: round(((cycleKwh / previousBillKwh) - 1) * 100, 1),
       risk,
-      riskLabel: risk === "high" ? "Likely much higher" : risk === "elevated" ? "Trending higher" : "Near recent range",
+      riskLabel: storedCurrentBill ? "Final bill" : risk === "high" ? "Likely much higher" : risk === "elevated" ? "Trending higher" : "Near recent range",
     },
     cost: {
       grossToDate,
@@ -713,8 +713,8 @@ async function loadElectricityAnalytics(
         ? `Billing-period usage is a completed SmartStats meter total through ${asOfDate}.`
         : `Actual usage through ${asOfDate}, plus the most recent ${recentRows.length}-day average for the ${daysRemaining} remaining days.`,
       cost: "Anaheim Standard Domestic calculator logic: a 60-day bimonthly customer charge and lifeline allowance, basic and above-lifeline energy charges, underground surcharge, PCA, EMA, and California energy surcharge. Solar is never deducted.",
-      ac: `Nest runtime is complete beginning July 25, 2026, so this billing cycle uses a full-cycle extrapolation rather than displaying the tracked-period subtotal. Matched whole-home meter use is regressed against runtime to learn a ${round(acModel?.baselineDailyKwh ?? 0, 1)} kWh/day non-AC baseline and an AC share of tracked electricity. That share and its 95% model interval are applied to the projected ${round(projectedKwh)} kWh cycle, then priced at the Standard Domestic above-lifeline marginal rate. The next billing cycle will have complete APU and Nest coverage from day one.`,
-      solar: "Exported solar and bank balances come from the Utilities workbook through April 21, 2026. The current SmartStats importer does not yet extract received energy or the bank, so later bank values remain unknown until another bill or spreadsheet update is added.",
+      ac: `Nest runtime is complete beginning July 25, 2026, so this billing cycle uses a full-cycle extrapolation rather than displaying the tracked-period subtotal. Matched whole-home meter use is regressed against runtime to learn a ${round(acModel?.baselineDailyKwh ?? 0, 1)} kWh/day non-AC baseline and an AC share of tracked electricity. That share and its 95% model interval are applied to the ${storedCurrentBill ? "completed" : "projected"} ${round(cycleKwh)} kWh cycle, then priced at the Standard Domestic above-lifeline marginal rate. The next billing cycle will have complete APU and Nest coverage from day one.`,
+      solar: "Exported solar and bank balances come from the Utilities workbook through August 19, 2026. SmartStats supplies live delivered usage; received energy and bank totals are updated from each completed bill row.",
     },
   };
 }

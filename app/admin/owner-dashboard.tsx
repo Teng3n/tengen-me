@@ -929,29 +929,39 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
     bankKwh: bill.solarBankKwh,
     netKwh: bill.exportedSolarKwh === null ? null : bill.exportedSolarKwh - bill.usageKwh,
   }));
+  const completedCurrentBill = analytics.billingHistory.find(
+    (bill) => bill.periodEnd === analytics.cycle.expectedEnd && bill.costKind === "actual",
+  ) ?? null;
   const projectedTotal = analytics.cost.lifelineKwh + analytics.cost.aboveLifelineKwh;
   const lifelinePercent = projectedTotal > 0 ? analytics.cost.lifelineKwh / projectedTotal * 100 : 0;
 
   return (
     <section className="owner-panel owner-energy-panel">
       <div className="owner-panel-heading">
-        <div><p className="section-kicker">Electricity bill</p><h2>August bill outlook</h2></div>
+        <div><p className="section-kicker">Electricity bill</p><h2>{completedCurrentBill ? "August bill actual" : "August bill outlook"}</h2></div>
         <span className={`owner-energy-risk owner-energy-risk-${analytics.cycle.risk}`}>
           {analytics.cycle.riskLabel}
         </span>
       </div>
 
       <div className="owner-energy-alert">
-        <strong>This bill is on pace to be materially higher.</strong>
-        <p>
-          Through {shortDate(analytics.asOfDate)}, you have already used {percentChange(analytics.cycle.usageToDateVsPreviousBillPercent)} more electricity than the entire June bill. At the recent pace, the cycle projects to {kwhFormatter.format(analytics.cycle.projectedKwh)} kWh by {shortDate(analytics.cycle.expectedEnd)}.
-        </p>
+        {completedCurrentBill ? <>
+          <strong>The August bill is complete.</strong>
+          <p>
+            The cycle used {kwhFormatter.format(completedCurrentBill.usageKwh)} kWh, exported {kwhFormatter.format(completedCurrentBill.exportedSolarKwh ?? 0)} kWh, and closed with {kwhFormatter.format(completedCurrentBill.solarBankKwh ?? 0)} kWh banked. Gross electric cost was {moneyFormatter.format(completedCurrentBill.electricCost)}.
+          </p>
+        </> : <>
+          <strong>This bill is on pace to be materially higher.</strong>
+          <p>
+            Through {shortDate(analytics.asOfDate)}, you have already used {percentChange(analytics.cycle.usageToDateVsPreviousBillPercent)} more electricity than the entire June bill. At the recent pace, the cycle projects to {kwhFormatter.format(analytics.cycle.projectedKwh)} kWh by {shortDate(analytics.cycle.expectedEnd)}.
+          </p>
+        </>}
       </div>
 
       <dl className="owner-energy-metrics">
-        <div><dt>Used so far</dt><dd>{kwhFormatter.format(analytics.cycle.usageToDateKwh)} <span>kWh</span></dd><small>{analytics.cycle.daysElapsed} of {analytics.cycle.totalDays} days</small></div>
-        <div><dt>Projected usage</dt><dd>{kwhFormatter.format(analytics.cycle.projectedKwh)} <span>kWh</span></dd><small>{percentChange(analytics.cycle.projectedVsPreviousBillPercent)} vs June bill</small></div>
-        <div><dt>Gross electric estimate*</dt><dd>{moneyFormatter.format(analytics.cost.projectedGross)}</dd><small>Before solar credits</small></div>
+        <div><dt>{completedCurrentBill ? "Bill usage" : "Used so far"}</dt><dd>{kwhFormatter.format(analytics.cycle.usageToDateKwh)} <span>kWh</span></dd><small>{completedCurrentBill ? `Closed ${shortDate(completedCurrentBill.periodEnd)}` : `${analytics.cycle.daysElapsed} of ${analytics.cycle.totalDays} days`}</small></div>
+        <div><dt>{completedCurrentBill ? "Exported solar" : "Projected usage"}</dt><dd>{kwhFormatter.format(completedCurrentBill?.exportedSolarKwh ?? analytics.cycle.projectedKwh)} <span>kWh</span></dd><small>{completedCurrentBill ? `${kwhFormatter.format(completedCurrentBill.solarBankKwh ?? 0)} kWh banked` : `${percentChange(analytics.cycle.projectedVsPreviousBillPercent)} vs June bill`}</small></div>
+        <div><dt>{completedCurrentBill ? "Gross electric cost*" : "Gross electric estimate*"}</dt><dd>{moneyFormatter.format(analytics.cost.projectedGross)}</dd><small>Before solar credits</small></div>
         <div><dt>Daily pace</dt><dd>{analytics.cycle.averageDailyKwh.toFixed(1)} <span>kWh</span></dd><small>June bill: {analytics.cycle.previousBillAverageDailyKwh.toFixed(1)} / day</small></div>
       </dl>
 
@@ -1038,10 +1048,10 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
             estimateLegend="Modeled cost / forecast"
             description="Year-over-year billing-period comparison with delivered electricity bars and gross electric cost lines"
           />
-          <p className="owner-chart-footnote"><strong>How to read it:</strong> each billing-period slot groups the 2026, 2025, and 2024 usage bars beneath it. Bars use the left axis for delivered kWh; matching year-colored lines use the right axis for gross electric cost. The August 2026 cost remains unplotted until the received bill amount is imported. August usage is {percentChange(analytics.cycle.projectedVsPreviousSummerPercent)} versus August 2025.</p>
+          <p className="owner-chart-footnote"><strong>How to read it:</strong> each billing-period slot groups the 2026, 2025, and 2024 usage bars beneath it. Bars use the left axis for delivered kWh; matching year-colored lines use the right axis for gross electric cost. June and August 2026 use completed bill values. August usage is {percentChange(analytics.cycle.projectedVsPreviousSummerPercent)} versus August 2025.</p>
         </article>
         <article className="owner-energy-chart-block owner-energy-breakdown">
-          <div className="owner-chart-heading"><h3>Standard Domestic model</h3><span>Projected 60-day bill · before solar</span></div>
+          <div className="owner-chart-heading"><h3>Standard Domestic model</h3><span>{completedCurrentBill ? "Completed bill usage · modeled rate split" : "Projected 60-day bill · before solar"}</span></div>
           <div className="owner-rate-bar" aria-label={`${lifelinePercent.toFixed(0)}% lifeline usage and ${(100 - lifelinePercent).toFixed(0)}% above-lifeline usage`}>
             <span className="owner-rate-lifeline" style={{ width: `${lifelinePercent}%` }} />
             <span className="owner-rate-above" style={{ width: `${100 - lifelinePercent}%` }} />
@@ -1087,7 +1097,7 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
           <div>
             <p className="section-kicker">Air conditioning</p>
             <h3>Estimated full-cycle AC contribution</h3>
-            <p>This bill began before complete Nest tracking. The estimate extrapolates the AC share learned from {analytics.ac.trackedDays} matched days across the projected {kwhFormatter.format(analytics.cycle.projectedKwh)} kWh billing cycle, then prices it at the above-lifeline marginal Standard Domestic rate. The next cycle will have complete APU and Nest coverage from day one.</p>
+            <p>This bill began before complete Nest tracking. The estimate extrapolates the AC share learned from {analytics.ac.trackedDays} matched days across the {completedCurrentBill ? "completed" : "projected"} {kwhFormatter.format(analytics.cycle.projectedKwh)} kWh billing cycle, then prices it at the above-lifeline marginal Standard Domestic rate. The next cycle will have complete APU and Nest coverage from day one.</p>
           </div>
           <dl>
             <div><dt>Full-cycle AC estimate</dt><dd>{moneyFormatter.format(analytics.ac.estimatedCost)}</dd></div>
@@ -1103,7 +1113,7 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
       ) : null}
 
       <div className="owner-energy-notes">
-        <p><strong>*Not the final utility bill.</strong> The estimate follows Anaheim&apos;s <a href="https://www.anaheim.net/6535/Residential-Bill-Calculator" target="_blank" rel="noreferrer">Residential Bill Calculator</a> for Standard Domestic electricity. It is gross: solar credits are not deducted, and water, sewer, trash, and other utility charges are excluded.</p>
+        <p><strong>{completedCurrentBill ? "*Electric portion of the completed bill." : "*Not the final utility bill."}</strong> {completedCurrentBill ? "The displayed total is the received electric cost; the rate breakdown remains modeled." : "The estimate follows Anaheim's"} {!completedCurrentBill && <a href="https://www.anaheim.net/6535/Residential-Bill-Calculator" target="_blank" rel="noreferrer">Residential Bill Calculator</a>} {!completedCurrentBill && " for Standard Domestic electricity."} It is gross: solar credits are not deducted, and water, sewer, trash, and other utility charges are excluded.</p>
         <details><summary>How this forecast is calculated</summary><p>{analytics.methodology.forecast} {analytics.methodology.cost} {analytics.methodology.ac}</p></details>
         <details><summary>Solar data status</summary><p>{analytics.methodology.solar}</p></details>
       </div>
