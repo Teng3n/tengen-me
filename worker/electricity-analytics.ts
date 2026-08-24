@@ -517,8 +517,9 @@ async function loadElectricityAnalytics(
         partial: row.partial,
       })),
   }));
+  const storedCurrentBill = storedBills.find((bill) => bill.period_end === CURRENT_CYCLE_END) ?? null;
   const billingHistory: ElectricityAnalytics["billingHistory"] = [
-    ...storedBills.map((bill) => ({
+    ...storedBills.filter((bill) => bill.period_end !== CURRENT_CYCLE_END).map((bill) => ({
       periodStart: bill.period_start,
       periodEnd: bill.period_end,
       label: billLabel(bill.period_end),
@@ -536,11 +537,17 @@ async function loadElectricityAnalytics(
       label: billLabel(CURRENT_CYCLE_END),
       usageKwh: round(daysRemaining === 0 ? usageToDateKwh : projectedKwh),
       usageKind: daysRemaining === 0 ? "measured" : "forecast",
-      electricCost: projectedCost.total,
-      costKind: daysRemaining === 0 ? "modeled" : "forecast",
-      exportedSolarKwh: null,
-      solarBankKwh: null,
-      source: daysRemaining === 0 ? "SmartStats measured billing-period usage" : "SmartStats forecast",
+      electricCost: round(storedCurrentBill?.electric_cost ?? projectedCost.total),
+      costKind: storedCurrentBill?.electric_cost !== null && storedCurrentBill?.electric_cost !== undefined
+        ? storedCurrentBill.cost_kind
+        : daysRemaining === 0 ? "modeled" : "forecast",
+      exportedSolarKwh: storedCurrentBill?.exported_solar_kwh === null || storedCurrentBill?.exported_solar_kwh === undefined
+        ? null
+        : round(storedCurrentBill.exported_solar_kwh),
+      solarBankKwh: storedCurrentBill?.solar_bank_kwh === null || storedCurrentBill?.solar_bank_kwh === undefined
+        ? null
+        : round(storedCurrentBill.solar_bank_kwh),
+      source: storedCurrentBill?.source ?? (daysRemaining === 0 ? "SmartStats measured billing-period usage" : "SmartStats forecast"),
     },
   ];
   const solarHistory = storedBills.flatMap((bill) => {
