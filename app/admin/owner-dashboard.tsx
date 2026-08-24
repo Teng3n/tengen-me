@@ -304,25 +304,22 @@ function YearUsageLineChart({
   const visibleSeries = series.filter((item) => visibleYears.has(item.year));
   if (!series.length) return <p className="owner-chart-empty">No year-over-year usage history is available yet.</p>;
   const width = 960;
-  const height = 300;
+  const height = kind === "daily" ? 270 : 300;
   const left = 62;
   const right = 18;
   const top = 22;
   const bottom = 46;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const maxX = kind === "daily" ? 365 : 11;
   const values = visibleSeries.flatMap((item) => item.points.map((point) => point.value));
   const interval = kind === "daily" ? 10 : 500;
   const maxKwh = Math.max(interval, Math.ceil(Math.max(...values, interval) / interval) * interval);
-  const point = (xValue: number, value: number) => ({
-    x: left + (xValue / maxX) * plotWidth,
-    y: top + plotHeight - (value / maxKwh) * plotHeight,
-  });
-  const xTicks = comparisonMonthLabels.map((label, monthIndex) => ({
-    label,
-    x: kind === "daily" ? calendarDayIndex(`2000-${String(monthIndex + 1).padStart(2, "0")}-01`) : monthIndex,
-  }));
+  const plotRanges = kind === "daily"
+    ? [
+      { label: "January–June", start: 0, end: 181, firstMonth: 0, lastMonth: 5 },
+      { label: "July–December", start: 182, end: 365, firstMonth: 6, lastMonth: 11 },
+    ]
+    : [{ label: "", start: 0, end: 11, firstMonth: 0, lastMonth: 11 }];
   const currentYear = Math.max(...series.map((item) => item.year));
 
   const toggleYear = (year: number) => {
@@ -351,46 +348,72 @@ function YearUsageLineChart({
           </button>
         ))}
       </div>
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${kind === "daily" ? "Daily" : "Monthly"} electricity usage by calendar position and year`}>
-        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-          const y = top + plotHeight * ratio;
+      <div className={kind === "daily" ? "owner-year-periods" : undefined}>
+        {plotRanges.map((range) => {
+          const point = (xValue: number, value: number) => ({
+            x: left + ((xValue - range.start) / (range.end - range.start)) * plotWidth,
+            y: top + plotHeight - (value / maxKwh) * plotHeight,
+          });
+          const xTicks = comparisonMonthLabels
+            .map((label, monthIndex) => ({
+              label,
+              monthIndex,
+              x: kind === "daily" ? calendarDayIndex(`2000-${String(monthIndex + 1).padStart(2, "0")}-01`) : monthIndex,
+            }))
+            .filter((tick) => tick.monthIndex >= range.firstMonth && tick.monthIndex <= range.lastMonth);
+
           return (
-            <g key={ratio}>
-              <line className="owner-chart-gridline" x1={left} x2={width - right} y1={y} y2={y} />
-              <text className="owner-chart-axis" x={left - 10} y={y + 4} textAnchor="end">{Math.round(maxKwh * (1 - ratio))}</text>
-            </g>
+            <section className={kind === "daily" ? "owner-year-period" : undefined} key={range.label || kind}>
+              {range.label ? <h4>{range.label}</h4> : null}
+              <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${kind === "daily" ? `${range.label} daily` : "Monthly"} electricity usage by calendar position and year`}>
+                {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+                  const y = top + plotHeight * ratio;
+                  return (
+                    <g key={ratio}>
+                      <line className="owner-chart-gridline" x1={left} x2={width - right} y1={y} y2={y} />
+                      <text className="owner-chart-axis" x={left - 10} y={y + 4} textAnchor="end">{Math.round(maxKwh * (1 - ratio))}</text>
+                    </g>
+                  );
+                })}
+                <text className="owner-chart-axis-title" x={14} y={top + plotHeight / 2} transform={`rotate(-90 14 ${top + plotHeight / 2})`} textAnchor="middle">{kind === "daily" ? "kWh / day" : "kWh / month"}</text>
+                {visibleSeries.map((item) => {
+                  const index = series.findIndex((candidate) => candidate.year === item.year);
+                  const rangePoints = item.points.filter((value) => value.x >= range.start && value.x <= range.end);
+                  const path = rangePoints.map((value, pointIndex) => {
+                    const p = point(value.x, value.value);
+                    return `${pointIndex ? "L" : "M"}${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+                  }).join(" ");
+                  return path
+                    ? <path key={item.year} className={`owner-chart-line owner-chart-year-line owner-chart-year-series-${Math.min(index, 3)}`} d={path} />
+                    : null;
+                })}
+                {visibleSeries.flatMap((item) => {
+                  const index = series.findIndex((candidate) => candidate.year === item.year);
+                  return item.points
+                    .filter((value) => value.x >= range.start && value.x <= range.end)
+                    .map((value) => {
+                      const p = point(value.x, value.value);
+                      return (
+                        <circle
+                          key={`${item.year}-${value.label}`}
+                          className={`${kind === "daily" ? "owner-chart-hit-point" : "owner-chart-year-point"} owner-chart-year-series-${Math.min(index, 3)}`}
+                          cx={p.x}
+                          cy={p.y}
+                          r={kind === "daily" ? 6 : 4}
+                        >
+                          <title>{value.label}: {value.value.toFixed(1)} kWh{value.partial ? " (month to date)" : ""}</title>
+                        </circle>
+                      );
+                    });
+                })}
+                {xTicks.map((tick, index) => (
+                  <text key={tick.label} className="owner-chart-axis" x={point(tick.x, 0).x} y={height - 12} textAnchor={index === 0 ? "start" : index === xTicks.length - 1 ? "end" : "middle"}>{tick.label}</text>
+                ))}
+              </svg>
+            </section>
           );
         })}
-        <text className="owner-chart-axis-title" x={14} y={top + plotHeight / 2} transform={`rotate(-90 14 ${top + plotHeight / 2})`} textAnchor="middle">{kind === "daily" ? "kWh / day" : "kWh / month"}</text>
-        {visibleSeries.map((item) => {
-          const index = series.findIndex((candidate) => candidate.year === item.year);
-          const path = item.points.map((value, pointIndex) => {
-            const p = point(value.x, value.value);
-            return `${pointIndex ? "L" : "M"}${p.x.toFixed(1)},${p.y.toFixed(1)}`;
-          }).join(" ");
-          return <path key={item.year} className={`owner-chart-line owner-chart-year-line owner-chart-year-series-${Math.min(index, 3)}`} d={path} />;
-        })}
-        {visibleSeries.flatMap((item) => {
-          const index = series.findIndex((candidate) => candidate.year === item.year);
-          return item.points.map((value) => {
-            const p = point(value.x, value.value);
-            return (
-              <circle
-                key={`${item.year}-${value.label}`}
-                className={`${kind === "daily" ? "owner-chart-hit-point" : "owner-chart-year-point"} owner-chart-year-series-${Math.min(index, 3)}`}
-                cx={p.x}
-                cy={p.y}
-                r={kind === "daily" ? 6 : 4}
-              >
-                <title>{value.label}: {value.value.toFixed(1)} kWh{value.partial ? " (month to date)" : ""}</title>
-              </circle>
-            );
-          });
-        })}
-        {xTicks.map((tick, index) => (
-          <text key={tick.label} className="owner-chart-axis" x={point(tick.x, 0).x} y={height - 12} textAnchor={index === 0 ? "start" : index === xTicks.length - 1 ? "end" : "middle"}>{tick.label}</text>
-        ))}
-      </svg>
+      </div>
     </div>
   );
 }
@@ -648,7 +671,7 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
 
       <div className="owner-energy-chart-grid">
         <article className="owner-energy-chart-block owner-energy-chart-wide">
-          <div className="owner-chart-heading"><h3>Daily usage by year</h3><span>Calendar dates aligned across every available year</span></div>
+          <div className="owner-chart-heading"><h3>Daily usage by year</h3><span>Two six-month views · shared scale and year toggles</span></div>
           <YearUsageLineChart series={dailyYearSeries} kind="daily" />
         </article>
         <article className="owner-energy-chart-block owner-energy-chart-wide">
