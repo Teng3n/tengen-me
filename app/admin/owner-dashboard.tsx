@@ -730,6 +730,8 @@ function BillingPeriodYearOverlayChart({
 
 type SolarBankMovementPoint = {
   periodEnd: string;
+  year: number;
+  periodIndex: number;
   label: string;
   usageKwh: number;
   exportedKwh: number | null;
@@ -738,31 +740,49 @@ type SolarBankMovementPoint = {
 };
 
 function SolarBankMovementChart({ points }: { points: SolarBankMovementPoint[] }) {
-  const history = points.filter((point) => point.periodEnd >= "2024-01-01").sort((a, b) => a.periodEnd.localeCompare(b.periodEnd));
+  const history = points.filter((point) => point.year >= 2024);
+  const years = [...new Set(history.map((point) => point.year))].sort((a, b) => b - a).slice(0, 3);
+  const [visibleYears, setVisibleYears] = useState(() => new Set(years));
+  const visiblePoints = history.filter((point) => visibleYears.has(point.year) && years.includes(point.year));
   const recorded = history.filter((point) => point.netKwh !== null && point.bankKwh !== null);
+  const visibleRecorded = visiblePoints.filter((point) => point.netKwh !== null && point.bankKwh !== null);
   if (!history.length || !recorded.length) return <p className="owner-chart-empty">No solar bank movement history is available yet.</p>;
   const positive = recorded.filter((point) => point.netKwh! > 0);
   const negative = recorded.filter((point) => point.netKwh! < 0);
   const netMovement = recorded.reduce((sum, point) => sum + point.netKwh!, 0);
   const totalUsage = recorded.reduce((sum, point) => sum + point.usageKwh, 0);
-  const latestRecorded = recorded.at(-1)!;
-  const width = 1200;
-  const height = 390;
+  const latestRecorded = [...recorded].sort((a, b) => a.periodEnd.localeCompare(b.periodEnd)).at(-1)!;
+  const width = 960;
+  const height = 360;
   const left = 88;
   const right = 98;
   const top = 28;
-  const bottom = 92;
+  const bottom = 56;
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
-  const maxNet = Math.max(500, Math.ceil(Math.max(...recorded.map((point) => Math.abs(point.netKwh!)), 500) / 500) * 500);
-  const maxBank = Math.max(1000, Math.ceil(Math.max(...recorded.map((point) => point.bankKwh!), 1000) / 1000) * 1000);
-  const slotWidth = plotWidth / history.length;
-  const barWidth = Math.min(38, slotWidth * 0.56);
+  const maxNet = Math.max(500, Math.ceil(Math.max(...visibleRecorded.map((point) => Math.abs(point.netKwh!)), 500) / 500) * 500);
+  const maxBank = Math.max(1000, Math.ceil(Math.max(...visibleRecorded.map((point) => point.bankKwh!), 1000) / 1000) * 1000);
+  const slotWidth = plotWidth / billingPeriodLabels.length;
+  const groupWidth = Math.min(92, slotWidth * 0.76);
+  const barWidth = Math.min(30, groupWidth / Math.max(1, years.length - 0.35));
+  const barStep = years.length > 1 ? (groupWidth - barWidth) / (years.length - 1) : 0;
   const zeroY = top + plotHeight / 2;
-  const x = (index: number) => left + slotWidth * index + slotWidth / 2;
+  const x = (periodIndex: number, year: number) => {
+    const yearIndex = years.indexOf(year);
+    return left + slotWidth * periodIndex + slotWidth / 2 - groupWidth / 2 + barWidth / 2 + yearIndex * barStep;
+  };
   const netY = (value: number) => top + ((maxNet - value) / (maxNet * 2)) * plotHeight;
   const bankY = (value: number) => top + plotHeight - (value / maxBank) * plotHeight;
   const signedKwh = (value: number) => `${value > 0 ? "+" : ""}${kwhFormatter.format(value)} kWh`;
+  const toggleYear = (year: number) => {
+    setVisibleYears((current) => {
+      if (current.has(year) && current.size === 1) return current;
+      const next = new Set(current);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  };
 
   return (
     <div className="owner-usage-chart owner-bank-movement-chart">
@@ -773,13 +793,26 @@ function SolarBankMovementChart({ points }: { points: SolarBankMovementPoint[] }
         <div><dt>Recorded usage</dt><dd>{kwhFormatter.format(totalUsage)} kWh</dd><small>{recorded.length} complete bills</small></div>
         <div><dt>Closing bank</dt><dd>{kwhFormatter.format(latestRecorded.bankKwh!)} kWh</dd><small>Through {shortDate(latestRecorded.periodEnd)}</small></div>
       </dl>
+      <div className="owner-chart-legend owner-chart-year-legend" aria-label="Toggle comparison years">
+        {years.map((year, index) => (
+          <button
+            key={year}
+            type="button"
+            className={`owner-chart-year-button owner-chart-year-series-${index}`}
+            aria-pressed={visibleYears.has(year)}
+            onClick={() => toggleYear(year)}
+          >
+            <i />
+            {comparisonYearLabel(year, years[0])}
+          </button>
+        ))}
+      </div>
       <div className="owner-chart-legend owner-bank-movement-legend" aria-hidden="true">
-        <span><i className="owner-bank-added" />Added to bank</span>
-        <span><i className="owner-bank-drawn" />Drew from bank</span>
-        <span><i className="owner-bank-balance-line" />Closing bank</span>
+        <span><i className="owner-chart-primary-bar" />Net bank impact</span>
+        <span><i className="owner-chart-secondary-line" />Closing bank</span>
         <span><i className="owner-chart-missing" />Not imported</span>
       </div>
-      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Chronological solar bank movement by billing cycle with net impact bars and closing bank balance line">
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Year-over-year solar bank movement by billing period with net impact bars and closing bank balance lines">
         {[maxNet, maxNet / 2, 0, -maxNet / 2, -maxNet].map((value) => {
           const y = netY(value);
           return (
@@ -794,11 +827,11 @@ function SolarBankMovementChart({ points }: { points: SolarBankMovementPoint[] }
         ))}
         <text className="owner-chart-axis-title" x={15} y={top + plotHeight / 2} transform={`rotate(-90 15 ${top + plotHeight / 2})`} textAnchor="middle">net bank change kWh</text>
         <text className="owner-chart-axis-title" x={width - 14} y={top + plotHeight / 2} transform={`rotate(90 ${width - 14} ${top + plotHeight / 2})`} textAnchor="middle">closing bank kWh</text>
-        {history.map((point, index) => point.netKwh === null ? null : (
+        {visiblePoints.map((point) => point.netKwh === null ? null : (
           <rect
-            key={`${point.periodEnd}-net`}
-            className={point.netKwh >= 0 ? "owner-bank-net-positive" : "owner-bank-net-negative"}
-            x={x(index) - barWidth / 2}
+            key={`${point.year}-${point.periodIndex}-net`}
+            className={`owner-calendar-bar owner-calendar-year-series-${years.indexOf(point.year)}`}
+            x={x(point.periodIndex, point.year) - barWidth / 2}
             y={point.netKwh >= 0 ? netY(point.netKwh) : zeroY}
             width={barWidth}
             height={Math.max(2, Math.abs(netY(point.netKwh) - zeroY))}
@@ -806,31 +839,28 @@ function SolarBankMovementChart({ points }: { points: SolarBankMovementPoint[] }
             <title>{point.label}: used {kwhFormatter.format(point.usageKwh)} kWh; exported {kwhFormatter.format(point.exportedKwh!)} kWh; {signedKwh(point.netKwh)} {point.netKwh >= 0 ? "added to" : "drawn from"} bank; closing bank {kwhFormatter.format(point.bankKwh!)} kWh</title>
           </rect>
         ))}
-        {history.slice(1).map((point, index) => {
-          const previous = history[index];
-          if (previous.bankKwh === null || point.bankKwh === null) return null;
-          return <line key={`${previous.periodEnd}-${point.periodEnd}-bank`} className="owner-bank-balance-segment" x1={x(index)} y1={bankY(previous.bankKwh)} x2={x(index + 1)} y2={bankY(point.bankKwh)} />;
+        {years.filter((year) => visibleYears.has(year)).map((year) => {
+          const yearPoints = visiblePoints
+            .filter((point) => point.year === year && point.bankKwh !== null)
+            .sort((a, b) => a.periodIndex - b.periodIndex);
+          const path = yearPoints.map((point, pointIndex) => `${pointIndex ? "L" : "M"}${x(point.periodIndex, point.year).toFixed(1)},${bankY(point.bankKwh!).toFixed(1)}`).join(" ");
+          return <path key={`${year}-bank-line`} className={`owner-chart-line owner-calendar-line owner-calendar-year-series-${years.indexOf(year)}`} d={path} />;
         })}
-        {history.map((point, index) => point.bankKwh === null ? null : (
-          <circle key={`${point.periodEnd}-bank`} className="owner-bank-balance-point" cx={x(index)} cy={bankY(point.bankKwh)} r="6">
+        {visiblePoints.map((point) => point.bankKwh === null ? null : (
+          <circle key={`${point.year}-${point.periodIndex}-bank`} className={`owner-calendar-point owner-calendar-year-series-${years.indexOf(point.year)}`} cx={x(point.periodIndex, point.year)} cy={bankY(point.bankKwh)} r="6">
             <title>{point.label}: closing bank {kwhFormatter.format(point.bankKwh)} kWh</title>
           </circle>
         ))}
-        {history.map((point, index) => point.netKwh !== null && point.bankKwh !== null ? null : (
-          <circle key={`${point.periodEnd}-missing`} className="owner-history-missing" cx={x(index)} cy={zeroY} r="5">
+        {visiblePoints.map((point) => point.netKwh !== null && point.bankKwh !== null ? null : (
+          <circle key={`${point.year}-${point.periodIndex}-missing`} className="owner-history-missing" cx={x(point.periodIndex, point.year)} cy={zeroY} r="5">
             <title>{point.label}: solar export and bank balance not imported</title>
           </circle>
         ))}
-        {history.map((point, index) => {
-          const date = new Date(`${point.periodEnd}T12:00:00`);
-          return (
-            <text key={`${point.periodEnd}-label`} className="owner-chart-axis owner-bank-axis-label" x={x(index)} y={height - 56} textAnchor="end" transform={`rotate(-42 ${x(index)} ${height - 56})`}>
-              {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ’{String(date.getFullYear()).slice(-2)}
-            </text>
-          );
-        })}
+        {billingPeriodLabels.map((label, periodIndex) => (
+          <text key={label} className="owner-chart-axis" x={left + slotWidth * periodIndex + slotWidth / 2} y={height - 14} textAnchor="middle">{label}</text>
+        ))}
       </svg>
-      <p className="owner-chart-footnote">Each bar is exported solar minus delivered electricity for that bill. Green added energy to the bank; red used more electricity than was exported and drew the difference from the bank. Hover any bar for usage, export, net movement, and closing balance.</p>
+      <p className="owner-chart-footnote">Each billing-period slot groups the 2026, 2025, and 2024 net-impact bars beneath it. Bars above zero added to the bank; bars below zero drew from it. Matching year-colored lines show the closing bank balance. Hover any bar for usage, export, net movement, and closing balance.</p>
     </div>
   );
 }
@@ -891,6 +921,8 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
   }));
   const solarBankMovementPoints: SolarBankMovementPoint[] = analytics.billingHistory.map((bill) => ({
     periodEnd: bill.periodEnd,
+    year: Number(bill.periodEnd.slice(0, 4)),
+    periodIndex: (Number(bill.periodEnd.slice(5, 7)) - 2) / 2,
     label: bill.label,
     usageKwh: bill.usageKwh,
     exportedKwh: bill.exportedSolarKwh,
@@ -1045,7 +1077,7 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
           <p className="owner-chart-footnote"><strong>How to read it:</strong> each billing-period slot groups the 2026, 2025, and 2024 export bars beneath it. Bars use the left axis for exported kWh; matching year-colored lines use the right axis for the cumulative bank balance. A hollow marker means that year&apos;s bill exists but its solar values have not been imported. Export is excess energy Anaheim received from the property, not total panel production.</p>
         </article>
         <article className="owner-energy-chart-block owner-energy-chart-wide">
-          <div className="owner-chart-heading"><h3>Solar bank movement by billing cycle</h3><span>Net export minus usage · chronological since 2024</span></div>
+          <div className="owner-chart-heading"><h3>Solar bank movement by billing cycle</h3><span>Six billing periods · 2024, 2025, and 2026 grouped beneath each</span></div>
           <SolarBankMovementChart points={solarBankMovementPoints} />
         </article>
       </div>
