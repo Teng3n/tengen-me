@@ -287,6 +287,8 @@ a { color: inherit; text-decoration: none; }
 .owner-billing-cycle-half > div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 2px; }
 .owner-billing-cycle-half h5 { margin: 0; color: var(--muted); font-family: var(--font-geist-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .09em; }
 .owner-billing-cycle-half > div span { color: var(--dim); font-family: var(--font-geist-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
+.owner-billing-temperature-line { opacity: .92; }
+.owner-billing-cycle-chart .owner-chart-year-point, .owner-billing-cycle-chart .owner-chart-hit-point { cursor: help; }
 .owner-overlay-chart .owner-chart-legend { margin-bottom: 7px; }
 .owner-chart-calendar-metric-legend { margin-top: 2px; }
 .owner-chart-legend .owner-chart-primary-bar { height: 8px; background: var(--muted); }

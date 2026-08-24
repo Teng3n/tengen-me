@@ -7,6 +7,7 @@ const AC_FULL_TRACKING_START = "2026-07-25";
 const LIVE_NEST_MONTHLY_START = "2026-08";
 const HISTORY_START = "2024-01-01";
 const ELECTRICITY_CACHE_MS = 15 * 60 * 1000;
+const HISTORICAL_WEATHER_API = "https://historical-forecast-api.open-meteo.com/v1/forecast";
 
 const domesticRates = {
   monthlyCustomerCharge: 8,
@@ -31,6 +32,13 @@ const completedCycles = [
 type DailyElectricityRow = {
   local_date: string;
   total_kwh: number;
+};
+
+type HistoricalWeatherResponse = {
+  daily?: {
+    time?: string[];
+    temperature_2m_max?: Array<number | null>;
+  };
 };
 
 type DailyCoolingRow = {
@@ -172,6 +180,7 @@ export type ElectricityAnalytics = {
     days: Array<{
       date: string;
       kwh: number;
+      dailyHighF: number | null;
     }>;
   }>;
   monthly: Array<{
@@ -230,6 +239,33 @@ let pendingAnalytics: Promise<ElectricityAnalytics | null> | null = null;
 function round(value: number, digits = 2) {
   const factor = 10 ** digits;
   return Math.round((value + Number.EPSILON) * factor) / factor;
+}
+
+async function loadHistoricalDailyHighs(start: string, end: string) {
+  const url = new URL(HISTORICAL_WEATHER_API);
+  url.search = new URLSearchParams({
+    latitude: "33.8886",
+    longitude: "-117.8131",
+    start_date: start,
+    end_date: end,
+    daily: "temperature_2m_max",
+    temperature_unit: "fahrenheit",
+    timezone: "America/Los_Angeles",
+  }).toString();
+
+  try {
+    const response = await fetch(url, { headers: { accept: "application/json" } });
+    if (!response.ok) return new Map<string, number>();
+    const payload = await response.json() as HistoricalWeatherResponse;
+    const dates = payload.daily?.time ?? [];
+    const highs = payload.daily?.temperature_2m_max ?? [];
+    return new Map(dates.flatMap((date, index) => {
+      const high = highs[index];
+      return typeof high === "number" ? [[date, round(high, 1)] as const] : [];
+    }));
+  } catch {
+    return new Map<string, number>();
+  }
 }
 
 function dateValue(date: string) {
@@ -569,11 +605,19 @@ async function loadElectricityAnalytics(
   const latestYear = Number(latestMeterDate.slice(0, 4));
   const comparisonYears = Array.from({ length: 4 }, (_, index) => latestYear - index)
     .filter((year) => dailyResult.results.some((row) => row.local_date.startsWith(`${year}-`)));
+  const dailyHighByDate = await loadHistoricalDailyHighs(
+    dailyResult.results[0]?.local_date ?? HISTORY_START,
+    latestMeterDate,
+  );
   const yearlyDaily = comparisonYears.map((year) => ({
     year,
     days: dailyResult.results
       .filter((row) => row.local_date.startsWith(`${year}-`))
-      .map((row) => ({ date: row.local_date, kwh: round(row.total_kwh) })),
+      .map((row) => ({
+        date: row.local_date,
+        kwh: round(row.total_kwh),
+        dailyHighF: dailyHighByDate.get(row.local_date) ?? null,
+      })),
   }));
   const yearlyMonthly = comparisonYears.map((year) => ({
     year,

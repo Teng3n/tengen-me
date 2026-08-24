@@ -139,6 +139,7 @@ type ElectricityAnalytics = {
     days: Array<{
       date: string;
       kwh: number;
+      dailyHighF: number | null;
     }>;
   }>;
   monthly: Array<{
@@ -287,6 +288,7 @@ type YearUsageSeries = {
     value: number;
     label: string;
     partial?: boolean;
+    dailyHighF?: number | null;
   }>;
 };
 
@@ -589,10 +591,14 @@ function BillingCycleTabsChart({
   if (!selectedCycle) return <p className="owner-chart-empty">No billing-cycle usage history is available yet.</p>;
   const selectedYears = selectedCycle.series.map((item) => item.year).sort((a, b) => b - a);
   const visibleSeries = selectedCycle.series.filter((item) => visibleYears.has(item.year));
+  const temperatureValues = selectedCycle.series.flatMap((item) => item.points.flatMap((point) => (
+    typeof point.dailyHighF === "number" ? [point.dailyHighF] : []
+  )));
+  const showTemperature = temperatureValues.length > 0;
   const width = 960;
   const height = 310;
   const left = 62;
-  const right = 18;
+  const right = showTemperature ? 76 : 18;
   const top = 24;
   const bottom = 50;
   const plotWidth = width - left - right;
@@ -601,6 +607,12 @@ function BillingCycleTabsChart({
   const values = visibleSeries.flatMap((item) => item.points.map((point) => point.value));
   const maxKwh = Math.max(10, Math.ceil(Math.max(...values, 10) / 10) * 10);
   const y = (value: number) => top + plotHeight - (value / maxKwh) * plotHeight;
+  const minimumTemperature = showTemperature ? Math.floor(Math.min(...temperatureValues) / 10) * 10 : 0;
+  const maximumTemperature = showTemperature
+    ? Math.max(minimumTemperature + 10, Math.ceil(Math.max(...temperatureValues) / 10) * 10)
+    : 10;
+  const temperatureY = (value: number) => top + plotHeight
+    - ((value - minimumTemperature) / (maximumTemperature - minimumTemperature)) * plotHeight;
   const ranges = [
     { key: "first", label: "First half", detail: "Days 1–30", start: 0, end: Math.min(29, maxDay) },
     { key: "second", label: "Second half", detail: `Days 31–${maxDay + 1}`, start: 30, end: maxDay },
@@ -645,8 +657,14 @@ function BillingCycleTabsChart({
           </button>
         ))}
       </div>
+      {showTemperature ? (
+        <div className="owner-chart-legend owner-chart-calendar-metric-legend" aria-label="Chart metrics">
+          <span><i className="owner-chart-primary-bar" />Daily usage</span>
+          <span><i className="owner-chart-secondary-line" />Recorded daily high</span>
+        </div>
+      ) : null}
       <section id="owner-billing-cycle-panel" role="tabpanel" className="owner-billing-cycle-panel">
-        <div className="owner-billing-cycle-caption"><h4>{selectedCycle.label}</h4><span>Two 30-day views · same vertical scale</span></div>
+        <div className="owner-billing-cycle-caption"><h4>{selectedCycle.label}</h4><span>{showTemperature ? "Bars kWh · lines daily high °F" : "Two 30-day views · same vertical scale"}</span></div>
         <div className="owner-billing-cycle-halves">
           {ranges.map((range) => {
             const dayCount = range.end - range.start + 1;
@@ -667,7 +685,7 @@ function BillingCycleTabsChart({
             return (
               <section className="owner-billing-cycle-half" key={range.key}>
                 <div><h5>{range.label}</h5><span>{range.detail}</span></div>
-                <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${selectedCycle.label} ${range.detail.toLowerCase()} daily electricity usage bars aligned by billing-cycle day and year`}>
+                <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${selectedCycle.label} ${range.detail.toLowerCase()} daily electricity usage bars${showTemperature ? " and recorded daily-high temperature lines" : ""} aligned by billing-cycle day and year`}>
                   {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
                     const gridY = top + plotHeight * ratio;
                     return (
@@ -678,6 +696,12 @@ function BillingCycleTabsChart({
                     );
                   })}
                   <text className="owner-chart-axis-title" x={14} y={top + plotHeight / 2} transform={`rotate(-90 14 ${top + plotHeight / 2})`} textAnchor="middle">kWh / day</text>
+                  {showTemperature ? [0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+                    const axisY = top + plotHeight * ratio;
+                    const temperature = maximumTemperature - (maximumTemperature - minimumTemperature) * ratio;
+                    return <text key={ratio} className="owner-chart-axis" x={width - right + 10} y={axisY + 4} textAnchor="start">{Math.round(temperature)}°</text>;
+                  }) : null}
+                  {showTemperature ? <text className="owner-chart-axis-title" x={width - 14} y={top + plotHeight / 2} transform={`rotate(90 ${width - 14} ${top + plotHeight / 2})`} textAnchor="middle">daily high °F</text> : null}
                   {[...visibleSeries].reverse().flatMap((item) => {
                     const seriesIndex = selectedYears.indexOf(item.year);
                     return item.points
@@ -693,11 +717,36 @@ function BillingCycleTabsChart({
                             width={barWidth}
                             height={Math.max(1, top + plotHeight - barY)}
                           >
-                            <title>{point.label}: {point.value.toFixed(1)} kWh · day {point.x + 1}</title>
+                            <title>{point.label}: {point.value.toFixed(1)} kWh{typeof point.dailyHighF === "number" ? ` · ${point.dailyHighF.toFixed(1)}°F high` : ""} · day {point.x + 1}</title>
                           </rect>
                         );
                       });
                   })}
+                  {showTemperature ? visibleSeries.map((item) => {
+                    const seriesIndex = selectedYears.indexOf(item.year);
+                    const points = item.points.filter((point) => (
+                      point.x >= range.start
+                      && point.x <= range.end
+                      && typeof point.dailyHighF === "number"
+                    ));
+                    if (!points.length) return null;
+                    const path = points.map((point, index) => (
+                      `${index === 0 ? "M" : "L"}${centerX(point.x).toFixed(2)} ${temperatureY(point.dailyHighF!).toFixed(2)}`
+                    )).join(" ");
+                    return (
+                      <g key={`temperature-${item.year}`}>
+                        <path className={`owner-chart-line owner-chart-year-line owner-billing-temperature-line owner-chart-year-series-${seriesIndex}`} d={path} />
+                        {points.map((point) => (
+                          <g key={`${item.year}-${point.label}-temperature`}>
+                            <circle className={`owner-chart-year-point owner-chart-year-series-${seriesIndex}`} cx={centerX(point.x)} cy={temperatureY(point.dailyHighF!)} r="2.8" />
+                            <circle className="owner-chart-hit-point" cx={centerX(point.x)} cy={temperatureY(point.dailyHighF!)} r="8">
+                              <title>{point.label}: {point.dailyHighF!.toFixed(1)}°F recorded high</title>
+                            </circle>
+                          </g>
+                        ))}
+                      </g>
+                    );
+                  }) : null}
                   {tickDays.map((day) => (
                     <text key={day} className="owner-chart-axis" x={centerX(day)} y={height - 14} textAnchor="middle">Day {day + 1}</text>
                   ))}
@@ -1010,6 +1059,7 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
         .map((day) => ({
           x: isoDayDifference(startDate, day.date),
           value: day.kwh,
+          dailyHighF: day.dailyHighF,
           label: new Date(`${day.date}T12:00:00`).toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
@@ -1156,6 +1206,7 @@ function ElectricityPanel({ analytics }: { analytics: ElectricityAnalytics }) {
         <article className="owner-energy-chart-block owner-energy-chart-wide">
           <div className="owner-chart-heading"><h3>Daily usage by billing cycle</h3><span>Current bill window opens first · two 30-day charts per tab</span></div>
           <BillingCycleTabsChart cycles={billingCycles} initialCycleKey={billingCycleKeyForDate(analytics.trends.asOfDate)} />
+          <p className="owner-chart-footnote">Usage bars use the left axis. Temperature lines use the right axis and show recorded Yorba Linda daily highs from Open-Meteo for completed historical days only; no forecast temperatures are included.</p>
         </article>
         <article className="owner-energy-chart-block owner-energy-chart-wide">
           <div className="owner-chart-heading"><h3>Month-to-month usage by year</h3><span>January through December aligned across every available year</span></div>
