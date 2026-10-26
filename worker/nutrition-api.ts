@@ -1,4 +1,6 @@
 import type { OwnerIdentity } from "./owner-network-auth";
+import type { OwnerDatabase } from "./owner-data";
+import { writeAudit } from "./owner-data";
 
 export interface NutritionEnv {
   GOOGLE_SHEETS_CLIENT_EMAIL?: string;
@@ -6,7 +8,16 @@ export interface NutritionEnv {
   NUTRITION_SPREADSHEET_ID?: string;
   NUTRITION_CALORIE_TARGET?: string;
   NUTRITION_PROTEIN_TARGET?: string;
+  NUTRITION_PROTEIN_MIN?: string;
+  NUTRITION_PROTEIN_MAX?: string;
+  OWNER_DB?: OwnerDatabase;
 }
+
+type ProteinPreferences = {
+  target: number;
+  min: number;
+  max: number;
+};
 
 type Cell = string | number | boolean | null;
 type Row = Cell[];
@@ -539,6 +550,75 @@ function safeDateParam(value: string | null) {
   return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : currentLosAngelesDate();
 }
 
+function defaultProteinPreferences(env: NutritionEnv): ProteinPreferences {
+  const target = Number(env.NUTRITION_PROTEIN_TARGET) || 110;
+  const min = Number(env.NUTRITION_PROTEIN_MIN) || 90;
+  const max = Number(env.NUTRITION_PROTEIN_MAX) || 130;
+  return min <= target && target <= max ? { target, min, max } : { target: 110, min: 90, max: 130 };
+}
+
+async function readProteinPreferences(env: NutritionEnv): Promise<ProteinPreferences> {
+  const fallback = defaultProteinPreferences(env);
+  if (!env.OWNER_DB) return fallback;
+  try {
+    const row = await env.OWNER_DB.prepare(
+      "SELECT suggested_target, preferred_min, preferred_max FROM nutrition_preferences WHERE id = 1",
+    ).first<{ suggested_target: number; preferred_min: number; preferred_max: number }>();
+    if (!row) return fallback;
+    const stored = { target: Number(row.suggested_target), min: Number(row.preferred_min), max: Number(row.preferred_max) };
+    return stored.min > 0 && stored.min <= stored.target && stored.target <= stored.max ? stored : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function isSameOrigin(request: Request) {
+  const origin = request.headers.get("origin");
+  return !origin || origin === new URL(request.url).origin;
+}
+
+export async function handleNutritionPreferencesPut(request: Request, env: NutritionEnv, identity: OwnerIdentity) {
+  if (!isSameOrigin(request)) return json({ error: "Cross-origin requests are not allowed" }, 403);
+  if (!env.OWNER_DB) return json({ error: "Owner storage is unavailable" }, 503);
+  let body: { target?: unknown; min?: unknown; max?: unknown };
+  try {
+    body = await request.json() as typeof body;
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+  const target = Number(body.target);
+  const min = Number(body.min);
+  const max = Number(body.max);
+  if (![target, min, max].every((value) => Number.isFinite(value) && value >= 1 && value <= 500)) {
+    return json({ error: "Protein values must be between 1 and 500 grams" }, 400);
+  }
+  if (min > target || target > max) {
+    return json({ error: "The suggested target must sit inside the preferred range" }, 400);
+  }
+
+  await env.OWNER_DB.batch([
+    env.OWNER_DB.prepare(
+      `CREATE TABLE IF NOT EXISTS nutrition_preferences (
+         id INTEGER PRIMARY KEY CHECK (id = 1),
+         suggested_target REAL NOT NULL,
+         preferred_min REAL NOT NULL,
+         preferred_max REAL NOT NULL,
+         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+         updated_by TEXT NOT NULL
+       )`,
+    ),
+    env.OWNER_DB.prepare(
+      `INSERT INTO nutrition_preferences (id, suggested_target, preferred_min, preferred_max, updated_at, updated_by)
+       VALUES (1, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+       ON CONFLICT(id) DO UPDATE SET suggested_target = excluded.suggested_target,
+         preferred_min = excluded.preferred_min, preferred_max = excluded.preferred_max,
+         updated_at = CURRENT_TIMESTAMP, updated_by = excluded.updated_by`,
+    ).bind(target, min, max, identity.label),
+  ]);
+  await writeAudit(env.OWNER_DB, identity.label, "nutrition.preferences.updated", "protein", "saved", `${target} g target; ${min}-${max} g preferred range`);
+  return json({ ok: true, protein: target, proteinMin: min, proteinMax: max });
+}
+
 export async function handleNutritionDashboardGet(
   request: Request,
   env: NutritionEnv,
@@ -570,7 +650,7 @@ export async function handleNutritionDashboardGet(
       : plannedCaloriesFromRows;
     const selectedConsumed = selectedCalorieDay?.consumed.value ?? null;
     const calorieTarget = Number(env.NUTRITION_CALORIE_TARGET) || 2100;
-    const proteinTarget = Number(env.NUTRITION_PROTEIN_TARGET) || 120;
+    const proteinPreferences = await readProteinPreferences(env);
 
     const confirmedByDate = new Map<string, FoodEntry[]>();
     for (const food of foods) {
@@ -611,7 +691,9 @@ export async function handleNutritionDashboardGet(
       availableDates,
       targets: {
         calories: calorieTarget,
-        protein: proteinTarget,
+        protein: proteinPreferences.target,
+        proteinMin: proteinPreferences.min,
+        proteinMax: proteinPreferences.max,
         fiber: 28,
         saturatedFat: calorieTarget * 0.1 / 9,
         sodium: 2300,

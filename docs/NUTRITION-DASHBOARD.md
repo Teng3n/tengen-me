@@ -41,7 +41,13 @@ ranges to the browser.
 Optional configuration can be stored as Worker secrets or environment values:
 
 - `NUTRITION_CALORIE_TARGET` (default `2100`)
-- `NUTRITION_PROTEIN_TARGET` (default `120`)
+- `NUTRITION_PROTEIN_TARGET` (default `110`)
+- `NUTRITION_PROTEIN_MIN` (default `90`)
+- `NUTRITION_PROTEIN_MAX` (default `130`)
+
+Protein preferences can also be changed from the protected dashboard settings.
+Those values are stored in the private owner database and override the environment
+defaults for every device on the approved home network.
 
 After configuring the secrets, deploy through the normal GitHub-to-Cloudflare
 pipeline and verify `/admin/nutrition` from the approved network.

@@ -33,12 +33,13 @@ type Nutrients = Omit<Food, "id" | "name" | "quality" | "note" | "consumption" |
 type HistoryMetric = "totalSugar" | "addedSugar" | "calories" | "protein" | "saturatedFat" | "fiber" | "sodium";
 type HistoryDay = { date: string } & Record<HistoryMetric, Measure>;
 type SugarAverage = { measure: Measure; recordedDays: number; calendarDays: number };
+type ProteinPreferences = { target: number; min: number; max: number };
 type DashboardData = {
   generatedAt: string;
   timezone: string;
   selectedDate: string;
   availableDates: string[];
-  targets: { calories: number; protein: number; fiber: number; saturatedFat: number; sodium: number; sugarReduction: number };
+  targets: { calories: number; protein: number; proteinMin: number; proteinMax: number; fiber: number; saturatedFat: number; sodium: number; sugarReduction: number };
   calories: {
     consumed: Measure;
     planned: Measure;
@@ -136,23 +137,68 @@ function percentage(value: number | null) {
   return `${value > 0 ? "↓ " : value < 0 ? "↑ " : ""}${Math.abs(value).toFixed(0)}%`;
 }
 
-function ProgressBar({ value, target, warning = false }: { value: number | null; target: number; warning?: boolean }) {
-  const percent = value === null ? 0 : Math.max(0, Math.min(100, value / target * 100));
+function ProgressBar({ value, target, warning = false }: { value: number | null; target: number | null; warning?: boolean }) {
+  const percent = value === null || target === null ? 0 : Math.max(0, Math.min(100, value / target * 100));
   return (
-    <div className={`nutrition-progress-track${warning ? " nutrition-progress-warning" : ""}`} aria-label={value === null ? "Data unavailable" : `${Math.round(value / target * 100)} percent`}>
+    <div className={`nutrition-progress-track${warning ? " nutrition-progress-warning" : ""}${target === null ? " nutrition-progress-unconfigured" : ""}`} aria-label={value === null ? "Data unavailable" : target === null ? "Target not configured" : `${Math.round(value / target * 100)} percent`}>
       <span style={{ width: `${percent}%` }} />
     </div>
   );
 }
 
-function NutrientProgress({ label, measure, target, unit, reference }: { label: string; measure: Measure; target: number; unit: string; reference: string }) {
+function NutrientProgress({ label, measure, target, unit, reference }: { label: string; measure: Measure; target: number | null; unit: string; reference: string }) {
   const value = measure.value;
-  const warning = (label === "Saturated fat" || label === "Sodium") && value !== null && value > target;
+  const warning = target !== null && (label === "Saturated fat" || label === "Sodium") && value !== null && value > target;
   return (
     <article className="nutrition-target-card">
       <div><span>{label}</span><strong>{formatMeasure(measure, unit, unit === "mg" ? 0 : 1)}</strong></div>
       <ProgressBar value={value} target={target} warning={warning} />
-      <small>{reference} · {value === null ? "progress unknown" : `${Math.round(value / target * 100)}%`}</small>
+      <small>{reference} · {target === null ? "target not configured" : value === null ? "progress unknown" : `${Math.round(value / target * 100)}%`}</small>
+    </article>
+  );
+}
+
+function proteinStatus(value: number | null, preferences: ProteinPreferences) {
+  if (value === null) return { label: "Not enough data", tone: "neutral" };
+  if (Math.abs(value - preferences.target) < 0.05) return { label: "On Target", tone: "target" };
+  if (value >= preferences.min && value <= preferences.max) return { label: "Within Preferred Range", tone: "range" };
+  if (value < preferences.min) return { label: "Below Preferred Range", tone: "neutral" };
+  return { label: "Above Preferred Range", tone: "neutral" };
+}
+
+function ProteinProgress({
+  measure,
+  preferences,
+  rollingAverage,
+  recordedDays,
+}: {
+  measure: Measure;
+  preferences: ProteinPreferences;
+  rollingAverage: number | null;
+  recordedDays: number;
+}) {
+  const value = measure.value;
+  const status = proteinStatus(value, preferences);
+  const plottedValue = measure.upperBound ?? value ?? 0;
+  const scaleMax = Math.max(preferences.max * 1.2, preferences.target * 1.4, plottedValue * 1.05, 1);
+  const percent = (amount: number) => Math.max(0, Math.min(100, amount / scaleMax * 100));
+  return (
+    <article className="nutrition-target-card nutrition-protein-card">
+      <div className="nutrition-protein-totals">
+        <div><span>Protein today</span><strong>{formatMeasure(measure, "g")}</strong></div>
+        <div><span>Rolling 7-day average</span><strong>{rollingAverage === null ? "Not enough data" : `${number.format(rollingAverage)} g/day`}</strong><small>{recordedDays} of 7 days recorded</small></div>
+      </div>
+      <div
+        className="nutrition-protein-bar"
+        aria-label={`${value === null ? "Protein data unavailable" : `${number.format(value)} grams protein`}; preferred range ${number.format(preferences.min)} to ${number.format(preferences.max)} grams; suggested target ${number.format(preferences.target)} grams`}
+      >
+        <span className="nutrition-protein-fill" style={{ width: `${percent(plottedValue)}%` }} />
+        <span className="nutrition-protein-band" style={{ left: `${percent(preferences.min)}%`, width: `${percent(preferences.max) - percent(preferences.min)}%` }} />
+        <i className="nutrition-protein-target-mark" style={{ left: `${percent(preferences.target)}%` }} />
+        {value !== null ? <b className="nutrition-protein-current-mark" style={{ left: `${percent(plottedValue)}%` }} /> : null}
+      </div>
+      <div className="nutrition-protein-scale-labels"><span>0 g</span><span>{number.format(preferences.min)}–{number.format(preferences.max)} g preferred</span><span>{number.format(scaleMax)} g</span></div>
+      <div className={`nutrition-protein-status nutrition-protein-status-${status.tone}`}><strong>{status.label}</strong><span>{number.format(preferences.target)} g suggested target</span></div>
     </article>
   );
 }
@@ -204,6 +250,66 @@ function HistoryChart({ data, metric, baseline, movingAverage }: { data: History
   );
 }
 
+function MetricCalendar({
+  data,
+  metric,
+  selectedDate,
+  onSelect,
+}: {
+  data: HistoryDay[];
+  metric: HistoryMetric;
+  selectedDate: string;
+  onSelect(date: string): void;
+}) {
+  const start = shiftDate(selectedDate, -29);
+  const dates = Array.from({ length: 30 }, (_, index) => shiftDate(start, index));
+  const byDate = new Map(data.map((day) => [day.date, day[metric]]));
+  const values = dates.flatMap((date) => {
+    const value = byDate.get(date)?.upperBound ?? byDate.get(date)?.value;
+    return value === null || value === undefined ? [] : [value];
+  });
+  const maxValue = Math.max(...values, 1);
+  const leadingDays = dateAtNoon(start).getUTCDay();
+  const config = metricConfig[metric];
+  const digits = metric === "sodium" || metric === "calories" ? 0 : 1;
+
+  return (
+    <div className="nutrition-calendar-wrap">
+      <div className="nutrition-calendar-summary">
+        <span>{shortDate(start)}–{shortDate(selectedDate)}</span>
+        <span><i /> Recorded <b /> Estimated or incomplete</span>
+      </div>
+      <div className="nutrition-calendar-scroll">
+        <div className="nutrition-calendar" role="grid" aria-label={`30-day ${config.label} calendar`}>
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => <span className="nutrition-calendar-weekday" role="columnheader" key={day}>{day}</span>)}
+          {Array.from({ length: leadingDays }, (_, index) => <span className="nutrition-calendar-blank" key={`blank-${index}`} />)}
+          {dates.map((date) => {
+            const measure = byDate.get(date) ?? { value: null, upperBound: null, incomplete: true, estimated: false };
+            const plottedValue = measure.upperBound ?? measure.value;
+            const level = plottedValue === null ? 0 : Math.max(8, Math.min(100, plottedValue / maxValue * 100));
+            const uncertain = measure.incomplete || measure.estimated || (measure.value !== null && measure.upperBound !== null && measure.value !== measure.upperBound);
+            return (
+              <button
+                type="button"
+                role="gridcell"
+                key={date}
+                className={`${date === selectedDate ? "nutrition-calendar-selected " : ""}${uncertain ? "nutrition-calendar-uncertain" : ""}`}
+                onClick={() => onSelect(date)}
+                aria-label={`${dateLabel(date)}: ${formatMeasure(measure, config.unit, digits)}`}
+              >
+                <i className="nutrition-calendar-fill" style={{ height: `${level}%` }} />
+                <span>{dateAtNoon(date).getUTCDate()}</span>
+                <strong>{measure.value === null ? "—" : compactMeasure(measure, digits)} <small>{measure.value === null ? "" : config.unit}</small></strong>
+                <em>{measure.value === null ? "No entry" : uncertain ? "Estimate / incomplete" : "Recorded"}</em>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const nutrientGroups: Array<{ category: string; rows: Array<[string, keyof Nutrients, string, number]> }> = [
   { category: "Protein", rows: [["Total protein", "protein", "g", 1]] },
   { category: "Carbohydrates", rows: [["Total carbohydrates", "carbs", "g", 1], ["Dietary fiber", "fiber", "g", 1], ["Net carbohydrates", "netCarbs", "g", 1]] },
@@ -235,9 +341,12 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [metric, setMetric] = useState<HistoryMetric>("totalSugar");
-  const [range, setRange] = useState<"7" | "30" | "october" | "september">("7");
+  const [range, setRange] = useState<"7" | "30" | "october" | "september">("30");
+  const [historyView, setHistoryView] = useState<"calendar" | "trend">("calendar");
   const [movingAverage, setMovingAverage] = useState(true);
-  const [proteinTarget, setProteinTarget] = useState<number | null>(null);
+  const [proteinDraft, setProteinDraft] = useState<ProteinPreferences>({ target: 110, min: 90, max: 130 });
+  const [savingProtein, setSavingProtein] = useState(false);
+  const [proteinSettingsStatus, setProteinSettingsStatus] = useState("");
 
   const load = useCallback(async (date?: string, refresh = false) => {
     setLoading(true);
@@ -249,7 +358,9 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
       const response = await fetch(`/admin/api/nutrition${params.size ? `?${params}` : ""}`, { cache: "no-store" });
       const payload = await response.json() as DashboardData | { error?: string };
       if (!response.ok) throw new Error("error" in payload && payload.error ? payload.error : "Nutrition data could not be loaded");
-      setData(payload as DashboardData);
+      const nextData = payload as DashboardData;
+      setData(nextData);
+      setProteinDraft({ target: nextData.targets.protein, min: nextData.targets.proteinMin, max: nextData.targets.proteinMax });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Nutrition data could not be loaded");
     } finally {
@@ -262,11 +373,6 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  const setTarget = (value: number) => {
-    const safe = Math.max(1, Math.min(999, value || 1));
-    setProteinTarget(safe);
-  };
-
   const history = useMemo(() => {
     if (!data) return [];
     const end = data.selectedDate;
@@ -274,6 +380,43 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
     const rangeEnd = range === "september" ? "2026-09-30" : end;
     return data.history.filter((day) => day.date >= start && day.date <= rangeEnd);
   }, [data, range]);
+
+  const proteinRolling = useMemo(() => {
+    if (!data) return { average: null as number | null, recordedDays: 0 };
+    const start = shiftDate(data.selectedDate, -6);
+    const values = data.history
+      .filter((day) => day.date >= start && day.date <= data.selectedDate && day.protein.value !== null)
+      .map((day) => day.protein.value as number);
+    return {
+      average: values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null,
+      recordedDays: values.length,
+    };
+  }, [data]);
+
+  const saveProteinPreferences = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSavingProtein(true);
+    setProteinSettingsStatus("");
+    try {
+      const response = await fetch("/admin/api/nutrition/preferences", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(proteinDraft),
+      });
+      const payload = await response.json() as { error?: string; protein?: number; proteinMin?: number; proteinMax?: number };
+      if (!response.ok || payload.protein === undefined || payload.proteinMin === undefined || payload.proteinMax === undefined) {
+        throw new Error(payload.error || "Protein settings could not be saved");
+      }
+      const saved = { target: payload.protein, min: payload.proteinMin, max: payload.proteinMax };
+      setProteinDraft(saved);
+      setData((current) => current ? { ...current, targets: { ...current.targets, protein: saved.target, proteinMin: saved.min, proteinMax: saved.max } } : current);
+      setProteinSettingsStatus("Saved for this private dashboard on all devices.");
+    } catch (reason) {
+      setProteinSettingsStatus(reason instanceof Error ? reason.message : "Protein settings could not be saved");
+    } finally {
+      setSavingProtein(false);
+    }
+  };
 
   if (loading && !data) {
     return <section className="owner-loading nutrition-loading"><span className="owner-loading-mark" /><div><h2>Reading the nutrition log</h2><p>Calculating daily totals without filling in missing values.</p></div></section>;
@@ -291,7 +434,6 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
   const nextDate = selectedIndex >= 0 && selectedIndex < data.availableDates.length - 1 ? data.availableDates[selectedIndex + 1] : null;
   const discrepancy = data.calories.discrepancy;
   const hasDiscrepancy = discrepancy !== null && Math.abs(discrepancy) >= 10;
-  const activeProteinTarget = proteinTarget ?? data.targets.protein;
 
   return (
     <div className="nutrition-dashboard">
@@ -351,16 +493,30 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
       </section>
 
       <section className="owner-panel nutrition-history-panel">
-        <header className="nutrition-section-heading nutrition-chart-heading"><div><p className="section-kicker">Historical trend</p><h2>{metricConfig[metric].label}</h2></div><div className="nutrition-chart-controls"><label><span>Metric</span><select value={metric} onChange={(event) => setMetric(event.target.value as HistoryMetric)}>{Object.entries(metricConfig).map(([key, config]) => <option key={key} value={key}>{config.label}</option>)}</select></label><label className="nutrition-check"><input type="checkbox" checked={movingAverage} onChange={(event) => setMovingAverage(event.target.checked)} /> 7-day moving average</label></div></header>
-        <div className="nutrition-range-tabs" role="group" aria-label="History range">{([['7', 'Last 7 days'], ['30', 'Last 30 days'], ['october', 'Since Oct 1'], ['september', 'September baseline']] as const).map(([value, label]) => <button key={value} className={range === value ? "active" : ""} onClick={() => setRange(value)}>{label}</button>)}</div>
-        <HistoryChart data={history} metric={metric} baseline={data.sugar.september.measure.value} movingAverage={movingAverage} />
-        <p className="nutrition-chart-note">Gaps remain gaps; days without quantified data are never plotted as zero. Hollow points are estimates or lower bounds.</p>
+        <header className="nutrition-section-heading nutrition-chart-heading"><div><p className="section-kicker">Historical view</p><h2>{historyView === "calendar" ? "30-day calendar" : metricConfig[metric].label}</h2></div><div className="nutrition-chart-controls"><div className="nutrition-view-toggle" role="group" aria-label="History display"><button className={historyView === "calendar" ? "active" : ""} onClick={() => setHistoryView("calendar")}>Calendar</button><button className={historyView === "trend" ? "active" : ""} onClick={() => setHistoryView("trend")}>Trend</button></div><label><span>Metric</span><select value={metric} onChange={(event) => setMetric(event.target.value as HistoryMetric)}>{Object.entries(metricConfig).map(([key, config]) => <option key={key} value={key}>{config.label}</option>)}</select></label>{historyView === "trend" ? <label className="nutrition-check"><input type="checkbox" checked={movingAverage} onChange={(event) => setMovingAverage(event.target.checked)} /> 7-day moving average</label> : null}</div></header>
+        {historyView === "trend" ? <><div className="nutrition-range-tabs" role="group" aria-label="History range">{([['7', 'Last 7 days'], ['30', 'Last 30 days'], ['october', 'Since Oct 1'], ['september', 'September baseline']] as const).map(([value, label]) => <button key={value} className={range === value ? "active" : ""} onClick={() => setRange(value)}>{label}</button>)}</div><HistoryChart data={history} metric={metric} baseline={data.sugar.september.measure.value} movingAverage={movingAverage} /></> : <MetricCalendar data={data.history} metric={metric} selectedDate={data.selectedDate} onSelect={(date) => void load(date)} />}
+        <p className="nutrition-chart-note">Gaps remain gaps; days without quantified data are never shown as zero. Select any calendar day to open its daily detail.</p>
       </section>
 
       <section className="owner-panel nutrition-targets-panel">
-        <header className="nutrition-section-heading"><div><p className="section-kicker">Daily progress</p><h2>Targets and reference values</h2></div><label className="nutrition-protein-target"><span>Protein target</span><input type="number" min="1" max="999" value={activeProteinTarget} onChange={(event) => setTarget(Number(event.target.value))} /><b>g</b></label></header>
+        <header className="nutrition-section-heading"><div><p className="section-kicker">Daily progress</p><h2>Targets and reference values</h2></div><span className="nutrition-quality-count">Protein is informational, not an allowance</span></header>
+        <ProteinProgress
+          measure={data.nutrients.protein}
+          preferences={{ target: data.targets.protein, min: data.targets.proteinMin, max: data.targets.proteinMax }}
+          rollingAverage={proteinRolling.average}
+          recordedDays={proteinRolling.recordedDays}
+        />
+        <details className="nutrition-protein-settings">
+          <summary>Protein settings</summary>
+          <form onSubmit={saveProteinPreferences}>
+            <label><span>Suggested target</span><input type="number" min="1" max="500" step="1" value={proteinDraft.target} onChange={(event) => setProteinDraft((current) => ({ ...current, target: Number(event.target.value) }))} /><b>g</b></label>
+            <label><span>Preferred range minimum</span><input type="number" min="1" max="500" step="1" value={proteinDraft.min} onChange={(event) => setProteinDraft((current) => ({ ...current, min: Number(event.target.value) }))} /><b>g</b></label>
+            <label><span>Preferred range maximum</span><input type="number" min="1" max="500" step="1" value={proteinDraft.max} onChange={(event) => setProteinDraft((current) => ({ ...current, max: Number(event.target.value) }))} /><b>g</b></label>
+            <button type="submit" disabled={savingProtein}>{savingProtein ? "Saving…" : "Save protein settings"}</button>
+            {proteinSettingsStatus ? <p role="status">{proteinSettingsStatus}</p> : null}
+          </form>
+        </details>
         <div className="nutrition-target-grid">
-          <NutrientProgress label="Protein" measure={data.nutrients.protein} target={activeProteinTarget} unit="g" reference="Personal target" />
           <NutrientProgress label="Fiber" measure={data.nutrients.fiber} target={data.targets.fiber} unit="g" reference="Daily reference" />
           <NutrientProgress label="Saturated fat" measure={data.nutrients.saturatedFat} target={data.targets.saturatedFat} unit="g" reference="10% of calorie target" />
           <NutrientProgress label="Sodium" measure={data.nutrients.sodium} target={data.targets.sodium} unit="mg" reference="Daily reference" />
@@ -375,7 +531,7 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
 
       <section className="owner-panel nutrition-food-panel">
         <header className="nutrition-section-heading"><div><p className="section-kicker">Food log</p><h2>Everything recorded</h2></div><div className="nutrition-food-counts"><span>{data.reliability.confirmedFoodCount} confirmed</span><span>{data.reliability.plannedFoodCount} planned</span><span>{data.reliability.uncountedFoodCount + data.reliability.unknownConsumptionCount} not counted / unknown</span></div></header>
-        {data.foods.length ? <div className="nutrition-food-list"><div className="nutrition-food-header"><span>Food</span><span>Calories</span><span>Protein</span><span>Sugar</span><span>Sat. fat</span><span>Quality</span></div>{data.foods.map((food) => <details key={food.id} className={`nutrition-food-row nutrition-food-${food.consumption}`}><summary><span className="nutrition-food-name"><b>{food.name}</b><small>{food.consumption}</small></span><span>{formatMeasure(food.calories, "kcal", 0)}</span><span>{formatMeasure(food.protein, "g")}</span><span>{formatMeasure(food.totalSugar, "g")}</span><span>{formatMeasure(food.saturatedFat, "g")}</span><span className="nutrition-quality-badge">{food.quality}</span></summary><FoodDetails food={food} /></details>)}</div> : <p className="nutrition-empty-state">No food entries are recorded for this date.</p>}
+        {data.foods.length ? <div className="nutrition-food-list"><div className="nutrition-food-header"><span>Food</span><span>Calories</span><span>Protein</span><span>Sugar</span><span>Sat. fat</span><span>Quality</span></div>{data.foods.map((food) => <details key={food.id} className={`nutrition-food-row nutrition-food-${food.consumption}`}><summary><span className="nutrition-food-name"><b>{food.name}</b><small>{food.consumption}</small></span><span className="nutrition-food-metric" data-label="Calories">{formatMeasure(food.calories, "kcal", 0)}</span><span className="nutrition-food-metric" data-label="Protein">{formatMeasure(food.protein, "g")}</span><span className="nutrition-food-metric" data-label="Sugar">{formatMeasure(food.totalSugar, "g")}</span><span className="nutrition-food-metric" data-label="Sat. fat">{formatMeasure(food.saturatedFat, "g")}</span><span className="nutrition-quality-badge">{food.quality}</span></summary><FoodDetails food={food} /></details>)}</div> : <p className="nutrition-empty-state">No food entries are recorded for this date.</p>}
       </section>
 
       <footer className="nutrition-data-footnote"><p>Updated {new Date(data.generatedAt).toLocaleString("en-US", { timeZone: data.timezone })}. Missing fields remain unknown; restaurant estimates and threshold labels are identified. The source spreadsheet is read-only.</p></footer>
