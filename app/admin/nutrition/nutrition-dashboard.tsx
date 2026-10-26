@@ -568,7 +568,6 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
           <button disabled={!nextDate || loading} onClick={() => nextDate && void load(nextDate)} aria-label="Next logged day">→</button>
         </div>
         <div className="nutrition-quick-dates">
-          <button onClick={() => void load(todayLosAngeles())}>Today</button>
           <button onClick={() => void load(shiftDate(todayLosAngeles(), -1))}>Yesterday</button>
           <button disabled={loading} onClick={() => void load(data.selectedDate, true)}>Refresh</button>
         </div>
