@@ -291,18 +291,19 @@ const metricConfig: Record<HistoryMetric, { label: string; unit: string }> = {
 
 const primaryMetricOrder: PrimaryMetric[] = ["protein", "fiber", "saturatedFat", "sodium"];
 
-function DayMetricBars({ day, targets }: { day?: HistoryDay; targets: DashboardData["targets"] }) {
-  return <div className="nutrition-day-mini-bars">{primaryMetricOrder.map((metric) => {
-    const measure = day?.[metric];
-    const config = primaryMetricDetails(metric, targets);
-    const value = measure?.upperBound ?? measure?.value ?? null;
-    const height = value === null ? 0 : Math.max(5, Math.min(100, value / config.target * 100));
-    const uncertain = !measure || measure.value === null || measure.incomplete || measure.estimated || measure.upperBound === null;
-    return <span className={`nutrition-day-mini-bar nutrition-day-mini-bar-${metric}${uncertain ? " nutrition-day-mini-bar-uncertain" : ""}`} key={metric} title={`${config.label}: ${measure ? formatMeasure(measure, config.unit, metric === "sodium" ? 0 : 1) : "No entry"}`}><i style={{ height: `${height}%` }} /></span>;
-  })}</div>;
+function DayNutritionValues({ day }: { day?: HistoryDay }) {
+  const rows: Array<[string, Measure | undefined, string, number]> = [
+    ["Calories", day?.calories, "kcal", 0],
+    ["Protein", day?.protein, "g", 1],
+    ["Fiber", day?.fiber, "g", 1],
+    ["Sugar", day?.totalSugar, "g", 1],
+    ["Sat. fat", day?.saturatedFat, "g", 1],
+    ["Sodium", day?.sodium, "mg", 0],
+  ];
+  return <dl className="nutrition-day-values">{rows.map(([label, measure, unit, digits]) => <div key={label}><dt>{label}</dt><dd>{measure ? compactMeasure(measure, digits) : "—"}{measure?.value === null || !measure ? null : <small>{unit}</small>}</dd></div>)}</dl>;
 }
 
-function MonthlyNutritionCalendar({ data, targets, month, selectedDate, onMonthChange, onSelect }: { data: HistoryDay[]; targets: DashboardData["targets"]; month: string; selectedDate: string; onMonthChange(month: string): void; onSelect(date: string): void }) {
+function MonthlyNutritionCalendar({ data, month, selectedDate, onMonthChange, onSelect }: { data: HistoryDay[]; month: string; selectedDate: string; onMonthChange(month: string): void; onSelect(date: string): void }) {
   const range = monthDateRange(month);
   const dates = Array.from({ length: range.days }, (_, index) => shiftDate(range.start, index));
   const byDate = new Map(data.map((day) => [day.date, day]));
@@ -311,15 +312,15 @@ function MonthlyNutritionCalendar({ data, targets, month, selectedDate, onMonthC
   return (
     <div className="nutrition-calendar-wrap">
       <div className="nutrition-month-nav"><button onClick={() => onMonthChange(shiftMonth(month, -1))} aria-label="Previous month">←</button><strong>{monthLabel}</strong><button onClick={() => onMonthChange(shiftMonth(month, 1))} aria-label="Next month">→</button></div>
-      <div className="nutrition-calendar-legend"><span><i className="protein" /> Protein</span><span><i className="fiber" /> Fiber</span><span><i className="saturated-fat" /> Saturated fat</span><span><i className="sodium" /> Sodium</span><span><b /> Incomplete</span></div>
       <div className="nutrition-calendar-scroll">
         <div className="nutrition-calendar nutrition-calendar-multi" role="grid" aria-label={`${monthLabel} nutrition calendar`}>
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => <span className="nutrition-calendar-weekday" role="columnheader" key={day}>{day}</span>)}
           {Array.from({ length: leadingDays }, (_, index) => <span className="nutrition-calendar-blank" key={`blank-${index}`} />)}
           {dates.map((date) => {
             const day = byDate.get(date);
-            const uncertain = !day || primaryMetricOrder.some((metric) => day[metric].value === null || day[metric].incomplete || day[metric].estimated);
-            return <button type="button" role="gridcell" key={date} className={`${date === selectedDate ? "nutrition-calendar-selected " : ""}${uncertain ? "nutrition-calendar-uncertain" : ""}`} onClick={() => onSelect(date)} aria-label={`${dateLabel(date)}${day ? ", nutrition values available" : ", no logged nutrition"}`}><span className="nutrition-calendar-day-number">{dateAtNoon(date).getUTCDate()}</span><DayMetricBars day={day} targets={targets} /></button>;
+            const measures = day ? [day.calories, day.protein, day.fiber, day.totalSugar, day.saturatedFat, day.sodium] : [];
+            const uncertain = !day || measures.some((measure) => measure.value === null || measure.incomplete || measure.estimated);
+            return <button type="button" role="gridcell" key={date} className={`${date === selectedDate ? "nutrition-calendar-selected " : ""}${uncertain ? "nutrition-calendar-uncertain" : ""}`} onClick={() => onSelect(date)} aria-label={`${dateLabel(date)}${day ? ", nutrition values available" : ", no logged nutrition"}`}><span className="nutrition-calendar-day-number">{dateAtNoon(date).getUTCDate()}</span><DayNutritionValues day={day} /></button>;
           })}
         </div>
       </div>
@@ -447,7 +448,7 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
 
       <details className="owner-panel nutrition-calendar-panel" open>
         <summary aria-label="Show or hide calendar"><span aria-hidden="true">⌄</span></summary>
-        <MonthlyNutritionCalendar data={data.history} targets={data.targets} month={calendarMonth || data.selectedDate.slice(0, 7)} selectedDate={data.selectedDate} onMonthChange={setCalendarMonth} onSelect={(date) => void load(date, false, true)} />
+        <MonthlyNutritionCalendar data={data.history} month={calendarMonth || data.selectedDate.slice(0, 7)} selectedDate={data.selectedDate} onMonthChange={setCalendarMonth} onSelect={(date) => void load(date, false, true)} />
       </details>
 
       <section className="nutrition-toolbar" aria-label="Date navigation">
