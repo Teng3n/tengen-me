@@ -20,8 +20,9 @@ import {
   isAuthorizedBridgeRequest,
   type StatusKV,
 } from "./server-status-api";
+import { handleNutritionDashboardGet, type NutritionEnv } from "./nutrition-api";
 
-interface Env {
+interface Env extends NutritionEnv {
   ASSETS: Fetcher;
   IMAGES: {
     input(stream: ReadableStream): {
@@ -67,6 +68,9 @@ const worker = {
 
       if (url.pathname === "/admin/api/dashboard" && request.method === "GET") {
         return handleOwnerDashboardGet(env, access.identity);
+      }
+      if (url.pathname === "/admin/api/nutrition" && request.method === "GET") {
+        return handleNutritionDashboardGet(request, env, access.identity);
       }
       if (url.pathname === "/admin/api/actions" && request.method === "POST") {
         return handleOwnerActionCreate(request, env, access.identity);

@@ -741,3 +741,100 @@ test("status feed remains live between heartbeats and times out after fifteen mi
   assert.equal(stalePayload.servers[0].status, "offline");
   assert.equal(stalePayload.servers[0].sourceLabel, "Feed timed out");
 });
+
+test("nutrition dashboard remains private and renders for the approved home network", async () => {
+  const denied = await render("/admin/nutrition", {
+    "x-tengen-owner-authorized": "1",
+  });
+  assert.equal(denied.status, 200);
+  assert.match(await denied.text(), /Nutrition data stays private/);
+
+  const allowed = await render("/admin/nutrition", {
+    "cf-connecting-ip": "172.115.212.10",
+  }, {
+    OWNER_DB: createOwnerDb("172.115.212.10/32"),
+  });
+  assert.equal(allowed.status, 200);
+  const html = await allowed.text();
+  assert.match(html, /Nutrition, without the guesswork/);
+  assert.match(html, /Reading the nutrition log/);
+});
+
+test("nutrition API fails closed when Google Sheets credentials are absent", async () => {
+  const response = await callWorker("/admin/api/nutrition?date=2026-10-25", {
+    headers: { "cf-connecting-ip": "172.115.212.10" },
+  }, {
+    OWNER_DB: createOwnerDb("172.115.212.10/32"),
+  });
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: "Nutrition spreadsheet is not configured" });
+});
+
+test("nutrition API preserves threshold ranges and ignores monthly summary rows", async () => {
+  const keys = await crypto.subtle.generateKey(
+    { name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
+    true,
+    ["sign", "verify"],
+  );
+  const privateKeyBytes = new Uint8Array(await crypto.subtle.exportKey("pkcs8", keys.privateKey));
+  const privateKey = `-----BEGIN PRIVATE KEY-----\n${Buffer.from(privateKeyBytes).toString("base64").match(/.{1,64}/g).join("\n")}\n-----END PRIVATE KEY-----`;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("oauth2.googleapis.com/token")) {
+      return Response.json({ access_token: "test-access-token", expires_in: 3600 });
+    }
+    if (url.includes("sheets.googleapis.com")) {
+      return Response.json({ valueRanges: [
+        { values: [
+          ["Date", "Calories In", "Basal Calories", "Active Calories", "Total Burn", "Net Calories", "Weight (lb)", "Food / Notes"],
+          ["October 2026", 999999, 999999, 999999, 999999, 0, null, "Monthly summary"],
+          ["Oct 25, 2026", 2103, 1693, 307, 2000, 103, null, "Finalized October 25, 2026."],
+        ] },
+        { values: [
+          ["Date", "Food item", "Calories logged", "Protein (g)", "Carbs (g)", "Fiber (g)", "Total sugar (g)", "Added sugar (g)", "Fat (g)", "Sodium (mg)", "Status", "Source / note", "Counted in calorie log?", "Saturated fat (g)"],
+          ["Oct 25, 2026", "Quest bars x2", 160, 16, 18, 10, null, 0, 7, 170, "Exact label", "Total sugar <2 g; 4 g sugar alcohol.", "Yes", 2],
+          ["Oct 25, 2026", "Quest bars x2", 160, 16, 18, 10, null, 0, 7, 170, "Exact label", "Total sugar <2 g; 4 g sugar alcohol.", "Yes", 2],
+          ["Oct 25, 2026", "In-N-Out meal", 1300, 54, 93, 8, 9, null, 62, 2410, "Partial estimate", "Restaurant estimate.", "Yes", 23.5],
+          ["Oct 25, 2026", "Chicken wrap", 338, 38, 22.5, 17, 0.5, 0, 18.25, 1298, "Derived", "Label-derived recipe.", "Yes", 8.5],
+          ["Oct 25, 2026", "Sugar-free popsicles", 120, 0, 26.7, 0, 0, 0, 0, 0, "Exact", "16 g sugar alcohol.", "Yes", 0],
+          ["Oct 25, 2026", "Pumpkin cheesecake", 185, 2, 18, 0, 12.5, 10.5, 11.5, 135, "Label-derived", "Half serving.", "Yes", 7.5],
+        ] },
+        { values: [
+          ["Nutrition Reference"],
+          ["Quick lookup"],
+          ["Blank cells remain unknown"],
+          ["Category", "Item", "Standard portion", "Calories", "Protein (g)", "Carbs (g)", "Fiber (g)", "Total sugar (g)", "Added sugar (g)", "Sugar alcohol (g)"],
+        ] },
+      ] });
+    }
+    return originalFetch(input);
+  };
+
+  try {
+    const response = await callWorker("/admin/api/nutrition?date=2026-10-25", {
+      headers: { "cf-connecting-ip": "172.115.212.10" },
+    }, {
+      OWNER_DB: createOwnerDb("172.115.212.10/32"),
+      GOOGLE_SHEETS_CLIENT_EMAIL: "nutrition-test@example.test",
+      GOOGLE_SHEETS_PRIVATE_KEY: privateKey,
+      NUTRITION_SPREADSHEET_ID: "test-sheet",
+    });
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.deepEqual(payload.availableDates, ["2026-10-25"]);
+    assert.equal(payload.calories.consumed.value, 2103);
+    assert.equal(payload.calories.burned.value, 2000);
+    assert.equal(payload.calories.status, "Finalized");
+    assert.equal(payload.calories.discrepancy, 0);
+    assert.equal(payload.foods.length, 5);
+    assert.equal(payload.nutrients.protein.value, 110);
+    assert.equal(payload.nutrients.totalSugar.value, 22);
+    assert.equal(payload.nutrients.totalSugar.upperBound, 24);
+    assert.equal(payload.nutrients.sugarAlcohols.value, 20);
+    assert.equal(payload.nutrients.saturatedFat.value, 41.5);
+    assert.equal(payload.nutrients.sodium.value, 4013);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
