@@ -377,7 +377,34 @@ function MonthlyNutritionCalendar({ data, targets, sugarBaseline, month, selecte
   );
 }
 
-function NutrientTrendPanel({ data, metric, targets, periodLabel }: { data: HistoryDay[]; metric: PrimaryMetric; targets: DashboardData["targets"]; periodLabel: string }) {
+function InteractiveChartPoint({ x, y, date, metricLabel, valueLabel, chartWidth, radius = 3.5, variant = "daily", uncertain = false, onSelect }: { x: number; y: number; date: string; metricLabel: string; valueLabel: string; chartWidth: number; radius?: number; variant?: "daily" | "rolling" | "nutrient"; uncertain?: boolean; onSelect(date: string): void }) {
+  const tooltipWidth = chartWidth < 600 ? 142 : 170;
+  const tooltipHeight = 38;
+  const tooltipX = x > chartWidth / 2 ? x - tooltipWidth - 7 : x + 7;
+  const tooltipY = y < 52 ? y + 9 : y - tooltipHeight - 9;
+  const ariaLabel = `${dateLabel(date)}, ${metricLabel}: ${valueLabel}. Select to view this date.`;
+  return <g className="nutrition-chart-point" role="button" tabIndex={0} aria-label={ariaLabel} onClick={() => onSelect(date)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onSelect(date); } }}>
+    <title>{ariaLabel}</title>
+    <circle className="nutrition-chart-point-hit" cx={x} cy={y} r={Math.max(11, radius + 7)} />
+    <circle className={`nutrition-chart-point-marker nutrition-chart-point-${variant}${uncertain ? " uncertain" : ""}`} cx={x} cy={y} r={radius} />
+    <g className="nutrition-chart-tooltip" aria-hidden="true">
+      <rect x={tooltipX} y={tooltipY} width={tooltipWidth} height={tooltipHeight} rx="4" />
+      <text x={tooltipX + 8} y={tooltipY + 14}><tspan>{shortDate(date)}</tspan><tspan x={tooltipX + 8} dy="14">{metricLabel}: {valueLabel}</tspan></text>
+    </g>
+  </g>;
+}
+
+function NutrientTrendLegend() {
+  return <div className="nutrition-trend-legend" aria-label="Nutrient graph legend">
+    <span><i className="daily" /> Daily upper estimate</span>
+    <span><i className="point" /> Logged day — hover or select</span>
+    <span><i className="reference" /> Target or reference</span>
+    <span><i className="sodium" /> Sodium 3,000 mg context</span>
+    <span className="gap">A gap means no quantified entry</span>
+  </div>;
+}
+
+function NutrientTrendPanel({ data, metric, targets, periodLabel, onSelect }: { data: HistoryDay[]; metric: PrimaryMetric; targets: DashboardData["targets"]; periodLabel: string; onSelect(date: string): void }) {
   const config = primaryMetricDetails(metric, targets);
   const points = data.flatMap((day, index) => day[metric].value === null ? [] : [{ index, value: (day[metric].upperBound ?? day[metric].value) as number, date: day.date, measure: day[metric] }]);
   if (!points.length) return <article className="nutrition-trend-card"><h3>{config.label}</h3><p>No quantified values</p></article>;
@@ -387,22 +414,22 @@ function NutrientTrendPanel({ data, metric, targets, periodLabel }: { data: Hist
   const y = (value: number) => pad.top + (1 - value / maxValue) * (height - pad.top - pad.bottom);
   const segments: Array<typeof points> = [];
   for (const point of points) { const segment = segments.at(-1); if (!segment || segment.at(-1)!.index !== point.index - 1) segments.push([point]); else segment.push(point); }
-  return <article className="nutrition-trend-card"><header><h3>{config.label}</h3><span>{config.reference}</span></header><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${periodLabel} ${config.label} trend`}><line x1={pad.left} x2={width - pad.right} y1={y(config.target)} y2={y(config.target)} className="nutrition-trend-reference" />{metric === "sodium" ? <line x1={pad.left} x2={width - pad.right} y1={y(3000)} y2={y(3000)} className="nutrition-trend-milestone" /> : null}{segments.map((segment, index) => segment.length > 1 ? <polyline key={index} points={segment.map((point) => `${x(point.index)},${y(point.value)}`).join(" ")} className="nutrition-history-line" /> : null)}{points.map((point) => <circle key={point.date} cx={x(point.index)} cy={y(point.value)} r="3"><title>{shortDate(point.date)}: {formatUpperEstimate(point.measure, config.unit, metric === "sodium" ? 0 : 1)}</title></circle>)}<text x={pad.left} y={height - 6}>{shortDate(data[0].date)}</text><text x={width - pad.right} y={height - 6} textAnchor="end">{shortDate(data.at(-1)!.date)}</text></svg></article>;
+  return <article className="nutrition-trend-card"><header><h3>{config.label}</h3><span>{config.reference}</span></header><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${periodLabel} ${config.label} trend`}><line x1={pad.left} x2={width - pad.right} y1={y(config.target)} y2={y(config.target)} className="nutrition-trend-reference" />{metric === "sodium" ? <line x1={pad.left} x2={width - pad.right} y1={y(3000)} y2={y(3000)} className="nutrition-trend-milestone" /> : null}{segments.map((segment, index) => segment.length > 1 ? <polyline key={index} points={segment.map((point) => `${x(point.index)},${y(point.value)}`).join(" ")} className="nutrition-history-line" /> : null)}{points.map((point) => <InteractiveChartPoint key={point.date} x={x(point.index)} y={y(point.value)} date={point.date} metricLabel={config.label} valueLabel={formatUpperEstimate(point.measure, config.unit, metric === "sodium" ? 0 : 1)} chartWidth={width} radius={3} variant="nutrient" uncertain={point.measure.incomplete || point.measure.estimated || (point.measure.upperBound !== null && Math.abs(point.measure.upperBound - point.measure.value!) > 0.001)} onSelect={onSelect} />)}<text x={pad.left} y={height - 6}>{shortDate(data[0].date)}</text><text x={width - pad.right} y={height - 6} textAnchor="end">{shortDate(data.at(-1)!.date)}</text></svg></article>;
 }
 
-function NutritionTrends({ data, targets, selectedDate, days }: { data: HistoryDay[]; targets: DashboardData["targets"]; selectedDate: string; days: 7 | 30 }) {
+function NutritionTrends({ data, targets, selectedDate, days, onSelect }: { data: HistoryDay[]; targets: DashboardData["targets"]; selectedDate: string; days: 7 | 30; onSelect(date: string): void }) {
   const start = shiftDate(selectedDate, -(days - 1));
   const byDate = new Map(data.map((day) => [day.date, day]));
   const trendDays = Array.from({ length: days }, (_, index) => {
     const date = shiftDate(start, index);
     return byDate.get(date) ?? { date, ...Object.fromEntries(Object.keys(metricConfig).map((metric) => [metric, { value: null, upperBound: null, incomplete: true, estimated: false }])) } as HistoryDay;
   });
-  return <div className="nutrition-trend-grid">{primaryMetricOrder.map((metric) => <NutrientTrendPanel key={metric} data={trendDays} metric={metric} targets={targets} periodLabel={`${days}-day`} />)}</div>;
+  return <><NutrientTrendLegend /><div className="nutrition-trend-grid">{primaryMetricOrder.map((metric) => <NutrientTrendPanel key={metric} data={trendDays} metric={metric} targets={targets} periodLabel={`${days}-day`} onSelect={onSelect} />)}</div></>;
 }
 
 type SugarRange = "7" | "14" | "30" | "october" | "september";
 
-function SugarTrendChart({ data, selectedDate, baseline, reductionGoal, range }: { data: HistoryDay[]; selectedDate: string; baseline: Measure; reductionGoal: number; range: SugarRange }) {
+function SugarTrendChart({ data, selectedDate, baseline, reductionGoal, range, onSelect }: { data: HistoryDay[]; selectedDate: string; baseline: Measure; reductionGoal: number; range: SugarRange; onSelect(date: string): void }) {
   const start = range === "7" ? shiftDate(selectedDate, -6) : range === "14" ? shiftDate(selectedDate, -13) : range === "30" ? shiftDate(selectedDate, -29) : range === "october" ? "2026-10-01" : "2026-09-01";
   const end = range === "september" ? "2026-09-30" : selectedDate;
   const dayCount = Math.max(1, Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000) + 1);
@@ -424,7 +451,7 @@ function SugarTrendChart({ data, selectedDate, baseline, reductionGoal, range }:
   const y = (value: number) => pad.top + (1 - value / maxValue) * (height - pad.top - pad.bottom);
   const segments: Array<typeof daily> = [];
   for (const point of daily) { const segment = segments.at(-1); if (!segment || segment.at(-1)!.index !== point.index - 1) segments.push([point]); else segment.push(point); }
-  return <div className="nutrition-sugar-chart-wrap"><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Total sugar history and rolling average">{baselineValue !== null ? <line x1={pad.left} x2={width - pad.right} y1={y(baselineValue)} y2={y(baselineValue)} className="nutrition-sugar-baseline-line" /> : null}{goalValue !== null ? <line x1={pad.left} x2={width - pad.right} y1={y(goalValue)} y2={y(goalValue)} className="nutrition-sugar-goal-line" /> : null}{segments.map((segment, index) => segment.length > 1 ? <polyline key={index} points={segment.map((point) => `${x(point.index)},${y(point.value)}`).join(" ")} className="nutrition-sugar-daily-line" /> : null)}{rolling.length > 1 ? <polyline points={rolling.map((point) => `${x(point.index)},${y(point.value)}`).join(" ")} className="nutrition-sugar-rolling-line" /> : null}{daily.map((point) => <circle key={point.date} cx={x(point.index)} cy={y(point.value)} r="3.5" className={point.measure.incomplete || point.measure.estimated ? "incomplete" : ""}><title>{shortDate(point.date)}: {formatUpperEstimate(point.measure, "g")}</title></circle>)}<text x={pad.left} y={height - 8}>{shortDate(start)}</text><text x={width - pad.right} y={height - 8} textAnchor="end">{shortDate(end)}</text></svg><div className="nutrition-sugar-chart-legend"><span><i className="daily" /> Daily total</span><span><i className="rolling" /> Rolling 7-day</span><span><i className="baseline" /> September baseline</span><span><i className="goal" /> {reductionGoal}% reduction goal</span></div></div>;
+  return <div className="nutrition-sugar-chart-wrap"><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Total sugar history and rolling average">{baselineValue !== null ? <line x1={pad.left} x2={width - pad.right} y1={y(baselineValue)} y2={y(baselineValue)} className="nutrition-sugar-baseline-line" /> : null}{goalValue !== null ? <line x1={pad.left} x2={width - pad.right} y1={y(goalValue)} y2={y(goalValue)} className="nutrition-sugar-goal-line" /> : null}{segments.map((segment, index) => segment.length > 1 ? <polyline key={index} points={segment.map((point) => `${x(point.index)},${y(point.value)}`).join(" ")} className="nutrition-sugar-daily-line" /> : null)}{rolling.length > 1 ? <polyline points={rolling.map((point) => `${x(point.index)},${y(point.value)}`).join(" ")} className="nutrition-sugar-rolling-line" /> : null}{daily.map((point) => <InteractiveChartPoint key={`daily-${point.date}`} x={x(point.index)} y={y(point.value)} date={point.date} metricLabel="Total sugar" valueLabel={formatUpperEstimate(point.measure, "g")} chartWidth={width} radius={3.5} variant="daily" uncertain={point.measure.incomplete || point.measure.estimated || (point.measure.upperBound !== null && Math.abs(point.measure.upperBound - point.measure.value!) > 0.001)} onSelect={onSelect} />)}{rolling.map((point) => <InteractiveChartPoint key={`rolling-${point.date}`} x={x(point.index)} y={y(point.value)} date={point.date} metricLabel="Rolling 7-day" valueLabel={`${point.uncertain ? "≈" : ""}${number.format(point.value)} g/day`} chartWidth={width} radius={2.8} variant="rolling" uncertain={point.uncertain} onSelect={onSelect} />)}<text x={pad.left} y={height - 8}>{shortDate(start)}</text><text x={width - pad.right} y={height - 8} textAnchor="end">{shortDate(end)}</text></svg><div className="nutrition-sugar-chart-legend"><span><i className="daily" /> Daily total</span><span><i className="rolling" /> Rolling 7-day</span><span><i className="baseline" /> September baseline</span><span><i className="goal" /> {reductionGoal}% reduction goal</span><span className="interaction">Hover for values · select a point to open that date</span></div></div>;
 }
 
 function SugarSources({ foods, dailyTotal }: { foods: Food[]; dailyTotal: Measure }) {
@@ -530,7 +557,7 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
       {error ? <p className="owner-alert">Refresh failed: {error}. Showing the last loaded view.</p> : null}
 
       <details className="owner-panel nutrition-calendar-panel" open>
-        <summary aria-label="Show or hide calendar"><strong>Calendar View</strong><span aria-hidden="true">⌄</span></summary>
+        <summary aria-label="Show or hide calendar"><strong>Calendar View</strong></summary>
         <MonthlyNutritionCalendar data={data.history} targets={data.targets} sugarBaseline={data.sugar.september.measure} month={calendarMonth || data.selectedDate.slice(0, 7)} selectedDate={data.selectedDate} onMonthChange={setCalendarMonth} onSelect={(date) => void load(date, false, true)} />
       </details>
 
@@ -582,7 +609,7 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
         </div>
         {progressPeriod === "today" ? null : <div className="nutrition-inline-trends">
           <header><div><p className="section-kicker">Nutrient graphs</p><h3>{progressPeriod === "r7" ? "Seven-day trends" : "Rolling 30-day trends"}</h3></div></header>
-          <NutritionTrends data={data.history} targets={data.targets} selectedDate={data.selectedDate} days={progressPeriod === "r7" ? 7 : 30} />
+          <NutritionTrends data={data.history} targets={data.targets} selectedDate={data.selectedDate} days={progressPeriod === "r7" ? 7 : 30} onSelect={(date) => void load(date, false, true)} />
           <p className="nutrition-chart-note">Missing days remain gaps rather than being interpreted as zero.</p>
         </div>}
       </section>
@@ -595,7 +622,7 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
           <SugarProgressCard label="Average since October 1" measure={data.sugar.sinceOctober.measure} baseline={data.sugar.september.measure} detail={`${data.sugar.sinceOctober.recordedDays} recorded days`} reduction={data.sugar.sinceOctoberReductionPercent} statusBasis="since October 1" />
           <SugarReductionCard reduction={data.sugar.rollingReductionPercent} baseline={data.sugar.september.measure} detail={`Primary goal ${data.targets.sugarReduction}% · optional milestones 60% and 70%`} />
         </div>
-        <div className="nutrition-sugar-chart-card"><header><div><p className="section-kicker">Historical sugar</p><h3>Daily total and rolling average</h3></div><div className="nutrition-range-tabs" role="group" aria-label="Sugar chart range">{([['7', '7 days'], ['14', '14 days'], ['30', '30 days'], ['october', 'Since Oct 1'], ['september', 'September']] as const).map(([value, label]) => <button key={value} className={sugarRange === value ? "active" : ""} onClick={() => setSugarRange(value)}>{label}</button>)}</div></header><SugarTrendChart data={data.history} selectedDate={data.selectedDate} baseline={data.sugar.september.measure} reductionGoal={data.targets.sugarReduction} range={sugarRange} /></div>
+        <div className="nutrition-sugar-chart-card"><header><div><p className="section-kicker">Historical sugar</p><h3>Daily total and rolling average</h3></div><div className="nutrition-range-tabs" role="group" aria-label="Sugar chart range">{([['7', '7 days'], ['14', '14 days'], ['30', '30 days'], ['october', 'Since Oct 1'], ['september', 'September']] as const).map(([value, label]) => <button key={value} className={sugarRange === value ? "active" : ""} onClick={() => setSugarRange(value)}>{label}</button>)}</div></header><SugarTrendChart data={data.history} selectedDate={data.selectedDate} baseline={data.sugar.september.measure} reductionGoal={data.targets.sugarReduction} range={sugarRange} onSelect={(date) => void load(date, false, true)} /></div>
         <div className="nutrition-sugar-secondary-grid"><SugarReferenceCard label="Added sugar" measure={data.nutrients.addedSugar} rolling={addedSugarRolling} reference={36} /><SugarReferenceCard label="Sugar alcohols" measure={data.nutrients.sugarAlcohols} rolling={sugarAlcoholRolling} /></div>
         <SugarSources foods={data.foods} dailyTotal={data.nutrients.totalSugar} />
       </section>
