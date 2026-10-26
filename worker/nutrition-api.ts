@@ -653,6 +653,7 @@ export async function handleNutritionDashboardGet(
           calories: calorieDay?.consumed ?? emptyMeasure(),
           totalSugar: dayNutrients?.totalSugar ?? emptyMeasure(),
           addedSugar: dayNutrients?.addedSugar ?? emptyMeasure(),
+          sugarAlcohols: dayNutrients?.sugarAlcohols ?? emptyMeasure(),
           protein: dayNutrients?.protein ?? emptyMeasure(),
           saturatedFat: dayNutrients?.saturatedFat ?? emptyMeasure(),
           fiber: dayNutrients?.fiber ?? emptyMeasure(),
