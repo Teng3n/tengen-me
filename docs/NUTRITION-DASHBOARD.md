@@ -41,13 +41,12 @@ ranges to the browser.
 Optional configuration can be stored as Worker secrets or environment values:
 
 - `NUTRITION_CALORIE_TARGET` (default `2100`)
-- `NUTRITION_PROTEIN_TARGET` (default `110`)
-- `NUTRITION_PROTEIN_MIN` (default `90`)
-- `NUTRITION_PROTEIN_MAX` (default `130`)
 
-Protein preferences can also be changed from the protected dashboard settings.
-Those values are stored in the private owner database and override the environment
-defaults for every device on the approved home network.
+The four primary nutrient references are intentionally fixed in source: protein
+110 g with a 90–130 g preferred range, fiber 30 g, saturated fat at less than
+10% of the calorie target, and sodium at less than 2,300 mg. They are presented
+as flexible references rather than mandatory allowances and are not editable in
+the dashboard.
 
 After configuring the secrets, deploy through the normal GitHub-to-Cloudflare
 pipeline and verify `/admin/nutrition` from the approved network.

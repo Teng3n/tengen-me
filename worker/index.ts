@@ -20,7 +20,7 @@ import {
   isAuthorizedBridgeRequest,
   type StatusKV,
 } from "./server-status-api";
-import { handleNutritionDashboardGet, handleNutritionPreferencesPut, type NutritionEnv } from "./nutrition-api";
+import { handleNutritionDashboardGet, type NutritionEnv } from "./nutrition-api";
 
 interface Env extends NutritionEnv {
   ASSETS: Fetcher;
@@ -71,9 +71,6 @@ const worker = {
       }
       if (url.pathname === "/admin/api/nutrition" && request.method === "GET") {
         return handleNutritionDashboardGet(request, env, access.identity);
-      }
-      if (url.pathname === "/admin/api/nutrition/preferences" && request.method === "PUT") {
-        return handleNutritionPreferencesPut(request, env, access.identity);
       }
       if (url.pathname === "/admin/api/actions" && request.method === "POST") {
         return handleOwnerActionCreate(request, env, access.identity);
