@@ -227,10 +227,10 @@ function primaryMetricDetails(metric: PrimaryMetric, targets: DashboardData["tar
   return { label: "Sodium", unit: "mg", target: targets.sodium, bandStart: 0, bandEnd: targets.sodium, reference: `<${wholeNumber.format(targets.sodium)} mg general reference · 3,000 mg improvement milestone`, orientation: "upper" as const };
 }
 
-type BarKeyItem = { kind: "range" | "target" | "secondary" | "milestone" | "baseline"; label: string; tooltip?: string };
+type BarKeyItem = { kind: "range" | "target" | "secondary" | "milestone" | "baseline"; label: string; tooltip?: string; tooltipPosition?: number };
 
 function BarKey({ items, label = "Bar key" }: { items: BarKeyItem[]; label?: string }) {
-  return <div className="nutrition-bar-key" aria-label={label}>{items.map((item) => <span className={item.tooltip ? "nutrition-bar-hint" : undefined} key={`${item.kind}-${item.label}`} {...(item.tooltip ? barHint(item.tooltip, 50) : {})}><i className={`nutrition-bar-key-${item.kind}`} aria-hidden="true" />{item.label}</span>)}</div>;
+  return <div className={`nutrition-bar-key${items.length > 2 ? " nutrition-bar-key-multi" : ""}`} aria-label={label}>{items.map((item) => <span className={item.tooltip ? "nutrition-bar-hint" : undefined} key={`${item.kind}-${item.label}`} {...(item.tooltip ? barHint(item.tooltip, item.tooltipPosition ?? 50) : {})}><i className={`nutrition-bar-key-${item.kind}`} aria-hidden="true" />{item.label}</span>)}</div>;
 }
 
 function PrimaryNutrientCard({ metric, measure, targets, rolling7, rolling30, period, detail }: { metric: PrimaryMetric; measure: Measure; targets: DashboardData["targets"]; rolling7: RollingMetric; rolling30: RollingMetric; period: "today" | "r7" | "r30"; detail?: string | null }) {
@@ -261,9 +261,9 @@ function PrimaryNutrientCard({ metric, measure, targets, rolling7, rolling30, pe
   const currentLabel = `${config.label} ${periodLabel}: ${formatMeasure(displayMeasure, config.unit, digits)}`;
   const targetLabel = metric === "protein" ? `Suggested target: ${targets.protein} g` : metric === "fiber" ? `Practical target: ${targets.fiber} g` : metric === "saturatedFat" ? `Active goal: ${number.format(targets.saturatedFat)} g` : `General reference: ${wholeNumber.format(targets.sodium)} mg`;
   const keyItems: BarKeyItem[] = metric === "protein"
-    ? [{ kind: "range", label: `${targets.proteinMin} g preferred min`, tooltip: `Protein preferred minimum: ${targets.proteinMin} g` }, { kind: "target", label: `Suggested ${targets.protein} g` }, { kind: "range", label: `${targets.proteinMax} g preferred max`, tooltip: `Protein preferred maximum: ${targets.proteinMax} g` }]
+    ? [{ kind: "range", label: `${targets.proteinMin} g preferred min`, tooltip: `Protein preferred minimum: ${targets.proteinMin} g`, tooltipPosition: 10 }, { kind: "target", label: `Suggested ${targets.protein} g` }, { kind: "range", label: `${targets.proteinMax} g preferred max`, tooltip: `Protein preferred maximum: ${targets.proteinMax} g`, tooltipPosition: 90 }]
     : metric === "fiber"
-      ? [{ kind: "range", label: "25 g preferred min", tooltip: "Fiber preferred minimum: 25 g" }, { kind: "target", label: `${targets.fiber} g practical target` }, { kind: "range", label: "40 g preferred max", tooltip: "Fiber preferred maximum: 40 g" }]
+      ? [{ kind: "range", label: "25 g preferred min", tooltip: "Fiber preferred minimum: 25 g", tooltipPosition: 10 }, { kind: "target", label: `${targets.fiber} g practical target` }, { kind: "range", label: "40 g preferred max", tooltip: "Fiber preferred maximum: 40 g", tooltipPosition: 90 }]
       : metric === "saturatedFat"
         ? [{ kind: "secondary", label: `${SATURATED_FAT_LONG_TERM_GOAL} g long-term` }, { kind: "target", label: `${number.format(targets.saturatedFat)} g active` }]
         : [{ kind: "target", label: `${wholeNumber.format(targets.sodium)} mg reference` }, { kind: "milestone", label: "3,000 mg milestone" }];
