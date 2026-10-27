@@ -615,7 +615,7 @@ export async function handleNutritionDashboardGet(
         proteinMin: 90,
         proteinMax: 130,
         fiber: 30,
-        saturatedFat: calorieTarget * 0.1 / 9,
+        saturatedFat: 30,
         sodium: 2300,
         sugarReduction: 50,
       },

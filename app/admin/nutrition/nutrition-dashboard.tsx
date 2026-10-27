@@ -68,6 +68,7 @@ type DashboardData = {
 
 const number = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 const wholeNumber = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+const SATURATED_FAT_LONG_TERM_GOAL = 23;
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/Los_Angeles",
   weekday: "long",
@@ -209,10 +210,9 @@ function metricStatus(metric: PrimaryMetric, value: number | null, targets: Dash
     return { label: "Meets Adult Reference", tone: "target" };
   }
   if (metric === "saturatedFat") {
-    if (value > 30) return { label: "Higher Intake Day", tone: "neutral" };
-    if (value > targets.saturatedFat) return { label: "Above General Reference", tone: "neutral" };
-    if (value >= 20) return { label: "Near General Reference", tone: "range" };
-    return { label: "Below General Reference", tone: "target" };
+    if (value > targets.saturatedFat) return { label: "Above Active Goal", tone: "neutral" };
+    if (value > SATURATED_FAT_LONG_TERM_GOAL) return { label: "Within Active Goal", tone: "range" };
+    return { label: "Meets Long-Term Goal", tone: "target" };
   }
   if (value > 3000) return { label: "Higher Sodium Day", tone: "neutral" };
   if (value > targets.sodium) return { label: "Above Reference", tone: "neutral" };
@@ -223,7 +223,7 @@ function metricStatus(metric: PrimaryMetric, value: number | null, targets: Dash
 function primaryMetricDetails(metric: PrimaryMetric, targets: DashboardData["targets"]) {
   if (metric === "protein") return { label: "Protein", unit: "g", target: targets.protein, bandStart: targets.proteinMin, bandEnd: targets.proteinMax, reference: `${targets.proteinMin}–${targets.proteinMax} g preferred · ${targets.protein} g suggested`, orientation: "minimum" as const };
   if (metric === "fiber") return { label: "Fiber", unit: "g", target: targets.fiber, bandStart: 25, bandEnd: 40, reference: `${targets.fiber} g practical target · 38 g adult reference`, orientation: "minimum" as const };
-  if (metric === "saturatedFat") return { label: "Saturated fat", unit: "g", target: targets.saturatedFat, bandStart: 0, bandEnd: targets.saturatedFat, reference: `<${number.format(targets.saturatedFat)} g general reference · 14 g optional stricter reference`, orientation: "upper" as const };
+  if (metric === "saturatedFat") return { label: "Saturated fat", unit: "g", target: targets.saturatedFat, bandStart: 0, bandEnd: targets.saturatedFat, reference: `${number.format(targets.saturatedFat)} g active goal · ${SATURATED_FAT_LONG_TERM_GOAL} g long-term goal`, orientation: "upper" as const };
   return { label: "Sodium", unit: "mg", target: targets.sodium, bandStart: 0, bandEnd: targets.sodium, reference: `<${wholeNumber.format(targets.sodium)} mg general reference · 3,000 mg improvement milestone`, orientation: "upper" as const };
 }
 
@@ -250,11 +250,11 @@ function PrimaryNutrientCard({ metric, measure, targets, rolling7, rolling30, pe
   const contextUncertain = period === "today" ? contextRolling.uncertain : contextRolling.previousUncertain;
   const averageLabel = contextValue === null ? "Not enough data" : `${contextUncertain ? "≥" : ""}${digits === 0 ? wholeNumber.format(contextValue) : number.format(contextValue)} ${config.unit}/day`;
   const trendLabel = change === null ? `Prior ${period === "r30" ? "30" : "7"}-day comparison unavailable` : `${change > 0 ? "↑" : change < 0 ? "↓" : "→"} ${digits === 0 ? wholeNumber.format(Math.abs(change)) : number.format(Math.abs(change))} ${config.unit}/day vs prior ${period === "r30" ? "30" : "7"} days`;
-  const referenceLabel = value === null ? config.reference : `${wholeNumber.format(value / config.target * 100)}% of reference · ${config.reference}`;
+  const referenceLabel = value === null ? config.reference : `${wholeNumber.format(value / config.target * 100)}% of ${metric === "saturatedFat" ? "active goal" : "reference"} · ${config.reference}`;
   const periodLabel = period === "today" ? "today" : period === "r7" ? "R7 average" : "R30 average";
   const currentLabel = `${config.label} ${periodLabel}: ${formatMeasure(displayMeasure, config.unit, digits)}`;
-  const bandLabel = metric === "protein" ? `Preferred range: ${targets.proteinMin}–${targets.proteinMax} g` : metric === "fiber" ? "Preferred range: 25–40 g" : metric === "saturatedFat" ? `General reference range: 0–${number.format(targets.saturatedFat)} g` : `General reference range: 0–${wholeNumber.format(targets.sodium)} mg`;
-  const targetLabel = metric === "protein" ? `Suggested target: ${targets.protein} g` : metric === "fiber" ? `Practical target: ${targets.fiber} g` : metric === "saturatedFat" ? `General reference: ${number.format(targets.saturatedFat)} g` : `General reference: ${wholeNumber.format(targets.sodium)} mg`;
+  const bandLabel = metric === "protein" ? `Preferred range: ${targets.proteinMin}–${targets.proteinMax} g` : metric === "fiber" ? "Preferred range: 25–40 g" : metric === "saturatedFat" ? `Active goal range: 0–${number.format(targets.saturatedFat)} g` : `General reference range: 0–${wholeNumber.format(targets.sodium)} mg`;
+  const targetLabel = metric === "protein" ? `Suggested target: ${targets.protein} g` : metric === "fiber" ? `Practical target: ${targets.fiber} g` : metric === "saturatedFat" ? `Active goal: ${number.format(targets.saturatedFat)} g` : `General reference: ${wholeNumber.format(targets.sodium)} mg`;
   const currentPosition = percent(plottedValue);
   const bandPosition = percent((config.bandStart + config.bandEnd) / 2);
   const targetPosition = percent(config.target);
@@ -264,11 +264,11 @@ function PrimaryNutrientCard({ metric, measure, targets, rolling7, rolling30, pe
         <div><span>{config.label} · {periodLabel}</span><strong>{formatMeasure(displayMeasure, config.unit, digits)}</strong>{period === "today" && detail ? <small>{detail}</small> : <small>{periodRolling.recordedDays} of {period === "r30" ? 30 : 7} days quantified</small>}</div>
         <div><span>{contextLabel}</span><strong>{averageLabel}</strong><small>{contextDays} of {contextTotalDays} days quantified{contextUncertain ? " · estimated / lower bound" : ""}</small></div>
       </div>
-      <div className="nutrition-primary-bar" aria-label={`${config.label}: ${formatMeasure(displayMeasure, config.unit, digits)}; reference ${number.format(config.target)} ${config.unit}`}>
+      <div className="nutrition-primary-bar" aria-label={`${config.label}: ${formatMeasure(displayMeasure, config.unit, digits)}; ${metric === "saturatedFat" ? "active goal" : "reference"} ${number.format(config.target)} ${config.unit}`}>
         <span className="nutrition-primary-fill nutrition-bar-hint" style={{ width: `${currentPosition}%` }} {...barHint(currentLabel, currentPosition / 2)} />
         <span className="nutrition-primary-band nutrition-bar-hint" style={{ left: `${percent(config.bandStart)}%`, width: `${percent(config.bandEnd) - percent(config.bandStart)}%` }} {...barHint(bandLabel, bandPosition)} />
         <i className="nutrition-primary-target-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${targetPosition}%` }} {...barHint(targetLabel, targetPosition)} />
-        {metric === "saturatedFat" ? <i className="nutrition-primary-secondary-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(14)}%` }} {...barHint("Optional stricter reference: 14 g", percent(14))} /> : null}
+        {metric === "saturatedFat" ? <i className="nutrition-primary-secondary-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(SATURATED_FAT_LONG_TERM_GOAL)}%` }} {...barHint(`Long-term goal: ${SATURATED_FAT_LONG_TERM_GOAL} g`, percent(SATURATED_FAT_LONG_TERM_GOAL))} /> : null}
         {metric === "sodium" ? <i className="nutrition-primary-milestone-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(3000)}%` }} {...barHint("Improvement milestone: 3,000 mg", percent(3000))} /> : null}
         {value !== null ? <b className="nutrition-primary-current-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${currentPosition}%` }} {...barHint(currentLabel, currentPosition)} /> : null}
       </div>
