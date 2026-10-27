@@ -629,7 +629,7 @@ a { color: inherit; text-decoration: none; }
 
 @media (max-width: 620px) {
   .nutrition-page { width: min(100% - 20px, 1280px); overflow: visible; }.nutrition-dashboard { width: 100%; gap: 12px; }.nutrition-toolbar { width: 100%; min-width: 0; max-width: 100%; padding: 10px; }
-  .nutrition-session-bar { min-width: 0; max-width: 100%; overflow: hidden; }.nutrition-session-bar .owner-admin-tabs { min-width: 0; max-width: 100%; overscroll-behavior-inline: contain; }
+  .nutrition-session-bar { min-width: 0; max-width: 100%; overflow: hidden; }.nutrition-session-bar .owner-admin-tabs { min-width: 0; max-width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }.nutrition-session-bar .owner-admin-tabs a { min-width: 0; display: grid; place-items: center; padding-inline: 5px; white-space: normal; text-align: center; line-height: 1.35; }
   .nutrition-date-stepper, .nutrition-quick-dates { width: 100%; }.nutrition-date-stepper { display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px; }.nutrition-date-stepper label { min-width: 0; }.nutrition-date-stepper label span { display: none; }.nutrition-date-stepper input { width: 100%; min-width: 0; }.nutrition-quick-dates { display: grid; grid-template-columns: 1fr 1fr; }
   .nutrition-overview, .nutrition-history-panel, .nutrition-targets-panel, .nutrition-breakdown-panel, .nutrition-food-panel, .nutrition-calendar-panel, .nutrition-sugar-section { padding: 18px; }
   .nutrition-calendar-panel:not([open]) > summary { margin: -18px; padding: 18px; }
