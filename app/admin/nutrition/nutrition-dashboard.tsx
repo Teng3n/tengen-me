@@ -32,7 +32,7 @@ type Food = {
 type Nutrients = Omit<Food, "id" | "name" | "quality" | "note" | "consumption" | "calories"> & { netCarbs: Measure };
 type HistoryMetric = "totalSugar" | "addedSugar" | "sugarAlcohols" | "calories" | "protein" | "saturatedFat" | "fiber" | "sodium";
 type PrimaryMetric = "protein" | "fiber" | "saturatedFat" | "sodium";
-type HistoryDay = { date: string } & Record<HistoryMetric, Measure>;
+type HistoryDay = { date: string; weight: Measure } & Record<HistoryMetric, Measure>;
 type SugarAverage = { measure: Measure; recordedDays: number; calendarDays: number };
 type DashboardData = {
   generatedAt: string;
@@ -52,6 +52,12 @@ type DashboardData = {
     discrepancy: number | null;
     status: string;
     note: string;
+  };
+  weight: {
+    current: Measure;
+    date: string | null;
+    trendPerWeek: number | null;
+    trendStartDate: string | null;
   };
   nutrients: Nutrients;
   foods: Food[];
@@ -419,7 +425,8 @@ function MonthlyNutritionCalendar({ data, targets, sugarBaseline, month, selecte
             const sugarRolling = rollingMetric(data, date, "totalSugar");
             const sugarBaselineValue = sugarBaseline.upperBound ?? sugarBaseline.value;
             const sugarOnGoal = sugarBaselineValue === null || sugarRolling.average === null || sugarRolling.recordedDays < 4 ? null : (sugarBaselineValue - sugarRolling.average) / sugarBaselineValue * 100 >= targets.sugarReduction;
-            return <button type="button" role="gridcell" key={date} className={`${date === selectedDate ? "nutrition-calendar-selected " : ""}${uncertain ? "nutrition-calendar-uncertain" : ""}`} onClick={() => onSelect(date)} aria-label={`${dateLabel(date)}${day ? ", nutrition values available" : ", no logged nutrition"}`}><span className="nutrition-calendar-day-number">{dateAtNoon(date).getUTCDate()}</span><DayNutritionValues day={day} targets={targets} sugarOnGoal={sugarOnGoal} /></button>;
+            const weight = day?.weight.value;
+            return <button type="button" role="gridcell" key={date} className={`${date === selectedDate ? "nutrition-calendar-selected " : ""}${uncertain ? "nutrition-calendar-uncertain" : ""}`} onClick={() => onSelect(date)} aria-label={`${dateLabel(date)}${day ? ", nutrition values available" : ", no logged nutrition"}${weight !== null && weight !== undefined ? `, weight ${number.format(weight)} pounds` : ""}`}><span className="nutrition-calendar-day-number">{dateAtNoon(date).getUTCDate()}</span>{weight !== null && weight !== undefined ? <span className="nutrition-calendar-weight">{number.format(weight)} lb</span> : null}<DayNutritionValues day={day} targets={targets} sugarOnGoal={sugarOnGoal} /></button>;
           })}
         </div>
       </div>
@@ -646,6 +653,7 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
           <article><span>Calories consumed</span><strong>{compactMeasure(data.calories.consumed)} <small>kcal</small></strong><p>{consumed === null ? "Target progress unknown" : `${Math.round(consumed / data.targets.calories * 100)}% of ${wholeNumber.format(data.targets.calories)} target`}</p></article>
           <article><span>Calories burned</span><strong>{compactMeasure(data.calories.burned)} <small>kcal</small></strong><p>Basal {compactMeasure(data.calories.basal)} · Active {compactMeasure(data.calories.active)}</p></article>
           <article className={data.calories.net.value !== null && data.calories.net.value > 0 ? "nutrition-surplus" : "nutrition-deficit"}><span>Net calories</span><strong>{signed(data.calories.net.value)} <small>kcal</small></strong><p>{data.calories.net.value === null ? "Burn data incomplete" : data.calories.net.value > 0 ? "Energy surplus" : data.calories.net.value < 0 ? "Energy deficit" : "Energy balance"}</p></article>
+          <article className="nutrition-weight-card"><span>Current weight</span><strong>{data.weight.current.value === null ? "—" : number.format(data.weight.current.value)} {data.weight.current.value === null ? null : <small>lb</small>}</strong><p>{data.weight.date === null ? "No weight recorded" : <>Latest logged {shortDate(data.weight.date)}{data.weight.trendPerWeek === null ? null : <> · {data.weight.trendPerWeek > 0 ? "+" : data.weight.trendPerWeek < 0 ? "−" : ""}{number.format(Math.abs(data.weight.trendPerWeek))} lb/week since {data.weight.trendStartDate ? shortDate(data.weight.trendStartDate) : "first weigh-in"}</>}</>}</p></article>
         </div>
 
         <div className="nutrition-intake-bar-block">

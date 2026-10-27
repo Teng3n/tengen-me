@@ -430,6 +430,7 @@ function parseFoodRows(rows: Row[], referenceRows: Row[]) {
 
 type CalorieDay = {
   date: string;
+  weight: Measure;
   consumed: Measure;
   planned: Measure;
   basal: Measure;
@@ -445,6 +446,7 @@ function parseCalorieRows(rows: Row[]) {
   const headerIndex = findHeaderRow(rows, ["date", "calor"]);
   const headers = headerMap(rows[headerIndex] ?? []);
   const dateIndex = column(headers, ["date", "day"], 0) ?? 0;
+  const weightIndex = column(headers, ["weight", "weight lb", "body weight"]);
   const consumedIndex = column(headers, ["calories consumed", "consumed calories", "calories logged", "calories in", "calorie intake", "intake"]);
   const plannedIndex = column(headers, ["planned calories", "calories planned", "planned"]);
   const basalIndex = column(headers, ["basal calories burned", "basal burn", "basal energy expenditure", "resting energy", "bmr"]);
@@ -475,6 +477,7 @@ function parseCalorieRows(rows: Row[]) {
     const derivedStatus = /\bfinali[sz]ed\b/i.test(note) ? "Finalized" : "Status not established";
     return [{
       date,
+      weight: weightIndex === null ? emptyMeasure() : parseMeasure(row[weightIndex]),
       consumed,
       planned,
       basal,
@@ -601,6 +604,24 @@ export async function handleNutritionDashboardGet(
       ...calorieDays.map((day) => day.date),
       ...nutrientByDate.map((day) => day.date),
     ])).filter((date) => date >= historyStart && date <= historyEnd).sort();
+    const recordedWeights = calorieDays
+      .filter((day) => day.date <= currentLosAngelesDate() && day.weight.value !== null)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const latestWeightDay = recordedWeights.at(-1) ?? null;
+    const weightTrendPerWeek = (() => {
+      if (recordedWeights.length < 2) return null;
+      const firstTime = Date.parse(`${recordedWeights[0].date}T12:00:00Z`);
+      const points = recordedWeights.map((day) => ({
+        x: (Date.parse(`${day.date}T12:00:00Z`) - firstTime) / 86_400_000,
+        y: day.weight.value as number,
+      }));
+      const meanX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
+      const meanY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
+      const denominator = points.reduce((sum, point) => sum + (point.x - meanX) ** 2, 0);
+      if (denominator === 0) return null;
+      const slopePerDay = points.reduce((sum, point) => sum + (point.x - meanX) * (point.y - meanY), 0) / denominator;
+      return slopePerDay * 7;
+    })();
 
     return json({
       generatedAt: new Date().toISOString(),
@@ -634,6 +655,12 @@ export async function handleNutritionDashboardGet(
         status: selectedCalorieDay?.status ?? "Status not established",
         note: selectedCalorieDay?.note ?? "",
       },
+      weight: {
+        current: latestWeightDay?.weight ?? emptyMeasure(),
+        date: latestWeightDay?.date ?? null,
+        trendPerWeek: weightTrendPerWeek,
+        trendStartDate: recordedWeights[0]?.date ?? null,
+      },
       nutrients,
       foods: selectedFoods,
       sugar: {
@@ -648,6 +675,7 @@ export async function handleNutritionDashboardGet(
         const calorieDay = calorieByDate.get(date);
         return {
           date,
+          weight: calorieDay?.weight ?? emptyMeasure(),
           calories: calorieDay?.consumed ?? emptyMeasure(),
           totalSugar: dayNutrients?.totalSugar ?? emptyMeasure(),
           addedSugar: dayNutrients?.addedSugar ?? emptyMeasure(),
