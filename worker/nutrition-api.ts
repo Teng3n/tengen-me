@@ -594,9 +594,7 @@ export async function handleNutritionDashboardGet(
 
     const latestRecordedDate = availableDates.filter((date) => date <= currentLosAngelesDate()).at(-1) ?? selectedDate;
     const historyEnd = latestRecordedDate > selectedDate ? latestRecordedDate : selectedDate;
-    const historyStart = historyEnd >= septemberStart
-      ? septemberStart
-      : dateShift(historyEnd, -29);
+    const historyStart = availableDates[0] ?? dateShift(historyEnd, -29);
     const calorieByDate = new Map(calorieDays.map((day) => [day.date, day]));
     const nutrientsByDate = new Map(nutrientByDate.map((day) => [day.date, day.totals]));
     const historyDates = Array.from(new Set([

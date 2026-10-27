@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Measure = { value: number | null; upperBound: number | null; incomplete: boolean; estimated: boolean };
 type Food = {
@@ -419,7 +419,7 @@ function MonthlyNutritionCalendar({ data, targets, sugarBaseline, month, selecte
   );
 }
 
-function InteractiveChartPoint({ x, y, date, metricLabel, valueLabel, chartWidth, radius = 3.5, variant = "daily", uncertain = false, onSelect }: { x: number; y: number; date: string; metricLabel: string; valueLabel: string; chartWidth: number; radius?: number; variant?: "daily" | "rolling" | "nutrient"; uncertain?: boolean; onSelect(date: string): void }) {
+function InteractiveChartPoint({ x, y, date, metricLabel, valueLabel, chartWidth, radius = 3.5, hitRadius, variant = "daily", uncertain = false, onSelect }: { x: number; y: number; date: string; metricLabel: string; valueLabel: string; chartWidth: number; radius?: number; hitRadius?: number; variant?: "daily" | "rolling" | "nutrient"; uncertain?: boolean; onSelect(date: string): void }) {
   const tooltipWidth = chartWidth < 600 ? 142 : 170;
   const tooltipHeight = 38;
   const tooltipX = x > chartWidth / 2 ? x - tooltipWidth - 7 : x + 7;
@@ -427,7 +427,7 @@ function InteractiveChartPoint({ x, y, date, metricLabel, valueLabel, chartWidth
   const ariaLabel = `${dateLabel(date)}, ${metricLabel}: ${valueLabel}. Select to view this date.`;
   return <g className="nutrition-chart-point" role="button" tabIndex={0} aria-label={ariaLabel} onClick={() => onSelect(date)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onSelect(date); } }}>
     <title>{ariaLabel}</title>
-    <circle className="nutrition-chart-point-hit" cx={x} cy={y} r={Math.max(11, radius + 7)} />
+    <circle className="nutrition-chart-point-hit" cx={x} cy={y} r={hitRadius ?? Math.max(11, radius + 7)} />
     <circle className={`nutrition-chart-point-marker nutrition-chart-point-${variant}${uncertain ? " uncertain" : ""}`} cx={x} cy={y} r={radius} />
     <g className="nutrition-chart-tooltip" aria-hidden="true">
       <rect x={tooltipX} y={tooltipY} width={tooltipWidth} height={tooltipHeight} rx="4" />
@@ -472,8 +472,20 @@ function NutritionTrends({ data, targets, selectedDate, days, onSelect }: { data
 type SugarRange = "7" | "14" | "30" | "october" | "september";
 
 function SugarTrendChart({ data, selectedDate, baseline, reductionGoal, range, onSelect }: { data: HistoryDay[]; selectedDate: string; baseline: Measure; reductionGoal: number; range: SugarRange; onSelect(date: string): void }) {
+  const chartWrapRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(980);
+  useEffect(() => {
+    const chartWrap = chartWrapRef.current;
+    if (!chartWrap) return;
+    const updateWidth = () => setChartWidth(Math.max(220, Math.min(980, Math.round(chartWrap.clientWidth))));
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(chartWrap);
+    return () => observer.disconnect();
+  }, []);
+  const latestDate = data.at(-1)?.date ?? selectedDate;
   const start = range === "7" ? shiftDate(selectedDate, -6) : range === "14" ? shiftDate(selectedDate, -13) : range === "30" ? shiftDate(selectedDate, -29) : range === "october" ? "2026-10-01" : "2026-09-01";
-  const end = range === "september" ? "2026-09-30" : selectedDate;
+  const end = range === "september" ? "2026-09-30" : range === "october" ? latestDate : selectedDate;
   const dayCount = Math.max(1, Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000) + 1);
   const byDate = new Map(data.map((day) => [day.date, day]));
   const days = Array.from({ length: dayCount }, (_, index) => {
@@ -487,13 +499,14 @@ function SugarTrendChart({ data, selectedDate, baseline, reductionGoal, range, o
   });
   const baselineValue = baseline.upperBound ?? baseline.value;
   const goalValue = baselineValue === null ? null : baselineValue * (1 - reductionGoal / 100);
-  const width = 980; const height = 280; const pad = { left: 48, right: 18, top: 22, bottom: 36 };
+  const width = chartWidth; const height = width < 480 ? 260 : 280; const pad = width < 480 ? { left: 34, right: 10, top: 22, bottom: 36 } : { left: 48, right: 18, top: 22, bottom: 36 };
   const maxValue = Math.max(...daily.map((point) => point.measure.upperBound ?? point.value), baselineValue ?? 0, 1) * 1.08;
   const x = (index: number) => pad.left + (days.length <= 1 ? 0 : index / (days.length - 1) * (width - pad.left - pad.right));
   const y = (value: number) => pad.top + (1 - value / maxValue) * (height - pad.top - pad.bottom);
+  const hitRadius = Math.max(4, Math.min(11, (width - pad.left - pad.right) / Math.max(1, days.length - 1) / 2));
   const segments: Array<typeof daily> = [];
   for (const point of daily) { const segment = segments.at(-1); if (!segment || segment.at(-1)!.index !== point.index - 1) segments.push([point]); else segment.push(point); }
-  return <div className="nutrition-sugar-chart-wrap"><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Total sugar history and rolling average">{baselineValue !== null ? <line x1={pad.left} x2={width - pad.right} y1={y(baselineValue)} y2={y(baselineValue)} className="nutrition-sugar-baseline-line" /> : null}{goalValue !== null ? <line x1={pad.left} x2={width - pad.right} y1={y(goalValue)} y2={y(goalValue)} className="nutrition-sugar-goal-line" /> : null}{segments.map((segment, index) => segment.length > 1 ? <polyline key={index} points={segment.map((point) => `${x(point.index)},${y(point.value)}`).join(" ")} className="nutrition-sugar-daily-line" /> : null)}{rolling.length > 1 ? <polyline points={rolling.map((point) => `${x(point.index)},${y(point.value)}`).join(" ")} className="nutrition-sugar-rolling-line" /> : null}{daily.map((point) => <InteractiveChartPoint key={`daily-${point.date}`} x={x(point.index)} y={y(point.value)} date={point.date} metricLabel="Total sugar" valueLabel={formatUpperEstimate(point.measure, "g")} chartWidth={width} radius={3.5} variant="daily" uncertain={point.measure.incomplete || point.measure.estimated || (point.measure.upperBound !== null && Math.abs(point.measure.upperBound - point.measure.value!) > 0.001)} onSelect={onSelect} />)}{rolling.map((point) => <InteractiveChartPoint key={`rolling-${point.date}`} x={x(point.index)} y={y(point.value)} date={point.date} metricLabel="Rolling 7-day" valueLabel={`${point.uncertain ? "≈" : ""}${number.format(point.value)} g/day`} chartWidth={width} radius={2.8} variant="rolling" uncertain={point.uncertain} onSelect={onSelect} />)}<text x={pad.left} y={height - 8}>{shortDate(start)}</text><text x={width - pad.right} y={height - 8} textAnchor="end">{shortDate(end)}</text></svg><div className="nutrition-sugar-chart-legend"><span><i className="daily" /> Daily total</span><span><i className="rolling" /> Rolling 7-day</span><span><i className="baseline" /> September baseline</span><span><i className="goal" /> {reductionGoal}% reduction goal</span><span className="interaction">Hover for values · select a point to open that date</span></div></div>;
+  return <div className="nutrition-sugar-chart-wrap" ref={chartWrapRef}><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Total sugar history and rolling average">{baselineValue !== null ? <line x1={pad.left} x2={width - pad.right} y1={y(baselineValue)} y2={y(baselineValue)} className="nutrition-sugar-baseline-line" /> : null}{goalValue !== null ? <line x1={pad.left} x2={width - pad.right} y1={y(goalValue)} y2={y(goalValue)} className="nutrition-sugar-goal-line" /> : null}{segments.map((segment, index) => segment.length > 1 ? <polyline key={index} points={segment.map((point) => `${x(point.index)},${y(point.value)}`).join(" ")} className="nutrition-sugar-daily-line" /> : null)}{rolling.length > 1 ? <polyline points={rolling.map((point) => `${x(point.index)},${y(point.value)}`).join(" ")} className="nutrition-sugar-rolling-line" /> : null}{daily.map((point) => <InteractiveChartPoint key={`daily-${point.date}`} x={x(point.index)} y={y(point.value)} date={point.date} metricLabel="Total sugar" valueLabel={formatUpperEstimate(point.measure, "g")} chartWidth={width} radius={width < 480 ? 2.8 : 3.5} hitRadius={hitRadius} variant="daily" uncertain={point.measure.incomplete || point.measure.estimated || (point.measure.upperBound !== null && Math.abs(point.measure.upperBound - point.measure.value!) > 0.001)} onSelect={onSelect} />)}{rolling.map((point) => <InteractiveChartPoint key={`rolling-${point.date}`} x={x(point.index)} y={y(point.value)} date={point.date} metricLabel="Rolling 7-day" valueLabel={`${point.uncertain ? "≈" : ""}${number.format(point.value)} g/day`} chartWidth={width} radius={width < 480 ? 2.4 : 2.8} hitRadius={hitRadius} variant="rolling" uncertain={point.uncertain} onSelect={onSelect} />)}<text x={pad.left} y={height - 8}>{shortDate(start)}</text><text x={width - pad.right} y={height - 8} textAnchor="end">{shortDate(end)}</text></svg><div className="nutrition-sugar-chart-legend"><span><i className="daily" /> Daily total</span><span><i className="rolling" /> Rolling 7-day</span><span><i className="baseline" /> September baseline</span><span><i className="goal" /> {reductionGoal}% reduction goal</span><span className="interaction">Hover for values · select a point to open that date</span></div></div>;
 }
 
 function SugarSources({ foods, dailyTotal }: { foods: Food[]; dailyTotal: Measure }) {
