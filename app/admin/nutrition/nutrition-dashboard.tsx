@@ -227,10 +227,10 @@ function primaryMetricDetails(metric: PrimaryMetric, targets: DashboardData["tar
   return { label: "Sodium", unit: "mg", target: targets.sodium, bandStart: 0, bandEnd: targets.sodium, reference: `<${wholeNumber.format(targets.sodium)} mg general reference · 3,000 mg improvement milestone`, orientation: "upper" as const };
 }
 
-type BarKeyItem = { kind: "range" | "target" | "secondary" | "milestone" | "baseline"; label: string };
+type BarKeyItem = { kind: "range" | "target" | "secondary" | "milestone" | "baseline"; label: string; tooltip?: string };
 
 function BarKey({ items, label = "Bar key" }: { items: BarKeyItem[]; label?: string }) {
-  return <div className="nutrition-bar-key" aria-label={label}>{items.map((item) => <span key={`${item.kind}-${item.label}`}><i className={`nutrition-bar-key-${item.kind}`} aria-hidden="true" />{item.label}</span>)}</div>;
+  return <div className="nutrition-bar-key" aria-label={label}>{items.map((item) => <span className={item.tooltip ? "nutrition-bar-hint" : undefined} key={`${item.kind}-${item.label}`} {...(item.tooltip ? barHint(item.tooltip, 50) : {})}><i className={`nutrition-bar-key-${item.kind}`} aria-hidden="true" />{item.label}</span>)}</div>;
 }
 
 function PrimaryNutrientCard({ metric, measure, targets, rolling7, rolling30, period, detail }: { metric: PrimaryMetric; measure: Measure; targets: DashboardData["targets"]; rolling7: RollingMetric; rolling30: RollingMetric; period: "today" | "r7" | "r30"; detail?: string | null }) {
@@ -261,9 +261,9 @@ function PrimaryNutrientCard({ metric, measure, targets, rolling7, rolling30, pe
   const currentLabel = `${config.label} ${periodLabel}: ${formatMeasure(displayMeasure, config.unit, digits)}`;
   const targetLabel = metric === "protein" ? `Suggested target: ${targets.protein} g` : metric === "fiber" ? `Practical target: ${targets.fiber} g` : metric === "saturatedFat" ? `Active goal: ${number.format(targets.saturatedFat)} g` : `General reference: ${wholeNumber.format(targets.sodium)} mg`;
   const keyItems: BarKeyItem[] = metric === "protein"
-    ? [{ kind: "range", label: `Preferred ${targets.proteinMin}–${targets.proteinMax} g` }, { kind: "target", label: `Suggested ${targets.protein} g` }]
+    ? [{ kind: "range", label: `${targets.proteinMin} g preferred min`, tooltip: `Protein preferred minimum: ${targets.proteinMin} g` }, { kind: "target", label: `Suggested ${targets.protein} g` }, { kind: "range", label: `${targets.proteinMax} g preferred max`, tooltip: `Protein preferred maximum: ${targets.proteinMax} g` }]
     : metric === "fiber"
-      ? [{ kind: "range", label: "Preferred 25–40 g" }, { kind: "target", label: `${targets.fiber} g practical target` }]
+      ? [{ kind: "range", label: "25 g preferred min", tooltip: "Fiber preferred minimum: 25 g" }, { kind: "target", label: `${targets.fiber} g practical target` }, { kind: "range", label: "40 g preferred max", tooltip: "Fiber preferred maximum: 40 g" }]
       : metric === "saturatedFat"
         ? [{ kind: "secondary", label: `${SATURATED_FAT_LONG_TERM_GOAL} g long-term` }, { kind: "target", label: `${number.format(targets.saturatedFat)} g active` }]
         : [{ kind: "target", label: `${wholeNumber.format(targets.sodium)} mg reference` }, { kind: "milestone", label: "3,000 mg milestone" }];
@@ -279,6 +279,7 @@ function PrimaryNutrientCard({ metric, measure, targets, rolling7, rolling30, pe
       <div className="nutrition-primary-bar" aria-label={`${config.label}: ${formatMeasure(displayMeasure, config.unit, digits)}; ${metric === "saturatedFat" ? "active goal" : "reference"} ${number.format(config.target)} ${config.unit}`}>
         <span className="nutrition-primary-fill" style={{ width: `${currentPosition}%` }} />
         <span className="nutrition-primary-band" style={{ left: `${percent(config.bandStart)}%`, width: `${percent(config.bandEnd) - percent(config.bandStart)}%` }} />
+        {metric === "protein" || metric === "fiber" ? <><i className="nutrition-primary-range-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(config.bandStart)}%` }} {...barHint(`${config.label} preferred minimum: ${number.format(config.bandStart)} g`, percent(config.bandStart))} /><i className="nutrition-primary-range-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(config.bandEnd)}%` }} {...barHint(`${config.label} preferred maximum: ${number.format(config.bandEnd)} g`, percent(config.bandEnd))} /></> : null}
         <i className="nutrition-primary-target-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${targetPosition}%` }} {...barHint(targetLabel, targetPosition)} />
         {metric === "saturatedFat" ? <i className="nutrition-primary-secondary-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(SATURATED_FAT_LONG_TERM_GOAL)}%` }} {...barHint(`Long-term goal: ${SATURATED_FAT_LONG_TERM_GOAL} g`, percent(SATURATED_FAT_LONG_TERM_GOAL))} /> : null}
         {metric === "sodium" ? <i className="nutrition-primary-milestone-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(3000)}%` }} {...barHint("Improvement milestone: 3,000 mg", percent(3000))} /> : null}
