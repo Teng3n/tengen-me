@@ -227,6 +227,12 @@ function primaryMetricDetails(metric: PrimaryMetric, targets: DashboardData["tar
   return { label: "Sodium", unit: "mg", target: targets.sodium, bandStart: 0, bandEnd: targets.sodium, reference: `<${wholeNumber.format(targets.sodium)} mg general reference · 3,000 mg improvement milestone`, orientation: "upper" as const };
 }
 
+type BarKeyItem = { kind: "range" | "target" | "secondary" | "milestone" | "baseline"; label: string };
+
+function BarKey({ items, label = "Bar key" }: { items: BarKeyItem[]; label?: string }) {
+  return <div className="nutrition-bar-key" aria-label={label}>{items.map((item) => <span key={`${item.kind}-${item.label}`}><i className={`nutrition-bar-key-${item.kind}`} aria-hidden="true" />{item.label}</span>)}</div>;
+}
+
 function PrimaryNutrientCard({ metric, measure, targets, rolling7, rolling30, period, detail }: { metric: PrimaryMetric; measure: Measure; targets: DashboardData["targets"]; rolling7: RollingMetric; rolling30: RollingMetric; period: "today" | "r7" | "r30"; detail?: string | null }) {
   const config = primaryMetricDetails(metric, targets);
   const periodRolling = period === "r30" ? rolling30 : rolling7;
@@ -253,10 +259,15 @@ function PrimaryNutrientCard({ metric, measure, targets, rolling7, rolling30, pe
   const referenceLabel = value === null ? config.reference : `${wholeNumber.format(value / config.target * 100)}% of ${metric === "saturatedFat" ? "active goal" : "reference"} · ${config.reference}`;
   const periodLabel = period === "today" ? "today" : period === "r7" ? "R7 average" : "R30 average";
   const currentLabel = `${config.label} ${periodLabel}: ${formatMeasure(displayMeasure, config.unit, digits)}`;
-  const bandLabel = metric === "protein" ? `Preferred range: ${targets.proteinMin}–${targets.proteinMax} g` : metric === "fiber" ? "Preferred range: 25–40 g" : metric === "saturatedFat" ? `Active goal range: 0–${number.format(targets.saturatedFat)} g` : `General reference range: 0–${wholeNumber.format(targets.sodium)} mg`;
   const targetLabel = metric === "protein" ? `Suggested target: ${targets.protein} g` : metric === "fiber" ? `Practical target: ${targets.fiber} g` : metric === "saturatedFat" ? `Active goal: ${number.format(targets.saturatedFat)} g` : `General reference: ${wholeNumber.format(targets.sodium)} mg`;
+  const keyItems: BarKeyItem[] = metric === "protein"
+    ? [{ kind: "range", label: `Preferred ${targets.proteinMin}–${targets.proteinMax} g` }, { kind: "target", label: `Suggested ${targets.protein} g` }]
+    : metric === "fiber"
+      ? [{ kind: "range", label: "Preferred 25–40 g" }, { kind: "target", label: `${targets.fiber} g practical target` }]
+      : metric === "saturatedFat"
+        ? [{ kind: "secondary", label: `${SATURATED_FAT_LONG_TERM_GOAL} g long-term` }, { kind: "target", label: `${number.format(targets.saturatedFat)} g active` }]
+        : [{ kind: "target", label: `${wholeNumber.format(targets.sodium)} mg reference` }, { kind: "milestone", label: "3,000 mg milestone" }];
   const currentPosition = percent(plottedValue);
-  const bandPosition = percent((config.bandStart + config.bandEnd) / 2);
   const targetPosition = percent(config.target);
   return (
     <article className={`nutrition-target-card nutrition-primary-card nutrition-primary-${config.orientation}`}>
@@ -264,15 +275,16 @@ function PrimaryNutrientCard({ metric, measure, targets, rolling7, rolling30, pe
         <div><span>{config.label} · {periodLabel}</span><strong>{formatMeasure(displayMeasure, config.unit, digits)}</strong>{period === "today" && detail ? <small>{detail}</small> : <small>{periodRolling.recordedDays} of {period === "r30" ? 30 : 7} days quantified</small>}</div>
         <div><span>{contextLabel}</span><strong>{averageLabel}</strong><small>{contextDays} of {contextTotalDays} days quantified{contextUncertain ? " · estimated / lower bound" : ""}</small></div>
       </div>
+      <BarKey items={keyItems} label={`${config.label} bar key`} />
       <div className="nutrition-primary-bar" aria-label={`${config.label}: ${formatMeasure(displayMeasure, config.unit, digits)}; ${metric === "saturatedFat" ? "active goal" : "reference"} ${number.format(config.target)} ${config.unit}`}>
-        <span className="nutrition-primary-fill nutrition-bar-hint" style={{ width: `${currentPosition}%` }} {...barHint(currentLabel, currentPosition / 2)} />
-        <span className="nutrition-primary-band nutrition-bar-hint" style={{ left: `${percent(config.bandStart)}%`, width: `${percent(config.bandEnd) - percent(config.bandStart)}%` }} {...barHint(bandLabel, bandPosition)} />
+        <span className="nutrition-primary-fill" style={{ width: `${currentPosition}%` }} />
+        <span className="nutrition-primary-band" style={{ left: `${percent(config.bandStart)}%`, width: `${percent(config.bandEnd) - percent(config.bandStart)}%` }} />
         <i className="nutrition-primary-target-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${targetPosition}%` }} {...barHint(targetLabel, targetPosition)} />
         {metric === "saturatedFat" ? <i className="nutrition-primary-secondary-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(SATURATED_FAT_LONG_TERM_GOAL)}%` }} {...barHint(`Long-term goal: ${SATURATED_FAT_LONG_TERM_GOAL} g`, percent(SATURATED_FAT_LONG_TERM_GOAL))} /> : null}
         {metric === "sodium" ? <i className="nutrition-primary-milestone-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(3000)}%` }} {...barHint("Improvement milestone: 3,000 mg", percent(3000))} /> : null}
         {value !== null ? <b className="nutrition-primary-current-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${currentPosition}%` }} {...barHint(currentLabel, currentPosition)} /> : null}
       </div>
-      <div className="nutrition-primary-scale-labels"><span>0 {config.unit}</span><span>{metric === "sodium" ? "2,300 reference · 3,000 milestone" : config.reference}</span><span>{digits === 0 ? wholeNumber.format(scaleMax) : number.format(scaleMax)} {config.unit}</span></div>
+      <div className="nutrition-primary-scale-labels"><span>0 {config.unit}</span><span>{digits === 0 ? wholeNumber.format(scaleMax) : number.format(scaleMax)} {config.unit}</span></div>
       <div className={`nutrition-primary-status nutrition-primary-status-${status.tone}`}><strong>{status.label}</strong><span>{referenceLabel}</span></div>
       <p className="nutrition-primary-trend">{trendLabel}</p>
     </article>
@@ -297,11 +309,18 @@ function SugarProgressCard({ label, measure, baseline, detail, reduction, status
   const comparisonText = reduction === null ? "September comparison unavailable" : `${sugarReductionStatus(reduction)} · ≈${wholeNumber.format(Math.abs(reduction))}% ${reduction < 0 ? "above baseline" : "reduction"} (${statusBasis})`;
   const currentLabel = `${label}: ${formatUpperEstimate(measure, unit)}`;
   const currentPosition = percent(plottedValue);
+  const keyItems: BarKeyItem[] = baselineValue === null ? [] : [
+    { kind: "milestone", label: `70% · ${number.format(baselineValue * 0.3)} g` },
+    { kind: "secondary", label: `60% · ${number.format(baselineValue * 0.4)} g` },
+    { kind: "target", label: `50% · ${number.format(baselineValue * 0.5)} g` },
+    { kind: "baseline", label: `Baseline · ${number.format(baselineValue)} g` },
+  ];
   return <article className="nutrition-sugar-card nutrition-sugar-progress-card">
     <span>{label}</span>
     <strong>{formatUpperEstimate(measure, unit)}</strong>
+    {keyItems.length ? <BarKey items={keyItems} label={`${label} bar key`} /> : null}
     <div className="nutrition-sugar-bar" aria-label={`${label}: ${formatUpperEstimate(measure, unit)}`}>
-      <span className="nutrition-bar-hint" style={{ width: `${currentPosition}%` }} {...barHint(currentLabel, currentPosition / 2)} />
+      <span style={{ width: `${currentPosition}%` }} />
       {comparison !== null ? <i className="nutrition-sugar-goal nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(comparison)}%` }} {...barHint(`50% reduction level: ${number.format(comparison)} g/day`, percent(comparison))} /> : null}
       {baselineValue !== null ? <i className="nutrition-sugar-milestone-60 nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(baselineValue * 0.4)}%` }} {...barHint(`60% reduction level: ${number.format(baselineValue * 0.4)} g/day`, percent(baselineValue * 0.4))} /> : null}
       {baselineValue !== null ? <i className="nutrition-sugar-milestone-70 nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(baselineValue * 0.3)}%` }} {...barHint(`70% reduction level: ${number.format(baselineValue * 0.3)} g/day`, percent(baselineValue * 0.3))} /> : null}
@@ -319,7 +338,8 @@ function SugarReductionCard({ reduction, baseline, detail }: { reduction: number
   return <article className="nutrition-sugar-card nutrition-sugar-progress-card">
     <span>Reduction versus September</span>
     <strong>{reduction === null ? "Not enough data" : reduction < 0 ? `≈${wholeNumber.format(Math.abs(reduction))}% increase` : `≈${wholeNumber.format(reduction)}%`}</strong>
-    <div className="nutrition-sugar-reduction-bar" aria-label={reductionLabel}><span className="nutrition-bar-hint" style={{ width: `${shown}%` }} {...barHint(reductionLabel, shown / 2)} /><i className="goal nutrition-bar-hint nutrition-bar-marker-hint" {...barHint("Primary reduction goal: 50%", 50)} /><i className="milestone-60 nutrition-bar-hint nutrition-bar-marker-hint" {...barHint("Optional milestone: 60%", 60)} /><i className="milestone-70 nutrition-bar-hint nutrition-bar-marker-hint" {...barHint("Optional milestone: 70%", 70)} /><b className="nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${shown}%` }} {...barHint(reductionLabel, shown)} /></div>
+    <BarKey items={[{ kind: "target", label: "50% goal" }, { kind: "secondary", label: "60% milestone" }, { kind: "milestone", label: "70% milestone" }]} label="Sugar reduction bar key" />
+    <div className="nutrition-sugar-reduction-bar" aria-label={reductionLabel}><span style={{ width: `${shown}%` }} /><i className="goal nutrition-bar-hint nutrition-bar-marker-hint" {...barHint("Primary reduction goal: 50%", 50)} /><i className="milestone-60 nutrition-bar-hint nutrition-bar-marker-hint" {...barHint("Optional milestone: 60%", 60)} /><i className="milestone-70 nutrition-bar-hint nutrition-bar-marker-hint" {...barHint("Optional milestone: 70%", 70)} /><b className="nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${shown}%` }} {...barHint(reductionLabel, shown)} /></div>
     <p>{sugarReductionStatus(reduction)}</p>
     <small>{formatUpperEstimate(baseline, "g/day")} September baseline · {detail}</small>
   </article>;
@@ -333,7 +353,7 @@ function SugarReferenceCard({ label, measure, rolling, reference }: { label: str
   const status = reference === undefined || value === null ? "Informational" : plotted < 18 ? "Lower Added Sugar" : plotted <= reference ? "Within Reference" : "Above Reference";
   const currentLabel = `${label} today: ${formatUpperEstimate(measure, "g")}`;
   const currentPosition = percent(plotted);
-  return <article className="nutrition-target-card nutrition-primary-card nutrition-sugar-reference-card"><div className="nutrition-primary-totals"><div><span>{label} today</span><strong>{formatUpperEstimate(measure, "g")}</strong></div><div><span>Rolling 7-day average</span><strong>{rolling.average === null ? "Not enough data" : `${rolling.uncertain ? "≈" : ""}${number.format(rolling.average)} g/day`}</strong><small>{rolling.recordedDays} of 7 days quantified</small></div></div><div className="nutrition-primary-bar"><span className="nutrition-primary-fill nutrition-bar-hint" style={{ width: `${currentPosition}%` }} {...barHint(currentLabel, currentPosition / 2)} />{reference ? <i className="nutrition-primary-target-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(reference)}%` }} {...barHint(`${label} reference: ${reference} g`, percent(reference))} /> : null}{value !== null ? <b className="nutrition-primary-current-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${currentPosition}%` }} {...barHint(currentLabel, currentPosition)} /> : null}</div><div className="nutrition-primary-status"><strong>{measure.incomplete ? "Incomplete Data" : status}</strong><span>{reference ? `${wholeNumber.format(value === null ? 0 : plotted / reference * 100)}% of ${reference} g reference` : "No universal reference applied"}</span></div></article>;
+  return <article className="nutrition-target-card nutrition-primary-card nutrition-sugar-reference-card"><div className="nutrition-primary-totals"><div><span>{label} today</span><strong>{formatUpperEstimate(measure, "g")}</strong></div><div><span>Rolling 7-day average</span><strong>{rolling.average === null ? "Not enough data" : `${rolling.uncertain ? "≈" : ""}${number.format(rolling.average)} g/day`}</strong><small>{rolling.recordedDays} of 7 days quantified</small></div></div>{reference ? <BarKey items={[{ kind: "target", label: `${reference} g reference` }]} label={`${label} bar key`} /> : null}<div className="nutrition-primary-bar"><span className="nutrition-primary-fill" style={{ width: `${currentPosition}%` }} />{reference ? <i className="nutrition-primary-target-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${percent(reference)}%` }} {...barHint(`${label} reference: ${reference} g`, percent(reference))} /> : null}{value !== null ? <b className="nutrition-primary-current-mark nutrition-bar-hint nutrition-bar-marker-hint" style={{ left: `${currentPosition}%` }} {...barHint(currentLabel, currentPosition)} /> : null}</div><div className="nutrition-primary-status"><strong>{measure.incomplete ? "Incomplete Data" : status}</strong><span>{reference ? `${wholeNumber.format(value === null ? 0 : plotted / reference * 100)}% of ${reference} g reference` : "No universal reference applied"}</span></div></article>;
 }
 
 const metricConfig: Record<HistoryMetric, { label: string; unit: string }> = {
