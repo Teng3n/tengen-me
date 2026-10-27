@@ -444,9 +444,17 @@ type CalorieDay = {
 function parseCalorieRows(rows: Row[]) {
   if (!rows.length) return [];
   const headerIndex = findHeaderRow(rows, ["date", "calor"]);
-  const headers = headerMap(rows[headerIndex] ?? []);
+  const headerRow = rows[headerIndex] ?? [];
+  const headers = headerMap(headerRow);
   const dateIndex = column(headers, ["date", "day"], 0) ?? 0;
-  const weightIndex = column(headers, ["weight", "weight lb", "body weight"]);
+  // The sheet also contains a secondary chart table with another "Weight (lb)"
+  // header. Use the first matching source column so weights stay aligned with
+  // the primary Date column rather than the chart's independent date series.
+  const weightColumn = headerRow.findIndex((value) => {
+    const header = normalizeHeader(value);
+    return header === "weight" || header === "body weight";
+  });
+  const weightIndex = weightColumn >= 0 ? weightColumn : null;
   const consumedIndex = column(headers, ["calories consumed", "consumed calories", "calories logged", "calories in", "calorie intake", "intake"]);
   const plannedIndex = column(headers, ["planned calories", "calories planned", "planned"]);
   const basalIndex = column(headers, ["basal calories burned", "basal burn", "basal energy expenditure", "resting energy", "bmr"]);
