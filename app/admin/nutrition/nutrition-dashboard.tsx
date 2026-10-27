@@ -154,6 +154,14 @@ function formatUpperEstimate(measure: Measure, unit: string, maximumFractionDigi
   return compact === "—" ? "Incomplete data" : `${compact} ${unit}`;
 }
 
+function foodDisplayName(name: string) {
+  return name
+    .replace(/\s*\((?:~|≈)?[\d,.]+\s*(?:calories?|kcal)\)/gi, "")
+    .replace(/\s+,/g, ",")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function signed(value: number | null, unit = "") {
   if (value === null) return "Unknown";
   return `${value > 0 ? "+" : value < 0 ? "−" : ""}${wholeNumber.format(Math.abs(value))}${unit}`;
@@ -689,7 +697,7 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
 
       <section className="owner-panel nutrition-food-panel">
         <header className="nutrition-section-heading"><div><p className="section-kicker">Food log</p><h2>Everything recorded</h2></div><div className="nutrition-food-counts"><span>{data.reliability.confirmedFoodCount} confirmed</span><span>{data.reliability.plannedFoodCount} planned</span><span>{data.reliability.uncountedFoodCount + data.reliability.unknownConsumptionCount} not counted / unknown</span></div></header>
-        {data.foods.length ? <div className="nutrition-food-list"><div className="nutrition-food-header"><span>Food</span><span>Calories</span><span>Protein</span><span>Sugar</span><span>Sat. fat</span><span>Quality</span></div>{data.foods.map((food) => <details key={food.id} className={`nutrition-food-row nutrition-food-${food.consumption}`}><summary><span className="nutrition-food-name"><b>{food.name}</b><small>{food.consumption}</small></span><span className="nutrition-food-metric" data-label="Calories">{formatMeasure(food.calories, "kcal", 0)}</span><span className="nutrition-food-metric" data-label="Protein">{formatMeasure(food.protein, "g")}</span><span className="nutrition-food-metric" data-label="Sugar">{formatMeasure(food.totalSugar, "g")}</span><span className="nutrition-food-metric" data-label="Sat. fat">{formatMeasure(food.saturatedFat, "g")}</span><span className="nutrition-quality-badge">{food.quality}</span></summary><FoodDetails food={food} /></details>)}</div> : <p className="nutrition-empty-state">No food entries are recorded for this date.</p>}
+        {data.foods.length ? <div className="nutrition-food-list"><div className="nutrition-food-header"><span>Food</span><span>Calories</span><span>Protein</span><span>Sugar</span><span>Sat. fat</span><span>Quality</span></div>{data.foods.map((food) => <details key={food.id} className={`nutrition-food-row nutrition-food-${food.consumption}`}><summary><span className="nutrition-food-name"><b>{foodDisplayName(food.name)}</b><small>{food.consumption}</small></span><span className="nutrition-food-metric" data-label="Calories">{formatMeasure(food.calories, "kcal", 0)}</span><span className="nutrition-food-metric" data-label="Protein">{formatMeasure(food.protein, "g")}</span><span className="nutrition-food-metric" data-label="Sugar">{formatMeasure(food.totalSugar, "g")}</span><span className="nutrition-food-metric" data-label="Sat. fat">{formatMeasure(food.saturatedFat, "g")}</span><span className="nutrition-quality-badge">{food.quality}</span></summary><FoodDetails food={food} /></details>)}</div> : <p className="nutrition-empty-state">No food entries are recorded for this date.</p>}
       </section>
 
       <footer className="nutrition-data-footnote"><p>Updated {new Date(data.generatedAt).toLocaleString("en-US", { timeZone: data.timezone })}. Missing fields remain unknown; restaurant estimates and threshold labels are identified. The source spreadsheet is read-only.</p></footer>
