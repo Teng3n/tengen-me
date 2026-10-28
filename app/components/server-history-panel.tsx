@@ -58,7 +58,6 @@ export function ServerHistoryPanel() {
     <section className="server-history-panel" aria-labelledby="server-history-heading">
       <header>
         <div><p className="section-kicker">Last 30 days</p><h2 id="server-history-heading">Server history</h2></div>
-        <span>{reported.length ? "Scheduled downtime excluded" : "Waiting for the first host report"}</span>
       </header>
       <dl className="server-history-summary">
         <div><dt>Scheduled uptime</dt><dd>{observedUptime === null ? "—" : `${observedUptime}%`}</dd></div>

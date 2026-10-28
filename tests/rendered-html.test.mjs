@@ -306,10 +306,11 @@ test("servers page presents the Enshrouded card without implementation notes", a
   assert.match(html, /The machines behind the worlds/);
   assert.match(html, /server-game-banner-enshrouded/);
   assert.match(html, /Server schedule/);
-  assert.match(html, /Around 12:00 PM/);
-  assert.match(html, /Sunday–Thursday nights/);
-  assert.match(html, /Friday–Saturday nights/);
-  assert.match(html, /Planned overnight shutdowns are recorded but excluded/);
+  assert.match(html, /Daily startup time/);
+  assert.match(html, /Sunday–Thursday shutdown/);
+  assert.match(html, /Friday–Saturday shutdown/);
+  assert.match(html, /12:00 PM/);
+  assert.doesNotMatch(html, /Planned overnight|recorded but excluded|Scheduled downtime excluded|Waiting for the first host report/i);
   assert.match(html, /Server history/);
   assert.match(html, /Last 30 days/);
   assert.doesNotMatch(html, /Connection plan|Public data boundary|Public-safe availability|control plane/i);

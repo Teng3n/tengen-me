@@ -1,7 +1,7 @@
 export const SERVER_SCHEDULE_TIME_ZONE = "America/Los_Angeles";
 
 export const SERVER_SCHEDULE = {
-  dailyStartLabel: "Around 12:00 PM",
+  dailyStartLabel: "12:00 PM",
   weekdayShutdownLabel: "12:00 AM",
   weekendShutdownLabel: "2:00 AM",
   timeZoneLabel: "Pacific time",

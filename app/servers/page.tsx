@@ -20,11 +20,10 @@ export default function ServersPage() {
             <span>{SERVER_SCHEDULE.timeZoneLabel}</span>
           </header>
           <dl>
-            <div><dt>Daily startup</dt><dd>{SERVER_SCHEDULE.dailyStartLabel}</dd></div>
-            <div><dt>Sunday–Thursday nights</dt><dd>{SERVER_SCHEDULE.weekdayShutdownLabel}</dd></div>
-            <div><dt>Friday–Saturday nights</dt><dd>{SERVER_SCHEDULE.weekendShutdownLabel}</dd></div>
+            <div><dt>Daily startup time</dt><dd>{SERVER_SCHEDULE.dailyStartLabel}</dd></div>
+            <div><dt>Sunday–Thursday shutdown</dt><dd>{SERVER_SCHEDULE.weekdayShutdownLabel}</dd></div>
+            <div><dt>Friday–Saturday shutdown</dt><dd>{SERVER_SCHEDULE.weekendShutdownLabel}</dd></div>
           </dl>
-          <p>Planned overnight shutdowns are recorded but excluded from the scheduled-uptime calculation below.</p>
         </section>
         <ServerHistoryPanel />
       </main>
