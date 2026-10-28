@@ -388,7 +388,10 @@ function DayNutritionValues({ day, targets, sugarOnGoal }: { day?: HistoryDay; t
   const tone = (metric: "calories" | PrimaryMetric | "totalSugar", measure?: Measure) => {
     if (!measure || measure.value === null) return "unknown";
     if (metric === "totalSugar") return sugarOnGoal === null ? "unknown" : sugarOnGoal ? "positive" : "attention";
-    if (metric === "calories") return measure.value >= targets.calories * 0.9 && measure.value <= targets.calories * 1.1 ? "positive" : "attention";
+    if (metric === "calories") {
+      const roundedPercent = Math.round(measure.value / targets.calories * 100);
+      return roundedPercent >= 90 && roundedPercent <= 110 ? "positive" : "attention";
+    }
     if (metric === "protein") return measure.value >= targets.proteinMin && measure.value <= targets.proteinMax ? "positive" : "attention";
     if (metric === "fiber") return measure.value >= 25 ? "positive" : "attention";
     if (metric === "saturatedFat") return measure.value <= targets.saturatedFat ? "positive" : "attention";
