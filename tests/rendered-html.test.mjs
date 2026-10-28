@@ -326,6 +326,11 @@ test("about and projects pages render their presentation details", async () => {
   assert.equal(projectsResponse.status, 200);
   const projectsHtml = await projectsResponse.text();
   assert.match(projectsHtml, /project-status project-status-active/);
+  assert.match(projectsHtml, /Guild Tools/);
+  assert.match(projectsHtml, /https:\/\/vitality-mop\.pages\.dev/);
+  assert.match(projectsHtml, /https:\/\/might-forever\.pages\.dev/);
+  assert.match(projectsHtml, /project-status project-status-pending/);
+  assert.doesNotMatch(projectsHtml, /Vitality Guild Tools/);
 });
 
 test("unlinked office diagram serves the expanded four-view fixture study", async () => {
