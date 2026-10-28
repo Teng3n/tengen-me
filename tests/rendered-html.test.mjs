@@ -330,6 +330,9 @@ test("about and projects pages render their presentation details", async () => {
   assert.match(projectsHtml, /https:\/\/vitality-mop\.pages\.dev/);
   assert.match(projectsHtml, /https:\/\/might-forever\.pages\.dev/);
   assert.match(projectsHtml, /project-status project-status-pending/);
+  assert.match(projectsHtml, /Dedicated server/);
+  assert.match(projectsHtml, /Current server/);
+  assert.match(projectsHtml, /project-current-server[^>]*>Enshrouded/);
   assert.doesNotMatch(projectsHtml, /Vitality Guild Tools/);
 });
 
