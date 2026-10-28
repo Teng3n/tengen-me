@@ -139,7 +139,7 @@ a { color: inherit; text-decoration: none; }
 .project-links a { display: inline-flex; align-items: center; gap: 9px; padding: 9px 12px; border: 1px solid var(--line); color: var(--ink); font-family: var(--font-geist-mono); font-size: 9px; text-decoration: none; text-transform: uppercase; letter-spacing: .08em; transition: border-color .18s ease, background .18s ease; }
 .project-links a:hover { border-color: var(--line-strong); background: var(--card-hover); }
 .project-links a span { color: var(--red-bright); font-size: 12px; }
-.project-status { border: 1px solid var(--line); padding: 8px 11px; display: flex; align-items: center; gap: 8px; font-family: var(--font-geist-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; }
+.project-status { width: 88px; border: 1px solid var(--line); padding: 8px 9px; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-geist-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .1em; }
 .project-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--red-bright); }
 .project-status-active i, .project-status-online i { background: var(--green); box-shadow: 0 0 12px color-mix(in srgb, var(--green) 55%, transparent); }
 .project-status-pending i { background: #d6a21f; box-shadow: 0 0 12px color-mix(in srgb, #d6a21f 50%, transparent); }
