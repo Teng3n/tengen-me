@@ -36,6 +36,8 @@ export const enshroudedServer: PublicServerStatus = {
   sourceLabel: "Bridge pending",
 };
 
+export const defaultServer = enshroudedServer;
+
 export function getPublicServerStatuses(): PublicServerStatus[] {
   return [enshroudedServer];
 }

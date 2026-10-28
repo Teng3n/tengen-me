@@ -3,7 +3,7 @@ import { ServerHistoryPanel } from "../components/server-history-panel";
 import { SiteShell } from "../components/site-shell";
 import { enshroudedServer } from "../lib/server-status";
 
-export const metadata = { title: "Servers · tengen.me", description: "Current Enshrouded server status and availability." };
+export const metadata = { title: "Servers · tengen.me", description: "Current dedicated-server status and availability." };
 
 export default function ServersPage() {
   return (

@@ -40,6 +40,9 @@ next-env.d.ts
 /dist/
 /.wrangler/
 bridge/bridge-config.local.json
+server-agent/config.local.json
+server-agent/state.local.json
+server-agent/*.log
 /outputs/
 /work/
 /archive/*.tar.gz

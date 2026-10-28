@@ -612,6 +612,85 @@ test("bridge action queue is unavailable without the bridge secret", async () =>
   assert.equal(completion.status, 401);
 });
 
+test("server registry sync requires the bridge secret and accepts sanitized inventory", async () => {
+  const database = createOwnerDb();
+  const body = JSON.stringify({
+    hostId: "home-windows",
+    hostName: "Home dedicated-server host",
+    agentVersion: "1.0.0",
+    observedAt: new Date().toISOString(),
+    servers: [{
+      slug: "palworld-home",
+      name: "Home Server",
+      game: "Palworld",
+      steamAppId: "2394010",
+      region: "US West",
+      status: "online",
+      current: true,
+      retired: false,
+      currentPlayers: null,
+      maximumPlayers: 32,
+      playerNames: [],
+      privateIp: "192.168.1.20",
+      installPath: "C:\\GameServers\\palworld",
+    }],
+  });
+
+  const denied = await callWorker("/api/server-registry/sync", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body,
+  }, { OWNER_DB: database, ENSHROUDED_BRIDGE_TOKEN: "correct-token" });
+  assert.equal(denied.status, 401);
+
+  const accepted = await callWorker("/api/server-registry/sync", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: "Bearer correct-token" },
+    body,
+  }, { OWNER_DB: database, ENSHROUDED_BRIDGE_TOKEN: "correct-token" });
+  assert.equal(accepted.status, 200);
+  const payload = await accepted.json();
+  assert.equal(payload.accepted, true);
+  assert.equal(payload.serverCount, 1);
+  const recorded = database.batches.flat().map((statement) => JSON.stringify(statement.bindings ?? [])).join(" ");
+  assert.doesNotMatch(recorded, /192\.168\.1\.20|GameServers/);
+});
+
+test("public status selects the current server from the dynamic registry", async () => {
+  const database = {
+    prepare(query) {
+      return {
+        bind() { return this; },
+        async all() {
+          if (query.includes("FROM game_server_registry")) {
+            return { success: true, results: [{
+              slug: "palworld-home",
+              name: "Home Server",
+              game: "Palworld",
+              region: "US West",
+              lifecycle: "active",
+              status: "online",
+              current_players: null,
+              maximum_players: 32,
+              player_names_json: "[]",
+              observed_at: new Date().toISOString(),
+              received_at: new Date().toISOString(),
+            }] };
+          }
+          return { success: true, results: [] };
+        },
+      };
+    },
+  };
+  const response = await callWorker("/api/server-status", {}, { OWNER_DB: database });
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.currentSlug, "palworld-home");
+  assert.equal(payload.servers[0].game, "Palworld");
+  assert.equal(payload.servers[0].status, "online");
+  assert.equal(payload.servers[0].players.maximum, 32);
+});
+
 test("public status endpoint falls back safely before the first bridge update", async () => {
   const response = await callWorker("/api/server-status");
   assert.equal(response.status, 200);

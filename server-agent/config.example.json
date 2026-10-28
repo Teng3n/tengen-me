@@ -1,0 +1,24 @@
+{
+  "hostId": "home-windows",
+  "hostName": "Home dedicated-server host",
+  "region": "US West",
+  "syncUrl": "https://tengen.me/api/server-registry/sync",
+  "steamCmdPath": "C:\\steamcmd\\steamcmd.exe",
+  "installRoot": "C:\\GameServers",
+  "steamLibraryRoots": [
+    "C:\\steamcmd\\steamapps",
+    "C:\\Program Files (x86)\\Steam\\steamapps"
+  ],
+  "bridgeToken": "",
+  "legacyBridgeConfigPath": "..\\bridge\\bridge-config.local.json",
+  "games": {
+    "enshrouded": {
+      "installPath": "",
+      "startArguments": ""
+    },
+    "palworld": {
+      "installPath": "",
+      "startArguments": "-useperfthreads -NoAsyncLoadingThread -UseMultithreadForDS"
+    }
+  }
+}

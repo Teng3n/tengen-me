@@ -1,5 +1,7 @@
 import type { OwnerDatabase } from "./owner-data";
 import { recordStatusHistory } from "./owner-data";
+import { isAuthorizedBridgeRequest } from "./bridge-auth";
+import { getRegistryPublicServers } from "./server-registry-api";
 
 const STATUS_KEY = "server:enshrouded-home";
 const HEARTBEAT_AFTER_MS = 10 * 60 * 1000;
@@ -34,7 +36,7 @@ type PublicServerStatus = {
   status: "online" | "offline" | "pending";
   region: string;
   connectAddress: null;
-  players: { current: number | null; maximum: number };
+  players: { current: number | null; maximum: number | null };
   playerNames: string[];
   lastUpdated: string | null;
   lastUpdatedLabel: string;
@@ -142,23 +144,7 @@ function toPublicStatus(stored: StoredStatus, now: number): PublicServerStatus {
   };
 }
 
-function safeTokenEqual(provided: string, expected: string): boolean {
-  const encoder = new TextEncoder();
-  const left = encoder.encode(provided);
-  const right = encoder.encode(expected);
-  let difference = left.length ^ right.length;
-  const length = Math.max(left.length, right.length);
-  for (let index = 0; index < length; index += 1) difference |= (left[index] ?? 0) ^ (right[index] ?? 0);
-  return difference === 0;
-}
-
-export function isAuthorizedBridgeRequest(request: Request, env: ServerStatusEnv): boolean {
-  // Keep the former binding as a fallback so the host can migrate without rotating its secret.
-  const expectedToken = env.ENSHROUDED_BRIDGE_TOKEN ?? env.PALWORLD_BRIDGE_TOKEN;
-  const authorization = request.headers.get("authorization") ?? "";
-  const providedToken = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
-  return Boolean(expectedToken && providedToken && safeTokenEqual(providedToken, expectedToken));
-}
+export { isAuthorizedBridgeRequest } from "./bridge-auth";
 
 export async function getStoredServerStatus(env: ServerStatusEnv): Promise<StoredStatus | null> {
   if (!env.STATUS_KV) return null;
@@ -177,7 +163,7 @@ function statusChanged(previous: StoredStatus, next: StoredStatus): boolean {
   return previous.playerNames.some((name, index) => name !== next.playerNames[index]);
 }
 
-async function getPublicServerHistory(db: OwnerDatabase | undefined): Promise<PublicHistoryDay[]> {
+async function getPublicServerHistory(db: OwnerDatabase | undefined, serverSlug: string): Promise<PublicHistoryDay[]> {
   if (!db) return [];
   const result = await db.prepare(
     `SELECT substr(observed_at, 1, 10) AS day,
@@ -190,26 +176,36 @@ async function getPublicServerHistory(db: OwnerDatabase | undefined): Promise<Pu
        AND julianday(received_at) >= julianday('now', '-29 days', 'start of day')
      GROUP BY substr(observed_at, 1, 10)
      ORDER BY day`,
-  ).bind("enshrouded-home").all<PublicHistoryRow>();
+  ).bind(serverSlug).all<PublicHistoryRow>();
 
   return result.results.flatMap((row) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(row.day)) return [];
     const onlineSamples = cleanInteger(row.online_samples, 0, 10_000);
     const totalSamples = cleanInteger(row.total_samples, 1, 10_000);
-    const peakPlayers = cleanInteger(row.peak_players, 0, 16);
-    const maximumPlayers = cleanInteger(row.maximum_players, 1, 16);
+    const peakPlayers = cleanInteger(row.peak_players, 0, 128);
+    const maximumPlayers = cleanInteger(row.maximum_players, 1, 128);
     if (onlineSamples === null || totalSamples === null || peakPlayers === null || maximumPlayers === null || onlineSamples > totalSamples || peakPlayers > maximumPlayers) return [];
     return [{ date: row.day, onlineSamples, totalSamples, peakPlayers, maximumPlayers }];
   });
 }
 
 export async function handleServerStatusGet(env: ServerStatusEnv): Promise<Response> {
-  const [stored, history] = await Promise.all([
+  const [stored, registryServers] = await Promise.all([
     env.STATUS_KV ? env.STATUS_KV.get(STATUS_KEY).then(parseStoredStatus) : Promise.resolve(null),
-    getPublicServerHistory(env.OWNER_DB).catch(() => []),
+    getRegistryPublicServers(env.OWNER_DB).catch(() => []),
   ]);
-  const server = stored ? toPublicStatus(stored, Date.now()) : pendingStatus();
-  return json({ servers: [server], history, generatedAt: new Date().toISOString() });
+  const now = Date.now();
+  let servers: PublicServerStatus[] = registryServers;
+  if (registryServers.length) {
+    if (stored && registryServers[0].slug === "enshrouded-home") {
+      const live = toPublicStatus(stored, now);
+      servers = [{ ...registryServers[0], ...live, name: registryServers[0].name, game: registryServers[0].game, region: registryServers[0].region }, ...registryServers.slice(1)];
+    }
+  } else {
+    servers = [stored ? toPublicStatus(stored, now) : pendingStatus()];
+  }
+  const history = await getPublicServerHistory(env.OWNER_DB, servers[0].slug).catch(() => []);
+  return json({ servers, currentSlug: servers[0].slug, history, generatedAt: new Date().toISOString() });
 }
 
 export async function handleServerStatusIngest(request: Request, env: ServerStatusEnv): Promise<Response> {

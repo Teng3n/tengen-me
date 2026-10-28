@@ -1,31 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import type { PublicServerStatus } from "../lib/server-status";
+import { useCurrentServer } from "./use-current-server";
 
 export function ServerStatusCard({ server, featured = false }: { server: PublicServerStatus; featured?: boolean }) {
-  const [currentServer, setCurrentServer] = useState(server);
-
-  const refresh = useCallback(async () => {
-    try {
-      const response = await fetch("/api/server-status", { cache: "no-store" });
-      if (!response.ok) return;
-      const payload = await response.json() as { servers?: PublicServerStatus[] };
-      const update = payload.servers?.find((candidate) => candidate.slug === server.slug);
-      if (update) setCurrentServer(update);
-    } catch {
-      // Keep the last known public-safe state when the status endpoint is unavailable.
-    }
-  }, [server.slug]);
-
-  useEffect(() => {
-    const initialRefresh = window.setTimeout(() => void refresh(), 0);
-    const timer = window.setInterval(() => void refresh(), 30_000);
-    return () => {
-      window.clearTimeout(initialRefresh);
-      window.clearInterval(timer);
-    };
-  }, [refresh]);
+  const currentServer = useCurrentServer(server);
 
   const isOnline = currentServer.status === "online";
   const isPending = currentServer.status === "pending";
@@ -37,7 +16,7 @@ export function ServerStatusCard({ server, featured = false }: { server: PublicS
 
   return (
     <article className={`server-card${featured ? " server-card-featured" : ""}`}>
-      <div className="server-game-banner server-game-banner-enshrouded" role="img" aria-label="Enshrouded active server">
+      <div className="server-game-banner server-game-banner-enshrouded" role="img" aria-label={`${currentServer.game} active server`}>
         <strong className="server-game-title"><small>Active world</small>{currentServer.game}</strong>
       </div>
       <div className="server-card-body">

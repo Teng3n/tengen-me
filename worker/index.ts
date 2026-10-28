@@ -17,9 +17,10 @@ import {
 import {
   handleServerStatusGet,
   handleServerStatusIngest,
-  isAuthorizedBridgeRequest,
   type StatusKV,
 } from "./server-status-api";
+import { handleServerRegistrySync } from "./server-registry-api";
+import { isAuthorizedBridgeRequest } from "./bridge-auth";
 import { handleNutritionDashboardGet, type NutritionEnv } from "./nutrition-api";
 
 interface Env extends NutritionEnv {
@@ -109,6 +110,10 @@ const worker = {
 
     if (url.pathname === "/api/server-status/ingest" && request.method === "POST") {
       return handleServerStatusIngest(request, env);
+    }
+
+    if (url.pathname === "/api/server-registry/sync" && request.method === "POST") {
+      return handleServerRegistrySync(request, env);
     }
 
     if (url.pathname === "/_vinext/image") {
