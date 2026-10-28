@@ -54,11 +54,26 @@ function Invoke-A2SRequest {
     $client.Connect($HostName, $Port)
     [void]$client.Send($Payload, $Payload.Length)
     $remoteEndpoint = [System.Net.IPEndPoint]::new([System.Net.IPAddress]::Any, 0)
-    $response = $client.Receive([ref]$remoteEndpoint)
-    if ($response.Length -lt 5 -or [BitConverter]::ToInt32($response, 0) -ne -1) {
-      throw "The Steam query response was invalid or split across packets."
+    for ($attempt = 0; $attempt -lt 3; $attempt += 1) {
+      $response = $client.Receive([ref]$remoteEndpoint)
+      if ($response.Length -lt 5 -or [BitConverter]::ToInt32($response, 0) -ne -1) {
+        throw "The Steam query response was invalid or split across packets."
+      }
+      if ($response[4] -ne 0x41) { return [byte[]]$response }
+      if ($response.Length -lt 9) { throw "The Steam query challenge was incomplete." }
+      if ($attempt -eq 2) { throw "The Steam query challenge was not accepted." }
+
+      # Challenges must be answered on the same socket as the original query.
+      $challenge = $response[5..8]
+      if ($Payload[4] -eq 0x54) {
+        $challengedPayload = [byte[]]($Payload + $challenge)
+      }
+      elseif ($Payload[4] -eq 0x55) {
+        $challengedPayload = [byte[]]($Payload[0..4] + $challenge)
+      }
+      else { throw "The Steam query type does not support challenges." }
+      [void]$client.Send($challengedPayload, $challengedPayload.Length)
     }
-    return [byte[]]$response
   }
   finally {
     $client.Dispose()
@@ -101,13 +116,7 @@ function Get-EnshroudedInfo {
 function Get-EnshroudedPlayers {
   param([string]$HostName, [int]$Port)
   $prefix = [byte[]](0xFF, 0xFF, 0xFF, 0xFF)
-  $challengeQuery = [byte[]]($prefix + 0x55 + 0xFF + 0xFF + 0xFF + 0xFF)
-  $challengeResponse = Invoke-A2SRequest $HostName $Port $challengeQuery
-  if ($challengeResponse.Length -lt 9 -or $challengeResponse[4] -ne 0x41) {
-    throw "The query port did not return an A2S_PLAYER challenge."
-  }
-
-  $playerQuery = [byte[]]($prefix + 0x55 + $challengeResponse[5..8])
+  $playerQuery = [byte[]]($prefix + 0x55 + 0xFF + 0xFF + 0xFF + 0xFF)
   $response = Invoke-A2SRequest $HostName $Port $playerQuery
   if ($response.Length -lt 6 -or $response[4] -ne 0x44) { throw "The query port did not return an A2S_PLAYER response." }
 
