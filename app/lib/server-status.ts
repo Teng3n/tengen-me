@@ -18,6 +18,8 @@ export type PublicServerHistoryDay = {
   date: string;
   onlineSamples: number;
   totalSamples: number;
+  scheduledOnlineSamples: number;
+  scheduledSamples: number;
   peakPlayers: number;
   maximumPlayers: number;
 };

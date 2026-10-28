@@ -305,6 +305,11 @@ test("servers page presents the Enshrouded card without implementation notes", a
   const html = await response.text();
   assert.match(html, /The machines behind the worlds/);
   assert.match(html, /server-game-banner-enshrouded/);
+  assert.match(html, /Server schedule/);
+  assert.match(html, /Around 12:00 PM/);
+  assert.match(html, /Sunday–Thursday nights/);
+  assert.match(html, /Friday–Saturday nights/);
+  assert.match(html, /Planned overnight shutdowns are recorded but excluded/);
   assert.match(html, /Server history/);
   assert.match(html, /Last 30 days/);
   assert.doesNotMatch(html, /Connection plan|Public data boundary|Public-safe availability|control plane/i);
@@ -700,17 +705,23 @@ test("public status endpoint falls back safely before the first bridge update", 
   assert.deepEqual(payload.history, []);
 });
 
-test("public status endpoint exposes only aggregated 30-day server history", async () => {
+test("public status history excludes planned overnight shutdowns from scheduled uptime", async () => {
   const database = {
     prepare(query) {
-      assert.match(query, /SUM\(CASE WHEN status = 'online'/);
+      assert.match(query, /SELECT status, current_players, maximum_players, observed_at/);
       return {
         bind(slug) {
           assert.equal(slug, "enshrouded-home");
           return this;
         },
         async all() {
-          return { success: true, results: [{ day: "2026-10-28", online_samples: 12, total_samples: 14, peak_players: 5, maximum_players: 16 }] };
+          return { success: true, results: [
+            { status: "offline", current_players: 0, maximum_players: 16, observed_at: "2026-10-30T08:00:00.000Z" },
+            { status: "online", current_players: 5, maximum_players: 16, observed_at: "2026-10-30T19:00:00.000Z" },
+            { status: "offline", current_players: 0, maximum_players: 16, observed_at: "2026-10-30T20:00:00.000Z" },
+            { status: "online", current_players: 3, maximum_players: 16, observed_at: "2026-10-31T08:00:00.000Z" },
+            { status: "offline", current_players: 0, maximum_players: 16, observed_at: "2026-10-31T10:00:00.000Z" },
+          ] };
         },
       };
     },
@@ -718,7 +729,26 @@ test("public status endpoint exposes only aggregated 30-day server history", asy
   const response = await callWorker("/api/server-status", {}, { OWNER_DB: database });
   assert.equal(response.status, 200);
   const payload = await response.json();
-  assert.deepEqual(payload.history, [{ date: "2026-10-28", onlineSamples: 12, totalSamples: 14, peakPlayers: 5, maximumPlayers: 16 }]);
+  assert.deepEqual(payload.history, [
+    {
+      date: "2026-10-30",
+      onlineSamples: 1,
+      totalSamples: 3,
+      scheduledOnlineSamples: 1,
+      scheduledSamples: 2,
+      peakPlayers: 5,
+      maximumPlayers: 16,
+    },
+    {
+      date: "2026-10-31",
+      onlineSamples: 1,
+      totalSamples: 2,
+      scheduledOnlineSamples: 1,
+      scheduledSamples: 1,
+      peakPlayers: 3,
+      maximumPlayers: 16,
+    },
+  ]);
   assert.doesNotMatch(JSON.stringify(payload.history), /playerNames|receivedAt|observedAt/);
 });
 

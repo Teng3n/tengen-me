@@ -2,6 +2,7 @@ import type { OwnerDatabase } from "./owner-data";
 import { recordStatusHistory } from "./owner-data";
 import { isAuthorizedBridgeRequest } from "./bridge-auth";
 import { getRegistryPublicServers } from "./server-registry-api";
+import { isServerScheduledOnline, serverScheduleDateKey } from "../shared/server-schedule";
 
 const STATUS_KEY = "server:enshrouded-home";
 const HISTORY_SAMPLE_MS = 10 * 60 * 1000;
@@ -44,17 +45,18 @@ type PublicServerStatus = {
 };
 
 type PublicHistoryRow = {
-  day: string;
-  online_samples: number;
-  total_samples: number;
-  peak_players: number;
+  status: "online" | "offline";
+  current_players: number;
   maximum_players: number;
+  observed_at: string;
 };
 
 type PublicHistoryDay = {
   date: string;
   onlineSamples: number;
   totalSamples: number;
+  scheduledOnlineSamples: number;
+  scheduledSamples: number;
   peakPlayers: number;
   maximumPlayers: number;
 };
@@ -166,27 +168,42 @@ function statusChanged(previous: StoredStatus, next: StoredStatus): boolean {
 async function getPublicServerHistory(db: OwnerDatabase | undefined, serverSlug: string): Promise<PublicHistoryDay[]> {
   if (!db) return [];
   const result = await db.prepare(
-    `SELECT substr(observed_at, 1, 10) AS day,
-            SUM(CASE WHEN status = 'online' THEN 1 ELSE 0 END) AS online_samples,
-            COUNT(*) AS total_samples,
-            MAX(current_players) AS peak_players,
-            MAX(maximum_players) AS maximum_players
+    `SELECT status, current_players, maximum_players, observed_at
      FROM server_status_history
      WHERE server_slug = ?
-       AND julianday(received_at) >= julianday('now', '-29 days', 'start of day')
-     GROUP BY substr(observed_at, 1, 10)
-     ORDER BY day`,
+       AND julianday(received_at) >= julianday('now', '-31 days')
+     ORDER BY observed_at`,
   ).bind(serverSlug).all<PublicHistoryRow>();
-
-  return result.results.flatMap((row) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.day)) return [];
-    const onlineSamples = cleanInteger(row.online_samples, 0, 10_000);
-    const totalSamples = cleanInteger(row.total_samples, 1, 10_000);
-    const peakPlayers = cleanInteger(row.peak_players, 0, 128);
+  const days = new Map<string, PublicHistoryDay>();
+  for (const row of result.results) {
+    const observedTime = Date.parse(row.observed_at);
+    const currentPlayers = cleanInteger(row.current_players, 0, 128);
     const maximumPlayers = cleanInteger(row.maximum_players, 1, 128);
-    if (onlineSamples === null || totalSamples === null || peakPlayers === null || maximumPlayers === null || onlineSamples > totalSamples || peakPlayers > maximumPlayers) return [];
-    return [{ date: row.day, onlineSamples, totalSamples, peakPlayers, maximumPlayers }];
-  });
+    if (!Number.isFinite(observedTime) || currentPlayers === null || maximumPlayers === null || currentPlayers > maximumPlayers) continue;
+    if (row.status !== "online" && row.status !== "offline") continue;
+    const date = new Date(observedTime);
+    const dateKey = serverScheduleDateKey(date);
+    const scheduled = isServerScheduledOnline(date);
+    const existing = days.get(dateKey) ?? {
+      date: dateKey,
+      onlineSamples: 0,
+      totalSamples: 0,
+      scheduledOnlineSamples: 0,
+      scheduledSamples: 0,
+      peakPlayers: 0,
+      maximumPlayers,
+    };
+    existing.totalSamples += 1;
+    if (row.status === "online") existing.onlineSamples += 1;
+    if (scheduled) {
+      existing.scheduledSamples += 1;
+      if (row.status === "online") existing.scheduledOnlineSamples += 1;
+    }
+    existing.peakPlayers = Math.max(existing.peakPlayers, currentPlayers);
+    existing.maximumPlayers = Math.max(existing.maximumPlayers, maximumPlayers);
+    days.set(dateKey, existing);
+  }
+  return [...days.values()].sort((left, right) => left.date.localeCompare(right.date)).slice(-30);
 }
 
 export async function handleServerStatusGet(env: ServerStatusEnv): Promise<Response> {
