@@ -764,7 +764,7 @@ test("bridge ingestion requires its secret and stores only the public snapshot",
   assert.deepEqual(publicPayload.servers[0].playerNames, ["Tengen", "Friend"]);
 });
 
-test("unchanged bridge snapshots do not create repeated KV writes", async () => {
+test("unchanged bridge snapshots refresh live status on every health check", async () => {
   const values = new Map();
   let putCount = 0;
   const kv = {
@@ -788,16 +788,16 @@ test("unchanged bridge snapshots do not create repeated KV writes", async () => 
   assert.equal((await ingest()).status, 204);
   assert.equal((await ingest()).status, 204);
   assert.equal((await ingest()).status, 204);
-  assert.equal(putCount, 1);
+  assert.equal(putCount, 3);
 
   assert.equal((await ingest({ currentPlayers: 3 })).status, 204);
-  assert.equal(putCount, 2);
+  assert.equal(putCount, 4);
 
   assert.equal((await ingest({ currentPlayers: 3, playerNames: ["Tengen", "Friend", "New Player"] })).status, 204);
-  assert.equal(putCount, 3);
+  assert.equal(putCount, 5);
 });
 
-test("unchanged bridge snapshots write a heartbeat after ten minutes", async () => {
+test("a new health check replaces an older stored snapshot immediately", async () => {
   const statusKey = "server:enshrouded-home";
   const values = new Map([[statusKey, JSON.stringify({
     status: "online",
@@ -830,7 +830,7 @@ test("unchanged bridge snapshots write a heartbeat after ten minutes", async () 
   assert.ok(Date.parse(JSON.parse(values.get(statusKey)).receivedAt) > Date.now() - 60_000);
 });
 
-test("status feed remains live between heartbeats and times out after fifteen minutes", async () => {
+test("status feed becomes unavailable after three minutes without declaring the server offline", async () => {
   const makeKv = (ageMinutes) => ({
     async get() {
       return JSON.stringify({
@@ -845,13 +845,14 @@ test("status feed remains live between heartbeats and times out after fifteen mi
     async put() {},
   });
 
-  const livePayload = await (await callWorker("/api/server-status", {}, { STATUS_KV: makeKv(11) })).json();
+  const livePayload = await (await callWorker("/api/server-status", {}, { STATUS_KV: makeKv(2) })).json();
   assert.equal(livePayload.servers[0].status, "online");
   assert.equal(livePayload.servers[0].sourceLabel, "Live feed");
 
-  const stalePayload = await (await callWorker("/api/server-status", {}, { STATUS_KV: makeKv(16) })).json();
-  assert.equal(stalePayload.servers[0].status, "offline");
-  assert.equal(stalePayload.servers[0].sourceLabel, "Feed timed out");
+  const stalePayload = await (await callWorker("/api/server-status", {}, { STATUS_KV: makeKv(4) })).json();
+  assert.equal(stalePayload.servers[0].status, "pending");
+  assert.equal(stalePayload.servers[0].players.current, null);
+  assert.equal(stalePayload.servers[0].sourceLabel, "Monitoring unavailable");
 });
 
 test("nutrition dashboard remains private and renders for the approved home network", async () => {

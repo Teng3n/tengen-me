@@ -4,7 +4,7 @@ Use this document with Codex running on the Windows dedicated-server computer.
 
 ## Initial prompt for the host Codex
 
-> Read `server-agent/AGENTS.md`, `server-agent/README.md`, and this handoff completely. Inspect this computer's existing SteamCMD location, Steam library manifests, dedicated-server installation directories, relevant processes, and scheduled tasks. Do not reveal or commit secrets. Copy `config.example.json` to the ignored `config.local.json`, fill in only verified local paths, preserve the existing TENGEN bridge token through the environment or ignored legacy bridge configuration, and run `serverctl.ps1 sync`. Verify that tengen.me reports the correct current game. Then install the startup/six-hour scheduled task and confirm its first run succeeds. Do not stop, replace, or retire any running server unless I explicitly request it.
+> Read `server-agent/AGENTS.md`, `server-agent/README.md`, and this handoff completely. Inspect this computer's existing SteamCMD location, Steam library manifests, dedicated-server installation directories, relevant processes, and scheduled tasks. Do not reveal or commit secrets. Copy `config.example.json` to the ignored `config.local.json`, fill in only verified local paths, preserve the existing TENGEN bridge token through the environment or ignored legacy bridge configuration, and run `serverctl.ps1 sync`. Verify that tengen.me reports the correct current game. Then install the startup/six-hour inventory task and the separate startup health monitor, start both once, and confirm the inventory task succeeds and the health monitor publishes a live Enshrouded snapshot. Do not stop, replace, or retire any running server unless I explicitly request it.
 
 ## Installation sequence
 
@@ -13,8 +13,8 @@ Use this document with Codex running on the Windows dedicated-server computer.
 3. Inspect paths read-only before creating `config.local.json`. Set a per-game `installPath` when an existing server was installed outside a discovered Steam library.
 4. Run `.\server-agent\serverctl.ps1 sync` interactively.
 5. Confirm `https://tengen.me/api/server-status` shows the detected current server.
-6. From an elevated PowerShell session, run `.\server-agent\install-sync-task.ps1`.
-7. Start the task once and confirm a successful result.
+6. From an elevated PowerShell session, run `.\server-agent\install-sync-task.ps1` and `.\server-agent\install-health-monitor-task.ps1`.
+7. Start both tasks once. Confirm the inventory task returns result `0`, the health-monitor task remains running, and the public status source changes to `Live feed`.
 
 ## Safety boundaries
 

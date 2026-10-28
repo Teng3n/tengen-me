@@ -105,7 +105,7 @@ export async function handleOwnerDashboardGet(env: OwnerDashboardEnv, identity: 
     const bridgeAgeSeconds = storedStatus
       ? Math.max(0, Math.floor((now - Date.parse(storedStatus.receivedAt)) / 1000))
       : null;
-    const bridgeFresh = bridgeAgeSeconds !== null && bridgeAgeSeconds <= 15 * 60;
+    const bridgeFresh = bridgeAgeSeconds !== null && bridgeAgeSeconds <= 3 * 60;
 
     return json({
       generatedAt: new Date(now).toISOString(),

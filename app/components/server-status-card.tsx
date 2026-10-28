@@ -8,6 +8,7 @@ export function ServerStatusCard({ server, featured = false }: { server: PublicS
 
   const isOnline = currentServer.status === "online";
   const isPending = currentServer.status === "pending";
+  const monitoringUnavailable = currentServer.sourceLabel === "Monitoring unavailable";
   const emptyMessage = isPending
     ? "Player information will appear when the server comes online."
     : isOnline && currentServer.players.current === null
@@ -22,7 +23,7 @@ export function ServerStatusCard({ server, featured = false }: { server: PublicS
       <div className="server-card-body">
         <div className="server-card-topline">
           <span className={`server-state server-state-${currentServer.status}`} aria-live="polite">
-            <i /> {isOnline ? "Online" : isPending ? "Checking status" : "Offline"}
+            <i /> {isOnline ? "Online" : monitoringUnavailable ? "Monitoring unavailable" : isPending ? "Checking status" : "Offline"}
           </span>
         </div>
         <dl className="server-metrics">

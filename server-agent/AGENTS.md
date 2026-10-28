@@ -11,7 +11,8 @@ This folder contains the deterministic control surface for the Windows computer 
 - Do not create a generic remote-command endpoint or accept arbitrary commands from tengen.me.
 - Only stop or retire a server when the user explicitly requests that action.
 - After a successful host change, run `serverctl.ps1 sync` and verify the sanitized tengen.me response.
-- The scheduled synchronization cadence is six hours plus system startup. Do not increase it without the user's request.
+- Keep inventory discovery at six hours plus system startup.
+- Keep the separate Enshrouded health monitor at one local A2S query per minute. This is status monitoring, not inventory discovery.
 
 ## Supported commands
 
@@ -33,3 +34,4 @@ Use `-WhatIf` before the first `deploy`, `start`, `stop`, or `retire` attempt on
 - A one-time `sync` succeeds without exposing secrets.
 - `https://tengen.me/api/server-status` shows the expected current game.
 - The scheduled task is installed and its last-run result is successful.
+- The health-monitor task is running and the public status source is `Live feed`.

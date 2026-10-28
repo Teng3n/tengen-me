@@ -6,7 +6,11 @@ import { useCurrentServer } from "./use-current-server";
 export function ProjectServerStatus({ server }: { server: PublicServerStatus }) {
   const currentServer = useCurrentServer(server);
 
-  const label = currentServer.status === "online" ? "Active" : currentServer.status === "offline" ? "Offline" : "Checking";
+  const label = currentServer.status === "online"
+    ? "Active"
+    : currentServer.status === "offline"
+      ? "Offline"
+      : currentServer.sourceLabel === "Monitoring unavailable" ? "Unavailable" : "Checking";
   return <span className={`project-status project-status-${currentServer.status}`} aria-live="polite"><i />{label}</span>;
 }
 

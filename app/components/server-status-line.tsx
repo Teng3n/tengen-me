@@ -10,7 +10,9 @@ export function ServerStatusLine({ server, includeIdentity = false }: { server: 
     ? `Online · ${currentServer.lastUpdatedLabel}`
     : currentServer.status === "offline"
       ? `Offline · ${currentServer.lastUpdatedLabel}`
-      : "Checking status";
+      : currentServer.sourceLabel === "Monitoring unavailable"
+        ? `Monitoring unavailable · ${currentServer.lastUpdatedLabel}`
+        : "Checking status";
 
   return <>
     {includeIdentity ? <div><p>{currentServer.game} server</p><span>{currentServer.region}</span></div> : null}

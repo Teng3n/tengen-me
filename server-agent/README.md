@@ -8,7 +8,8 @@ This folder turns SteamCMD provisioning into a deterministic, non-AI workflow. C
 - Detects whether the known dedicated-server process is running.
 - Publishes a sanitized inventory to `https://tengen.me/api/server-registry/sync`.
 - Immediately synchronizes after deploy, start, stop, retire, or unretire.
-- Supports a startup and six-hour Windows Scheduled Task.
+- Supports a startup and six-hour inventory task.
+- Installs a separate startup health monitor that queries Enshrouded's local A2S endpoint every 60 seconds.
 
 The first catalog includes Enshrouded and Palworld. Adding a game requires a reviewed catalog entry with its Steam dedicated-server App ID, process name, executable path, and default player capacity.
 
@@ -23,10 +24,19 @@ The first catalog includes Enshrouded and Palworld. Adding a game requires a rev
    .\serverctl.ps1 sync
    ```
 
-5. Install the schedule from an elevated PowerShell session:
+5. Install the inventory schedule from an elevated PowerShell session:
 
    ```powershell
    .\install-sync-task.ps1
    ```
+
+6. Install the live Enshrouded health monitor from the same elevated session. It reuses the existing ignored bridge configuration and token referenced by `config.local.json`:
+
+   ```powershell
+   .\install-health-monitor-task.ps1
+   Start-ScheduledTask -TaskName "tengen.me Enshrouded Health Monitor"
+   ```
+
+The inventory task discovers installed/current games every six hours. The health monitor separately queries the active Enshrouded game endpoint every minute, so the public online state does not wait for inventory discovery.
 
 No OpenAI or ChatGPT API is used by these scripts.

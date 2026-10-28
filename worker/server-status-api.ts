@@ -4,8 +4,8 @@ import { isAuthorizedBridgeRequest } from "./bridge-auth";
 import { getRegistryPublicServers } from "./server-registry-api";
 
 const STATUS_KEY = "server:enshrouded-home";
-const HEARTBEAT_AFTER_MS = 10 * 60 * 1000;
-const STALE_AFTER_MS = 15 * 60 * 1000;
+const HISTORY_SAMPLE_MS = 10 * 60 * 1000;
+const STALE_AFTER_MS = 3 * 60 * 1000;
 const MAX_PLAYER_NAMES = 16;
 
 export interface StatusKV {
@@ -128,7 +128,7 @@ function formatAge(iso: string, now: number): string {
 
 function toPublicStatus(stored: StoredStatus, now: number): PublicServerStatus {
   const stale = now - Date.parse(stored.receivedAt) > STALE_AFTER_MS;
-  const status = stale ? "offline" : stored.status;
+  const status = stale ? "pending" : stored.status;
   return {
     slug: "enshrouded-home",
     name: "Home Server",
@@ -136,11 +136,11 @@ function toPublicStatus(stored: StoredStatus, now: number): PublicServerStatus {
     status,
     region: "US West",
     connectAddress: null,
-    players: { current: status === "online" ? stored.currentPlayers : 0, maximum: stored.maximumPlayers },
+    players: { current: status === "online" ? stored.currentPlayers : stale ? null : 0, maximum: stored.maximumPlayers },
     playerNames: status === "online" ? stored.playerNames : [],
     lastUpdated: stored.observedAt,
     lastUpdatedLabel: formatAge(stored.observedAt, now),
-    sourceLabel: stale ? "Feed timed out" : "Live feed",
+    sourceLabel: stale ? "Monitoring unavailable" : "Live feed",
   };
 }
 
@@ -247,21 +247,23 @@ export async function handleServerStatusIngest(request: Request, env: ServerStat
     receivedAt: new Date().toISOString(),
   };
   const previous = parseStoredStatus(await env.STATUS_KV.get(STATUS_KEY));
-  const heartbeatDue = !previous || Date.now() - Date.parse(previous.receivedAt) >= HEARTBEAT_AFTER_MS;
-  if (!previous || statusChanged(previous, stored) || heartbeatDue) {
-    await env.STATUS_KV.put(STATUS_KEY, JSON.stringify(stored), { expirationTtl: 86_400 });
-  }
-  try {
-    await recordStatusHistory(env.OWNER_DB, {
-      serverSlug: "enshrouded-home",
-      status: stored.status,
-      currentPlayers: stored.currentPlayers,
-      maximumPlayers: stored.maximumPlayers,
-      observedAt: stored.observedAt,
-      receivedAt: stored.receivedAt,
-    });
-  } catch {
-    // Public status ingestion remains available if private history storage is temporarily unavailable.
+  const observationBucket = Math.floor(observedTime / HISTORY_SAMPLE_MS);
+  const previousBucket = previous ? Math.floor(Date.parse(previous.observedAt) / HISTORY_SAMPLE_MS) : -1;
+  const historyDue = !previous || statusChanged(previous, stored) || observationBucket !== previousBucket;
+  await env.STATUS_KV.put(STATUS_KEY, JSON.stringify(stored), { expirationTtl: 86_400 });
+  if (historyDue) {
+    try {
+      await recordStatusHistory(env.OWNER_DB, {
+        serverSlug: "enshrouded-home",
+        status: stored.status,
+        currentPlayers: stored.currentPlayers,
+        maximumPlayers: stored.maximumPlayers,
+        observedAt: stored.observedAt,
+        receivedAt: stored.receivedAt,
+      });
+    } catch {
+      // Public status ingestion remains available if private history storage is temporarily unavailable.
+    }
   }
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }
