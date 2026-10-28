@@ -1,4 +1,5 @@
 import { ServerStatusCard } from "../components/server-status-card";
+import { ServerHistoryPanel } from "../components/server-history-panel";
 import { SiteShell } from "../components/site-shell";
 import { enshroudedServer } from "../lib/server-status";
 
@@ -12,6 +13,7 @@ export default function ServersPage() {
         <div className="server-directory">
           <ServerStatusCard server={enshroudedServer} />
         </div>
+        <ServerHistoryPanel />
       </main>
     </SiteShell>
   );

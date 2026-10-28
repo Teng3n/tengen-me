@@ -305,6 +305,8 @@ test("servers page presents the Enshrouded card without implementation notes", a
   const html = await response.text();
   assert.match(html, /The machines behind the worlds/);
   assert.match(html, /server-game-banner-enshrouded/);
+  assert.match(html, /Server history/);
+  assert.match(html, /Last 30 days/);
   assert.doesNotMatch(html, /Connection plan|Public data boundary|Public-safe availability|control plane/i);
 });
 
@@ -616,6 +618,29 @@ test("public status endpoint falls back safely before the first bridge update", 
   const payload = await response.json();
   assert.equal(payload.servers[0].status, "pending");
   assert.equal(payload.servers[0].connectAddress, null);
+  assert.deepEqual(payload.history, []);
+});
+
+test("public status endpoint exposes only aggregated 30-day server history", async () => {
+  const database = {
+    prepare(query) {
+      assert.match(query, /SUM\(CASE WHEN status = 'online'/);
+      return {
+        bind(slug) {
+          assert.equal(slug, "enshrouded-home");
+          return this;
+        },
+        async all() {
+          return { success: true, results: [{ day: "2026-10-28", online_samples: 12, total_samples: 14, peak_players: 5, maximum_players: 16 }] };
+        },
+      };
+    },
+  };
+  const response = await callWorker("/api/server-status", {}, { OWNER_DB: database });
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.deepEqual(payload.history, [{ date: "2026-10-28", onlineSamples: 12, totalSamples: 14, peakPlayers: 5, maximumPlayers: 16 }]);
+  assert.doesNotMatch(JSON.stringify(payload.history), /playerNames|receivedAt|observedAt/);
 });
 
 test("bridge ingestion requires its secret and stores only the public snapshot", async () => {

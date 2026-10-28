@@ -14,6 +14,14 @@ export type PublicServerStatus = {
   sourceLabel: string;
 };
 
+export type PublicServerHistoryDay = {
+  date: string;
+  onlineSamples: number;
+  totalSamples: number;
+  peakPlayers: number;
+  maximumPlayers: number;
+};
+
 export const enshroudedServer: PublicServerStatus = {
   slug: "enshrouded-home",
   name: "Home Server",

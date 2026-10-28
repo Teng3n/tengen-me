@@ -41,6 +41,22 @@ type PublicServerStatus = {
   sourceLabel: string;
 };
 
+type PublicHistoryRow = {
+  day: string;
+  online_samples: number;
+  total_samples: number;
+  peak_players: number;
+  maximum_players: number;
+};
+
+type PublicHistoryDay = {
+  date: string;
+  onlineSamples: number;
+  totalSamples: number;
+  peakPlayers: number;
+  maximumPlayers: number;
+};
+
 function json(body: unknown, status = 200, headers: Record<string, string> = {}) {
   return Response.json(body, {
     status,
@@ -161,11 +177,39 @@ function statusChanged(previous: StoredStatus, next: StoredStatus): boolean {
   return previous.playerNames.some((name, index) => name !== next.playerNames[index]);
 }
 
+async function getPublicServerHistory(db: OwnerDatabase | undefined): Promise<PublicHistoryDay[]> {
+  if (!db) return [];
+  const result = await db.prepare(
+    `SELECT substr(observed_at, 1, 10) AS day,
+            SUM(CASE WHEN status = 'online' THEN 1 ELSE 0 END) AS online_samples,
+            COUNT(*) AS total_samples,
+            MAX(current_players) AS peak_players,
+            MAX(maximum_players) AS maximum_players
+     FROM server_status_history
+     WHERE server_slug = ?
+       AND julianday(received_at) >= julianday('now', '-29 days', 'start of day')
+     GROUP BY substr(observed_at, 1, 10)
+     ORDER BY day`,
+  ).bind("enshrouded-home").all<PublicHistoryRow>();
+
+  return result.results.flatMap((row) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.day)) return [];
+    const onlineSamples = cleanInteger(row.online_samples, 0, 10_000);
+    const totalSamples = cleanInteger(row.total_samples, 1, 10_000);
+    const peakPlayers = cleanInteger(row.peak_players, 0, 16);
+    const maximumPlayers = cleanInteger(row.maximum_players, 1, 16);
+    if (onlineSamples === null || totalSamples === null || peakPlayers === null || maximumPlayers === null || onlineSamples > totalSamples || peakPlayers > maximumPlayers) return [];
+    return [{ date: row.day, onlineSamples, totalSamples, peakPlayers, maximumPlayers }];
+  });
+}
+
 export async function handleServerStatusGet(env: ServerStatusEnv): Promise<Response> {
-  if (!env.STATUS_KV) return json({ servers: [pendingStatus()], generatedAt: new Date().toISOString() });
-  const stored = parseStoredStatus(await env.STATUS_KV.get(STATUS_KEY));
+  const [stored, history] = await Promise.all([
+    env.STATUS_KV ? env.STATUS_KV.get(STATUS_KEY).then(parseStoredStatus) : Promise.resolve(null),
+    getPublicServerHistory(env.OWNER_DB).catch(() => []),
+  ]);
   const server = stored ? toPublicStatus(stored, Date.now()) : pendingStatus();
-  return json({ servers: [server], generatedAt: new Date().toISOString() });
+  return json({ servers: [server], history, generatedAt: new Date().toISOString() });
 }
 
 export async function handleServerStatusIngest(request: Request, env: ServerStatusEnv): Promise<Response> {
