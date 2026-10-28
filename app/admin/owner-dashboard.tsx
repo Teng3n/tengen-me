@@ -14,7 +14,7 @@ type HistoryItem = {
 };
 type OwnerAction = {
   id: string;
-  action: "refresh-status" | "save-world";
+  action: "refresh-status";
   status: "queued" | "running" | "completed" | "failed" | "expired";
   requested_at: string;
   completed_at: string | null;
@@ -1341,8 +1341,7 @@ export function OwnerDashboard({ ownerLabel }: { ownerLabel: string }) {
     [data?.actions],
   );
 
-  async function queueAction(action: "refresh-status" | "save-world") {
-    if (action === "save-world" && !window.confirm("Ask the Palworld host to save the current world now?")) return;
+  async function queueAction(action: "refresh-status") {
     setBusy(`action:${action}`);
     setError("");
     try {
@@ -1390,12 +1389,12 @@ export function OwnerDashboard({ ownerLabel }: { ownerLabel: string }) {
         <ServiceCard label="Home IP gate" service={data.services.access} />
         <ServiceCard label="Website and API" service={data.services.website} />
         <ServiceCard label="Owner database" service={data.services.database} />
-        <ServiceCard label="Palworld bridge" service={data.services.bridge} />
+        <ServiceCard label="Enshrouded bridge" service={data.services.bridge} />
       </section>
 
       <section className="owner-panel owner-server-panel">
         <div className="owner-panel-heading">
-          <div><p className="section-kicker">Palworld host</p><h2>Server operations</h2></div>
+          <div><p className="section-kicker">Enshrouded host</p><h2>Server operations</h2></div>
           <span className={`owner-server-state owner-server-${data.server?.status ?? "pending"}`}>
             <i /> {data.server?.status ?? "Pending"}
           </span>
@@ -1414,18 +1413,11 @@ export function OwnerDashboard({ ownerLabel }: { ownerLabel: string }) {
             >
               <span>Refresh status</span><small>{pendingActions.has("refresh-status") ? "Waiting for host" : "Safe · no server change"}</small>
             </button>
-            <button
-              type="button"
-              onClick={() => void queueAction("save-world")}
-              disabled={busy !== "" || pendingActions.has("save-world")}
-            >
-              <span>Save world</span><small>{pendingActions.has("save-world") ? "Waiting for host" : "Official Palworld save API"}</small>
-            </button>
           </div>
         </div>
         <div className="owner-history">
           <div><span>Recent status history</span><span>{data.history.length ? `${relativeTime(data.history[0].received_at)} – ${relativeTime(data.history[data.history.length - 1].received_at)}` : "Collecting data"}</span></div>
-          <div className="owner-history-strip" aria-label="Recent Palworld status samples">
+          <div className="owner-history-strip" aria-label="Recent Enshrouded status samples">
             {data.history.length ? data.history.map((sample) => (
               <span
                 key={sample.id}

@@ -36,7 +36,7 @@ export default async function AdminPage() {
         <header className="page-heading compact-heading owner-heading">
           <p className="eyebrow"><span /> Owner</p>
           <h1>Home operations, at a glance.</h1>
-          <p>Private health, Palworld controls, house plans, maintenance, and an audit trail in one protected workspace.</p>
+          <p>Private health, Enshrouded monitoring, house plans, maintenance, and an audit trail in one protected workspace.</p>
         </header>
         <OwnerDashboard ownerLabel={user.label} />
       </main>

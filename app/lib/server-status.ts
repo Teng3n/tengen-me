@@ -7,27 +7,27 @@ export type PublicServerStatus = {
   status: ServerState;
   region: string;
   connectAddress: string | null;
-  players: { current: number | null; maximum: number };
+  players: { current: number | null; maximum: number | null };
   playerNames: string[];
   lastUpdated: string | null;
   lastUpdatedLabel: string;
   sourceLabel: string;
 };
 
-export const palworldServer: PublicServerStatus = {
-  slug: "palworld-home",
+export const enshroudedServer: PublicServerStatus = {
+  slug: "enshrouded-home",
   name: "Home Server",
-  game: "Palworld",
+  game: "Enshrouded",
   status: "pending",
   region: "US West",
   connectAddress: null,
-  players: { current: null, maximum: 32 },
+  players: { current: null, maximum: 16 },
   playerNames: [],
   lastUpdated: null,
   lastUpdatedLabel: "Awaiting first check",
-  sourceLabel: "Integration ready",
+  sourceLabel: "Bridge pending",
 };
 
 export function getPublicServerStatuses(): PublicServerStatus[] {
-  return [palworldServer];
+  return [enshroudedServer];
 }

@@ -29,7 +29,7 @@ type HistoryRow = {
 
 type ActionRow = {
   id: string;
-  action: "refresh-status" | "save-world";
+  action: "refresh-status";
   status: "queued" | "running" | "completed" | "failed" | "expired";
   requested_at: string;
   completed_at: string | null;
@@ -82,7 +82,7 @@ export async function handleOwnerDashboardGet(env: OwnerDashboardEnv, identity: 
     const [historyResult, checklistResult, actionResult, auditResult, storedStatus, electricity] = await Promise.all([
       db.prepare(
         `SELECT id, status, current_players, maximum_players, observed_at, received_at
-         FROM server_status_history WHERE server_slug = 'palworld-home'
+         FROM server_status_history WHERE server_slug = 'enshrouded-home'
          ORDER BY received_at DESC LIMIT 42`,
       ).all<HistoryRow>(),
       db.prepare(
@@ -117,8 +117,8 @@ export async function handleOwnerDashboardGet(env: OwnerDashboardEnv, identity: 
         bridge: {
           state: storedStatus ? (bridgeFresh ? "operational" : "stale") : "pending",
           detail: storedStatus
-            ? (bridgeFresh ? "The Palworld host is reporting normally." : "The last Palworld report is too old.")
-            : "The Palworld host has not published its first snapshot.",
+            ? (bridgeFresh ? "The Enshrouded host is reporting normally." : "The last Enshrouded report is too old.")
+            : "The Enshrouded host has not published its first snapshot.",
         },
       },
       server: storedStatus ? {
@@ -186,7 +186,7 @@ export async function handleChecklistUpdate(
   return json({ ok: true, id: checklistId, completed: body.completed });
 }
 
-const allowedActions = new Set(["refresh-status", "save-world"]);
+const allowedActions = new Set(["refresh-status"]);
 
 export async function handleOwnerActionCreate(request: Request, env: OwnerDashboardEnv, identity: OwnerIdentity) {
   if (!isSameOrigin(request)) return json({ error: "Cross-origin requests are not allowed" }, 403);
@@ -232,14 +232,14 @@ export async function handleBridgeNextAction(env: OwnerDashboardEnv) {
   const action = await db.prepare(
     `SELECT id, action FROM owner_actions
      WHERE status = 'queued' ORDER BY requested_at LIMIT 1`,
-  ).first<{ id: string; action: "refresh-status" | "save-world" }>();
+  ).first<{ id: string; action: "refresh-status" }>();
   if (!action) return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 
   await db.batch([
     db.prepare("UPDATE owner_actions SET status = 'running', started_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'queued'").bind(action.id),
     db.prepare(
       `INSERT INTO owner_audit_log (actor, event_type, target, outcome, detail, created_at)
-       VALUES ('palworld-bridge', 'server.action.started', ?, 'running', ?, CURRENT_TIMESTAMP)`,
+       VALUES ('enshrouded-bridge', 'server.action.started', ?, 'running', ?, CURRENT_TIMESTAMP)`,
     ).bind(action.id, action.action),
   ]);
   return json(action);
@@ -261,6 +261,6 @@ export async function handleBridgeActionComplete(request: Request, env: OwnerDas
      WHERE id = ? AND status = 'running'`,
   ).bind(body.status, message, actionId).run();
   if (!result.meta?.changes) return json({ error: "Running action not found" }, 404);
-  await writeAudit(db, "palworld-bridge", "server.action.completed", actionId, body.status, message || body.status);
+  await writeAudit(db, "enshrouded-bridge", "server.action.completed", actionId, body.status, message || body.status);
   return json({ ok: true });
 }

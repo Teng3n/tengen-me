@@ -31,21 +31,14 @@ export function ServerStatusCard({ server, featured = false }: { server: PublicS
   const isPending = currentServer.status === "pending";
   const emptyMessage = isPending
     ? "Player information will appear when the server comes online."
-    : isOnline ? "No players are online right now." : "The server is currently unavailable.";
+    : isOnline && currentServer.players.current === null
+      ? "Live player information isn’t connected yet."
+      : isOnline ? "No players are online right now." : "The server is currently unavailable.";
 
   return (
     <article className={`server-card${featured ? " server-card-featured" : ""}`}>
-      <div className="palworld-banner" role="img" aria-label="Palworld">
-        {/* The logo is a small, already-compressed static asset; bypass image optimization for Worker compatibility. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className="palworld-logo"
-          src="/palworld-logo-banner.png"
-          alt=""
-          aria-hidden="true"
-          width={1280}
-          height={340}
-        />
+      <div className="server-game-banner server-game-banner-enshrouded" role="img" aria-label="Enshrouded active server">
+        <strong className="server-game-title"><small>Active world</small>{currentServer.game}</strong>
       </div>
       <div className="server-card-body">
         <div className="server-card-topline">
@@ -54,7 +47,7 @@ export function ServerStatusCard({ server, featured = false }: { server: PublicS
           </span>
         </div>
         <dl className="server-metrics">
-          <div><dt>Players</dt><dd>{currentServer.players.current ?? "—"}<span> / {currentServer.players.maximum}</span></dd></div>
+          <div><dt>Players</dt><dd>{currentServer.players.current ?? "—"}{currentServer.players.maximum === null ? null : <span> / {currentServer.players.maximum}</span>}</dd></div>
           <div><dt>Region</dt><dd className="metric-text">{currentServer.region}</dd></div>
           <div><dt>Last check</dt><dd className="metric-text">{currentServer.lastUpdatedLabel}</dd></div>
         </dl>

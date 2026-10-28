@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ServerStatusCard } from "./components/server-status-card";
 import { SiteShell } from "./components/site-shell";
-import { palworldServer } from "./lib/server-status";
+import { enshroudedServer } from "./lib/server-status";
 
 export default function Home() {
   return (
@@ -22,7 +22,7 @@ export default function Home() {
           </div>
 
           <div className="hero-panel">
-            <ServerStatusCard server={palworldServer} featured />
+            <ServerStatusCard server={enshroudedServer} featured />
           </div>
         </section>
 
@@ -42,7 +42,7 @@ export default function Home() {
             <span className="feature-index">A / SERVERS</span>
             <div>
               <h3>Join the next adventure</h3>
-              <p>See the current Palworld server status, player count, and who&apos;s already online.</p>
+              <p>See the current Enshrouded server status and the world that&apos;s online now.</p>
             </div>
             <span className="arrow">↗</span>
           </Link>

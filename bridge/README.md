@@ -1,36 +1,36 @@
-# Palworld status bridge
+# Enshrouded status bridge
 
-This script runs on the Windows computer hosting Palworld. It reads the official REST API over localhost and sends only server availability, player counts, player names, and a timestamp to `tengen.me`. It also collects two explicitly allowlisted owner actions: refresh the public status and ask Palworld to save the world.
+This PowerShell bridge runs on the Windows computer hosting Enshrouded. It reads the server's local Steam query endpoint and publishes only availability, player counts, player names when available, and a timestamp to `tengen.me`.
 
-## Palworld setup
+Enshrouded's official configuration uses UDP query port `15637` and supports up to 16 player slots. The bridge queries `127.0.0.1` by default, so no additional public management port or password is required.
 
-In `PalWorldSettings.ini`, set `RESTAPIEnabled=True`, `RESTAPIPort=8212`, and a strong `AdminPassword`, then restart the server. Keep TCP 8212 closed on the router and public firewall; the bridge accesses it through `127.0.0.1`.
+## Setup
 
-## Bridge setup
-
-1. Copy this `bridge` folder to the Palworld computer.
+1. Confirm `enshrouded_server.json` has the expected `queryPort` and `slotCount` values.
 2. Copy `bridge-config.example.json` to `bridge-config.local.json`.
-3. Put the Palworld `AdminPassword` and the Cloudflare bridge token in the local file.
-4. Test one update from PowerShell:
+3. Preserve the existing `TENGEN_BRIDGE_TOKEN` from the Palworld bridge configuration.
+4. Run a one-time test from the server host:
 
    ```powershell
-   .\palworld-status-bridge.ps1 -Once
+   .\enshrouded-status-bridge.ps1 -Once
    ```
 
-5. Run it continuously at startup. From an Administrator PowerShell prompt, adjust the path and run:
+5. Replace the old scheduled task with the Enshrouded bridge. Adjust the folder path if needed:
 
    ```powershell
-   schtasks /Create /F /SC ONSTART /TN "tengen.me Palworld Status Bridge" /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\PalworldBridge\palworld-status-bridge.ps1" /RU SYSTEM /RL HIGHEST
-   schtasks /Run /TN "tengen.me Palworld Status Bridge"
+   schtasks /Delete /F /TN "tengen.me Palworld Status Bridge"
+   schtasks /Create /F /SC ONSTART /TN "tengen.me Enshrouded Status Bridge" /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\EnshroudedBridge\enshrouded-status-bridge.ps1" /RU SYSTEM /RL HIGHEST
+   schtasks /Run /TN "tengen.me Enshrouded Status Bridge"
    ```
 
-`bridge-config.local.json` contains secrets and is excluded from Git.
+`bridge-config.local.json` contains the private bridge token and is excluded from Git.
 
-## Owner actions
+## Owner action
 
-The bridge does not accept arbitrary commands. The only supported actions are:
+The only allowlisted owner action is **Refresh status**, which asks the bridge to immediately publish its next sanitized snapshot. Enshrouded automatically maintains rolling world saves, so the former Palworld-specific save API action has been removed. Shutdown, restart, process execution, configuration changes, and log retrieval are not implemented.
 
-- **Refresh status** — immediately publishes the next sanitized snapshot.
-- **Save world** — calls Palworld's official local `POST /save` endpoint.
+## Troubleshooting
 
-Shutdown, restart, process execution, configuration changes, and log retrieval are intentionally not implemented. Each requested action is recorded in the private owner audit trail.
+- A timeout to `127.0.0.1:15637` usually means the Enshrouded process is stopped or its configured query port differs.
+- An HTTP 401 from `tengen.me` means `TENGEN_BRIDGE_TOKEN` does not match the Cloudflare bridge secret.
+- If the player count appears but names do not, the server answered `A2S_INFO` but did not provide `A2S_PLAYER`; the bridge will still publish the accurate count.

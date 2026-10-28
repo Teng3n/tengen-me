@@ -288,7 +288,7 @@ test("server-renders the tengen.me home page", async () => {
   const html = await response.text();
   assert.match(html, /<title>tengen\.me · Servers, systems, and projects<\/title>/i);
   assert.match(html, /A home for the things I run, build, and keep online/);
-  assert.match(html, /Palworld/);
+  assert.match(html, /Enshrouded/);
   assert.match(html, /Checking status/);
   assert.match(html, /class="wordmark-block theme-toggle"/);
   assert.match(html, /Switch to dark mode/);
@@ -299,12 +299,12 @@ test("server-renders the tengen.me home page", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|ChatGPT/i);
 });
 
-test("servers page presents the Palworld card without implementation notes", async () => {
+test("servers page presents the Enshrouded card without implementation notes", async () => {
   const response = await render("/servers");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /The machines behind the worlds/);
-  assert.match(html, /palworld-logo-banner\.png/);
+  assert.match(html, /server-game-banner-enshrouded/);
   assert.doesNotMatch(html, /Connection plan|Public data boundary|Public-safe availability|control plane/i);
 });
 
@@ -618,10 +618,10 @@ test("bridge ingestion requires its secret and stores only the public snapshot",
     async put(key, value) { putCount += 1; values.set(key, value); },
   };
   const body = JSON.stringify({
-    slug: "palworld-home",
+    slug: "enshrouded-home",
     status: "online",
     currentPlayers: 2,
-    maximumPlayers: 32,
+    maximumPlayers: 16,
     playerNames: ["Tengen", "Friend"],
     observedAt: new Date().toISOString(),
     privateIp: "192.168.1.20",
@@ -630,18 +630,18 @@ test("bridge ingestion requires its secret and stores only the public snapshot",
 
   const denied = await callWorker("/api/server-status/ingest", {
     method: "POST", headers: { "content-type": "application/json" }, body,
-  }, { STATUS_KV: kv, PALWORLD_BRIDGE_TOKEN: "correct-token" });
+  }, { STATUS_KV: kv, ENSHROUDED_BRIDGE_TOKEN: "correct-token" });
   assert.equal(denied.status, 401);
 
   const accepted = await callWorker("/api/server-status/ingest", {
     method: "POST",
     headers: { "content-type": "application/json", authorization: "Bearer correct-token" },
     body,
-  }, { STATUS_KV: kv, PALWORLD_BRIDGE_TOKEN: "correct-token" });
+  }, { STATUS_KV: kv, ENSHROUDED_BRIDGE_TOKEN: "correct-token" });
   assert.equal(accepted.status, 204);
   assert.equal(putCount, 1);
 
-  const stored = values.get("server:palworld-home");
+  const stored = values.get("server:enshrouded-home");
   assert.match(stored, /Tengen/);
   assert.doesNotMatch(stored, /192\.168|must-not-be-stored/);
 
@@ -663,15 +663,15 @@ test("unchanged bridge snapshots do not create repeated KV writes", async () => 
     method: "POST",
     headers: { "content-type": "application/json", authorization: "Bearer correct-token" },
     body: JSON.stringify({
-      slug: "palworld-home",
+      slug: "enshrouded-home",
       status: "online",
       currentPlayers: 2,
-      maximumPlayers: 32,
+      maximumPlayers: 16,
       playerNames: ["Tengen", "Friend"],
       observedAt: new Date().toISOString(),
       ...overrides,
     }),
-  }, { STATUS_KV: kv, PALWORLD_BRIDGE_TOKEN: "correct-token" });
+  }, { STATUS_KV: kv, ENSHROUDED_BRIDGE_TOKEN: "correct-token" });
 
   assert.equal((await ingest()).status, 204);
   assert.equal((await ingest()).status, 204);
@@ -686,11 +686,11 @@ test("unchanged bridge snapshots do not create repeated KV writes", async () => 
 });
 
 test("unchanged bridge snapshots write a heartbeat after ten minutes", async () => {
-  const statusKey = "server:palworld-home";
+  const statusKey = "server:enshrouded-home";
   const values = new Map([[statusKey, JSON.stringify({
     status: "online",
     currentPlayers: 2,
-    maximumPlayers: 32,
+    maximumPlayers: 16,
     playerNames: ["Tengen", "Friend"],
     observedAt: new Date(Date.now() - 11 * 60 * 1000).toISOString(),
     receivedAt: new Date(Date.now() - 11 * 60 * 1000).toISOString(),
@@ -704,14 +704,14 @@ test("unchanged bridge snapshots write a heartbeat after ten minutes", async () 
     method: "POST",
     headers: { "content-type": "application/json", authorization: "Bearer correct-token" },
     body: JSON.stringify({
-      slug: "palworld-home",
+      slug: "enshrouded-home",
       status: "online",
       currentPlayers: 2,
-      maximumPlayers: 32,
+      maximumPlayers: 16,
       playerNames: ["Tengen", "Friend"],
       observedAt: new Date().toISOString(),
     }),
-  }, { STATUS_KV: kv, PALWORLD_BRIDGE_TOKEN: "correct-token" });
+  }, { STATUS_KV: kv, ENSHROUDED_BRIDGE_TOKEN: "correct-token" });
 
   assert.equal(response.status, 204);
   assert.equal(putCount, 1);
@@ -724,7 +724,7 @@ test("status feed remains live between heartbeats and times out after fifteen mi
       return JSON.stringify({
         status: "online",
         currentPlayers: 2,
-        maximumPlayers: 32,
+        maximumPlayers: 16,
         playerNames: ["Tengen", "Friend"],
         observedAt: new Date(Date.now() - ageMinutes * 60 * 1000).toISOString(),
         receivedAt: new Date(Date.now() - ageMinutes * 60 * 1000).toISOString(),

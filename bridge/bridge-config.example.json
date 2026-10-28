@@ -1,7 +1,7 @@
 {
-  "PALWORLD_API_URL": "http://127.0.0.1:8212/v1/api",
-  "PALWORLD_API_USERNAME": "admin",
-  "PALWORLD_ADMIN_PASSWORD": "replace-with-your-palworld-admin-password",
+  "ENSHROUDED_QUERY_HOST": "127.0.0.1",
+  "ENSHROUDED_QUERY_PORT": 15637,
+  "ENSHROUDED_SLOT_COUNT": 16,
   "TENGEN_BRIDGE_URL": "https://tengen.me/api/server-status/ingest",
   "TENGEN_ACTIONS_URL": "https://tengen.me/api/server-status/actions",
   "TENGEN_BRIDGE_TOKEN": "replace-with-the-private-bridge-token"

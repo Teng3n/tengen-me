@@ -1,0 +1,201 @@
+[CmdletBinding()]
+param(
+  [switch]$Once,
+  [ValidateRange(15, 3600)]
+  [int]$IntervalSeconds = 60,
+  [string]$ConfigPath = (Join-Path $PSScriptRoot "bridge-config.local.json")
+)
+
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+
+function Get-Setting {
+  param([string]$Name, [object]$Config, [string]$Default = "")
+  $environmentValue = [Environment]::GetEnvironmentVariable($Name)
+  if ($environmentValue) { return $environmentValue }
+  $property = $Config.PSObject.Properties[$Name]
+  if ($property -and $null -ne $property.Value -and [string]$property.Value -ne "") { return [string]$property.Value }
+  return $Default
+}
+
+function Send-Snapshot {
+  param([hashtable]$Snapshot, [string]$BridgeUrl, [string]$BridgeToken)
+  $headers = @{ Authorization = "Bearer $BridgeToken" }
+  $body = $Snapshot | ConvertTo-Json -Depth 4 -Compress
+  Invoke-RestMethod -Uri $BridgeUrl -Method Post -Headers $headers -ContentType "application/json" -Body $body -TimeoutSec 15 | Out-Null
+}
+
+function Get-QueuedAction {
+  param([string]$ActionsUrl, [string]$BridgeToken)
+  $headers = @{ Authorization = "Bearer $BridgeToken" }
+  return Invoke-RestMethod -Uri "$($ActionsUrl.TrimEnd('/'))/next" -Method Get -Headers $headers -TimeoutSec 10
+}
+
+function Complete-QueuedAction {
+  param(
+    [string]$ActionsUrl,
+    [string]$BridgeToken,
+    [string]$ActionId,
+    [ValidateSet("completed", "failed")]
+    [string]$Status,
+    [string]$Message
+  )
+  $headers = @{ Authorization = "Bearer $BridgeToken" }
+  $body = @{ status = $Status; message = $Message } | ConvertTo-Json -Compress
+  Invoke-RestMethod -Uri "$($ActionsUrl.TrimEnd('/'))/$ActionId/complete" -Method Post -Headers $headers -ContentType "application/json" -Body $body -TimeoutSec 10 | Out-Null
+}
+
+function Invoke-A2SRequest {
+  param([string]$HostName, [int]$Port, [byte[]]$Payload)
+  $client = [System.Net.Sockets.UdpClient]::new()
+  try {
+    $client.Client.ReceiveTimeout = 5000
+    $client.Client.SendTimeout = 5000
+    $client.Connect($HostName, $Port)
+    [void]$client.Send($Payload, $Payload.Length)
+    $remoteEndpoint = [System.Net.IPEndPoint]::new([System.Net.IPAddress]::Any, 0)
+    $response = $client.Receive([ref]$remoteEndpoint)
+    if ($response.Length -lt 5 -or [BitConverter]::ToInt32($response, 0) -ne -1) {
+      throw "The Steam query response was invalid or split across packets."
+    }
+    return [byte[]]$response
+  }
+  finally {
+    $client.Dispose()
+  }
+}
+
+function Read-CString {
+  param([byte[]]$Bytes, [ref]$Offset)
+  $start = $Offset.Value
+  $cursor = $start
+  while ($cursor -lt $Bytes.Length -and $Bytes[$cursor] -ne 0) { $cursor += 1 }
+  if ($cursor -ge $Bytes.Length) { throw "The Steam query response contained an unterminated string." }
+  $Offset.Value = $cursor + 1
+  return [Text.Encoding]::UTF8.GetString($Bytes, $start, $cursor - $start)
+}
+
+function Get-EnshroudedInfo {
+  param([string]$HostName, [int]$Port)
+  $prefix = [byte[]](0xFF, 0xFF, 0xFF, 0xFF)
+  $query = [byte[]]($prefix + [Text.Encoding]::ASCII.GetBytes("TSource Engine Query`0"))
+  $response = Invoke-A2SRequest $HostName $Port $query
+  if ($response[4] -ne 0x49) { throw "The query port did not return a Source A2S_INFO response." }
+
+  $offset = 6
+  $serverName = Read-CString $response ([ref]$offset)
+  [void](Read-CString $response ([ref]$offset))
+  [void](Read-CString $response ([ref]$offset))
+  [void](Read-CString $response ([ref]$offset))
+  if ($offset + 4 -gt $response.Length) { throw "The A2S_INFO response was incomplete." }
+  $offset += 2
+  $currentPlayers = [int]$response[$offset]
+  $maximumPlayers = [int]$response[$offset + 1]
+  return [pscustomobject]@{
+    Name = $serverName
+    CurrentPlayers = $currentPlayers
+    MaximumPlayers = $maximumPlayers
+  }
+}
+
+function Get-EnshroudedPlayers {
+  param([string]$HostName, [int]$Port)
+  $prefix = [byte[]](0xFF, 0xFF, 0xFF, 0xFF)
+  $challengeQuery = [byte[]]($prefix + 0x55 + 0xFF + 0xFF + 0xFF + 0xFF)
+  $challengeResponse = Invoke-A2SRequest $HostName $Port $challengeQuery
+  if ($challengeResponse.Length -lt 9 -or $challengeResponse[4] -ne 0x41) {
+    throw "The query port did not return an A2S_PLAYER challenge."
+  }
+
+  $playerQuery = [byte[]]($prefix + 0x55 + $challengeResponse[5..8])
+  $response = Invoke-A2SRequest $HostName $Port $playerQuery
+  if ($response.Length -lt 6 -or $response[4] -ne 0x44) { throw "The query port did not return an A2S_PLAYER response." }
+
+  $playerCount = [int]$response[5]
+  $offset = 6
+  $names = [System.Collections.Generic.List[string]]::new()
+  for ($index = 0; $index -lt $playerCount; $index += 1) {
+    if ($offset -ge $response.Length) { break }
+    $offset += 1
+    $name = Read-CString $response ([ref]$offset)
+    if ($offset + 8 -gt $response.Length) { break }
+    $offset += 8
+    if ($name) { $names.Add($name) }
+  }
+  return @($names)
+}
+
+$config = [pscustomobject]@{}
+if (Test-Path -LiteralPath $ConfigPath) {
+  $config = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
+}
+
+$queryHost = Get-Setting "ENSHROUDED_QUERY_HOST" $config "127.0.0.1"
+$queryPort = [int](Get-Setting "ENSHROUDED_QUERY_PORT" $config "15637")
+$slotCount = [int](Get-Setting "ENSHROUDED_SLOT_COUNT" $config "16")
+$bridgeUrl = Get-Setting "TENGEN_BRIDGE_URL" $config "https://tengen.me/api/server-status/ingest"
+$actionsUrl = Get-Setting "TENGEN_ACTIONS_URL" $config "https://tengen.me/api/server-status/actions"
+$bridgeToken = Get-Setting "TENGEN_BRIDGE_TOKEN" $config
+
+if (-not $bridgeToken) { throw "TENGEN_BRIDGE_TOKEN is required in the environment or local config file." }
+if ($queryPort -lt 1 -or $queryPort -gt 65535) { throw "ENSHROUDED_QUERY_PORT must be a valid UDP port." }
+if ($slotCount -lt 1 -or $slotCount -gt 16) { throw "ENSHROUDED_SLOT_COUNT must be between 1 and 16." }
+
+do {
+  $observedAt = [DateTime]::UtcNow.ToString("o")
+  $queuedAction = $null
+  try {
+    $queuedAction = Get-QueuedAction $actionsUrl $bridgeToken
+  }
+  catch {
+    Write-Warning "[$observedAt] Could not check owner actions: $($_.Exception.Message)"
+  }
+
+  if ($queuedAction -and $queuedAction.action -ne "refresh-status") {
+    try { Complete-QueuedAction $actionsUrl $bridgeToken $queuedAction.id "failed" "The Enshrouded bridge rejected an unsupported action." } catch { Write-Warning "[$observedAt] Could not reject the unsupported owner action." }
+    $queuedAction = $null
+  }
+
+  try {
+    $info = Get-EnshroudedInfo $queryHost $queryPort
+    $currentPlayers = [Math]::Max(0, [int]$info.CurrentPlayers)
+    $maximumPlayers = if ([int]$info.MaximumPlayers -gt 0) { [Math]::Min(16, [int]$info.MaximumPlayers) } else { $slotCount }
+    $playerNames = @()
+    try {
+      $playerNames = @(Get-EnshroudedPlayers $queryHost $queryPort | Where-Object { $_ } | Select-Object -First 16)
+    }
+    catch {
+      Write-Warning "[$observedAt] Player names were unavailable; publishing the A2S_INFO count only: $($_.Exception.Message)"
+    }
+
+    Send-Snapshot @{
+      slug = "enshrouded-home"; status = "online"; currentPlayers = $currentPlayers
+      maximumPlayers = $maximumPlayers; playerNames = $playerNames; observedAt = $observedAt
+    } $bridgeUrl $bridgeToken
+    Write-Host "[$observedAt] Published Enshrouded online: $currentPlayers/$maximumPlayers players."
+    if ($queuedAction -and $queuedAction.action -eq "refresh-status") {
+      Complete-QueuedAction $actionsUrl $bridgeToken $queuedAction.id "completed" "Published a fresh Enshrouded status snapshot."
+      Write-Host "[$observedAt] Completed owner action: refresh status."
+    }
+  }
+  catch {
+    Write-Warning "[$observedAt] Enshrouded query failed: $($_.Exception.Message)"
+    try {
+      Send-Snapshot @{
+        slug = "enshrouded-home"; status = "offline"; currentPlayers = 0
+        maximumPlayers = $slotCount; playerNames = @(); observedAt = $observedAt
+      } $bridgeUrl $bridgeToken
+      Write-Host "[$observedAt] Published Enshrouded offline state."
+      if ($queuedAction -and $queuedAction.action -eq "refresh-status") {
+        Complete-QueuedAction $actionsUrl $bridgeToken $queuedAction.id "completed" "Published a fresh Enshrouded offline status snapshot."
+      }
+    }
+    catch {
+      Write-Warning "[$observedAt] Could not reach tengen.me: $($_.Exception.Message)"
+      if ($queuedAction -and $queuedAction.action -eq "refresh-status") {
+        try { Complete-QueuedAction $actionsUrl $bridgeToken $queuedAction.id "failed" "The bridge could not publish the requested status snapshot." } catch { Write-Warning "[$observedAt] Could not report the failed owner action." }
+      }
+    }
+  }
+  if (-not $Once) { Start-Sleep -Seconds $IntervalSeconds }
+} while (-not $Once)

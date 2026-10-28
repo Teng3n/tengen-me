@@ -34,6 +34,7 @@ interface Env extends NutritionEnv {
   STATUS_KV?: StatusKV;
   OWNER_DB?: OwnerDatabase;
   HOUSEHOLD_DB?: OwnerDatabase;
+  ENSHROUDED_BRIDGE_TOKEN?: string;
   PALWORLD_BRIDGE_TOKEN?: string;
   HOME_ACCESS_UPDATE_TOKEN?: string;
 }

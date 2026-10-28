@@ -1,10 +1,10 @@
 import type { OwnerDatabase } from "./owner-data";
 import { recordStatusHistory } from "./owner-data";
 
-const STATUS_KEY = "server:palworld-home";
+const STATUS_KEY = "server:enshrouded-home";
 const HEARTBEAT_AFTER_MS = 10 * 60 * 1000;
 const STALE_AFTER_MS = 15 * 60 * 1000;
-const MAX_PLAYER_NAMES = 32;
+const MAX_PLAYER_NAMES = 16;
 
 export interface StatusKV {
   get(key: string): Promise<string | null>;
@@ -13,6 +13,7 @@ export interface StatusKV {
 
 export interface ServerStatusEnv {
   STATUS_KV?: StatusKV;
+  ENSHROUDED_BRIDGE_TOKEN?: string;
   PALWORLD_BRIDGE_TOKEN?: string;
   OWNER_DB?: OwnerDatabase;
 }
@@ -53,13 +54,13 @@ function json(body: unknown, status = 200, headers: Record<string, string> = {})
 
 function pendingStatus(): PublicServerStatus {
   return {
-    slug: "palworld-home",
+    slug: "enshrouded-home",
     name: "Home Server",
-    game: "Palworld",
+    game: "Enshrouded",
     status: "pending",
     region: "US West",
     connectAddress: null,
-    players: { current: null, maximum: 32 },
+    players: { current: null, maximum: 16 },
     playerNames: [],
     lastUpdated: null,
     lastUpdatedLabel: "Awaiting first check",
@@ -111,9 +112,9 @@ function toPublicStatus(stored: StoredStatus, now: number): PublicServerStatus {
   const stale = now - Date.parse(stored.receivedAt) > STALE_AFTER_MS;
   const status = stale ? "offline" : stored.status;
   return {
-    slug: "palworld-home",
+    slug: "enshrouded-home",
     name: "Home Server",
-    game: "Palworld",
+    game: "Enshrouded",
     status,
     region: "US West",
     connectAddress: null,
@@ -136,7 +137,8 @@ function safeTokenEqual(provided: string, expected: string): boolean {
 }
 
 export function isAuthorizedBridgeRequest(request: Request, env: ServerStatusEnv): boolean {
-  const expectedToken = env.PALWORLD_BRIDGE_TOKEN;
+  // Keep the former binding as a fallback so the host can migrate without rotating its secret.
+  const expectedToken = env.ENSHROUDED_BRIDGE_TOKEN ?? env.PALWORLD_BRIDGE_TOKEN;
   const authorization = request.headers.get("authorization") ?? "";
   const providedToken = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
   return Boolean(expectedToken && providedToken && safeTokenEqual(providedToken, expectedToken));
@@ -180,7 +182,7 @@ export async function handleServerStatusIngest(request: Request, env: ServerStat
     return json({ error: "Invalid JSON" }, 400);
   }
 
-  if (body.slug !== "palworld-home" || (body.status !== "online" && body.status !== "offline")) {
+  if (body.slug !== "enshrouded-home" || (body.status !== "online" && body.status !== "offline")) {
     return json({ error: "Invalid server status" }, 400);
   }
   const currentPlayers = cleanInteger(body.currentPlayers, 0, 128);
@@ -211,7 +213,7 @@ export async function handleServerStatusIngest(request: Request, env: ServerStat
   }
   try {
     await recordStatusHistory(env.OWNER_DB, {
-      serverSlug: "palworld-home",
+      serverSlug: "enshrouded-home",
       status: stored.status,
       currentPlayers: stored.currentPlayers,
       maximumPlayers: stored.maximumPlayers,
