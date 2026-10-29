@@ -446,7 +446,13 @@ function parseCalorieRows(rows: Row[]) {
   const headerIndex = findHeaderRow(rows, ["date", "calor"]);
   const headerRow = rows[headerIndex] ?? [];
   const headers = headerMap(headerRow);
-  const dateIndex = column(headers, ["date", "day"], 0) ?? 0;
+  // The primary ledger is always anchored in column A. Do not let the
+  // secondary "Chart Date" table take over when the A1 label is blank.
+  const explicitDateIndex = headerRow.findIndex((value) => {
+    const header = normalizeHeader(value);
+    return header === "date" || header === "day";
+  });
+  const dateIndex = explicitDateIndex >= 0 ? explicitDateIndex : 0;
   // The sheet also contains a secondary chart table with another "Weight (lb)"
   // header. Use the first matching source column so weights stay aligned with
   // the primary Date column rather than the chart's independent date series.

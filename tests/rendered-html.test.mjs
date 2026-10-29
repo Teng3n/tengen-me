@@ -914,7 +914,7 @@ test("nutrition API fails closed when Google Sheets credentials are absent", asy
   assert.deepEqual(await response.json(), { error: "Nutrition spreadsheet is not configured" });
 });
 
-test("nutrition API preserves threshold ranges and ignores monthly summary rows", async () => {
+test("nutrition API survives a blank primary date header and ignores monthly summary rows", async () => {
   const keys = await crypto.subtle.generateKey(
     { name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
     true,
@@ -931,7 +931,7 @@ test("nutrition API preserves threshold ranges and ignores monthly summary rows"
     if (url.includes("sheets.googleapis.com")) {
       return Response.json({ valueRanges: [
         { values: [
-          ["Date", "Calories In", "Basal Calories", "Active Calories", "Total Burn", "Net Calories", "Weight (lb)", "Food / Notes"],
+          [null, "Calories In", "Basal Calories", "Active Calories", "Total Burn", "Net Calories", "Weight (lb)", "Food / Notes", null, "Chart Date"],
           ["October 2026", 999999, 999999, 999999, 999999, 0, null, "Monthly summary"],
           ["Oct 25, 2026", 2103, 1693, 307, 2000, 103, null, "Finalized October 25, 2026."],
         ] },
