@@ -9,11 +9,15 @@ export function ServerStatusCard({ server, featured = false }: { server: PublicS
   const isOnline = currentServer.status === "online";
   const isPending = currentServer.status === "pending";
   const monitoringUnavailable = currentServer.sourceLabel === "Monitoring unavailable";
+  const connectedCount = currentServer.players.current ?? currentServer.playerNames.length;
+  const unavailableNameCount = Math.max(0, connectedCount - currentServer.playerNames.length);
   const emptyMessage = isPending
     ? "Player information will appear when the server comes online."
     : isOnline && currentServer.players.current === null
       ? "Live player information isn’t connected yet."
-      : isOnline ? "No players are online right now." : "The server is currently unavailable.";
+      : isOnline && connectedCount > 0
+        ? `${connectedCount === 1 ? "The connected player’s name isn’t" : "The connected players’ names aren’t"} available yet.`
+        : isOnline ? "No players are online right now." : "The server is currently unavailable.";
 
   return (
     <article className={`server-card${featured ? " server-card-featured" : ""}`}>
@@ -32,9 +36,9 @@ export function ServerStatusCard({ server, featured = false }: { server: PublicS
           <div><dt>Last check</dt><dd className="metric-text">{currentServer.lastUpdatedLabel}</dd></div>
         </dl>
         <div className="player-list">
-          <div className="player-list-heading"><span>Who&apos;s online</span><span>{currentServer.playerNames.length} connected</span></div>
+          <div className="player-list-heading"><span>Who&apos;s online</span><span>{connectedCount} connected</span></div>
           {currentServer.playerNames.length > 0 ? (
-            <ul>{currentServer.playerNames.map((player) => <li key={player}><span>{player.slice(0, 1).toUpperCase()}</span>{player}</li>)}</ul>
+            <><ul>{currentServer.playerNames.map((player) => <li key={player}><span>{player.slice(0, 1).toUpperCase()}</span>{player}</li>)}</ul>{unavailableNameCount > 0 ? <p className="empty-state">{unavailableNameCount} additional {unavailableNameCount === 1 ? "name is" : "names are"} unavailable.</p> : null}</>
           ) : <p className="empty-state">{emptyMessage}</p>}
         </div>
       </div>

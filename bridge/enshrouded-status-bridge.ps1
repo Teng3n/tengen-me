@@ -134,6 +134,81 @@ function Get-EnshroudedPlayers {
   return @($names)
 }
 
+function Test-EnshroudedPlayerName {
+  param([string]$Name)
+  if ([string]::IsNullOrWhiteSpace($Name)) { return $false }
+  $trimmed = $Name.Trim()
+  if ($trimmed -match '^\d+(\(\d+\))?$') { return $false }
+  return $trimmed -notin @("Reserve", "WaitForJoin", "HostOnline", "Host_Online", "Lobby", "LoadingWorld", "Playing", "Login", "Session")
+}
+
+function Resolve-EnshroudedLogDirectory {
+  param([object]$Config, [string]$ConfiguredPath)
+  if ($ConfiguredPath) { return $ConfiguredPath }
+
+  $serverProcess = Get-Process -Name "enshrouded_server" -ErrorAction SilentlyContinue | Select-Object -First 1
+  if (-not $serverProcess -or -not $serverProcess.Path) { return $null }
+  $serverDirectory = Split-Path -Parent $serverProcess.Path
+  $serverConfigPath = Join-Path $serverDirectory "enshrouded_server.json"
+  $logDirectory = "./logs"
+  if (Test-Path -LiteralPath $serverConfigPath) {
+    try {
+      $serverConfig = Get-Content -LiteralPath $serverConfigPath -Raw | ConvertFrom-Json
+      if ($serverConfig.logDirectory) { $logDirectory = [string]$serverConfig.logDirectory }
+    }
+    catch {
+      Write-Warning "Could not read the Enshrouded server configuration; using its default log directory."
+    }
+  }
+  if ([System.IO.Path]::IsPathRooted($logDirectory)) { return $logDirectory }
+  return [System.IO.Path]::GetFullPath((Join-Path $serverDirectory $logDirectory))
+}
+
+function Get-EnshroudedLogPlayers {
+  param([string]$LogDirectory, [int]$CurrentPlayers)
+  if ($CurrentPlayers -le 0 -or -not $LogDirectory -or -not (Test-Path -LiteralPath $LogDirectory)) { return @() }
+  $log = Get-ChildItem -LiteralPath $LogDirectory -File -Filter "*.log" -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTimeUtc -Descending |
+    Select-Object -First 1
+  if (-not $log) { return @() }
+
+  # Enshrouded leaves A2S player names blank. Its local log records joins,
+  # departures, and a complete roster inside regular save blocks.
+  $roster = [ordered]@{}
+  $savingRoster = $null
+  foreach ($line in (Get-Content -LiteralPath $log.FullName -Tail 25000 -ErrorAction Stop)) {
+    if ($line -match '\(up\)!|\(down\)!') { continue }
+    if ($line -match '\[server\] Start Saving') {
+      $savingRoster = [ordered]@{}
+      continue
+    }
+    if ($null -ne $savingRoster) {
+      if ($line -match "Sending Character Savegame '([^']+)'") {
+        $name = $Matches[1].Trim()
+        if (Test-EnshroudedPlayerName $name) { $savingRoster[$name] = $true }
+        continue
+      }
+      if ($line -match '\[server\] Saved') {
+        $roster = $savingRoster
+        $savingRoster = $null
+        continue
+      }
+    }
+    if ($line -match "\[server\] Player '([^']+)' (?:logged in|joined)") {
+      $name = $Matches[1].Trim()
+      if (Test-EnshroudedPlayerName $name) {
+        $roster.Remove($name)
+        $roster[$name] = $true
+      }
+      continue
+    }
+    if ($line -match "\[server\] Remove (?:Entity for )?Player '([^']+)'" -or $line -match "Player '([^']+)' (?:logged out|left|disconnected)") {
+      $roster.Remove($Matches[1].Trim())
+    }
+  }
+  return @($roster.Keys | Select-Object -First $CurrentPlayers)
+}
+
 $config = [pscustomobject]@{}
 if (Test-Path -LiteralPath $ConfigPath) {
   $config = Get-Content -LiteralPath $ConfigPath -Raw | ConvertFrom-Json
@@ -142,6 +217,7 @@ if (Test-Path -LiteralPath $ConfigPath) {
 $queryHost = Get-Setting "ENSHROUDED_QUERY_HOST" $config "127.0.0.1"
 $queryPort = [int](Get-Setting "ENSHROUDED_QUERY_PORT" $config "15637")
 $slotCount = [int](Get-Setting "ENSHROUDED_SLOT_COUNT" $config "16")
+$configuredLogDirectory = Get-Setting "ENSHROUDED_LOG_DIRECTORY" $config
 $bridgeUrl = Get-Setting "TENGEN_BRIDGE_URL" $config "https://tengen.me/api/server-status/ingest"
 $actionsUrl = Get-Setting "TENGEN_ACTIONS_URL" $config "https://tengen.me/api/server-status/actions"
 $bridgeToken = Get-Setting "TENGEN_BRIDGE_TOKEN" $config
@@ -175,6 +251,16 @@ do {
     }
     catch {
       Write-Warning "[$observedAt] Player names were unavailable; publishing the A2S_INFO count only: $($_.Exception.Message)"
+    }
+    if ($playerNames.Count -lt $currentPlayers) {
+      try {
+        $logDirectory = Resolve-EnshroudedLogDirectory $config $configuredLogDirectory
+        $logPlayerNames = @(Get-EnshroudedLogPlayers $logDirectory $currentPlayers)
+        if ($logPlayerNames.Count -gt $playerNames.Count) { $playerNames = $logPlayerNames }
+      }
+      catch {
+        Write-Warning "[$observedAt] Player names were unavailable from the Enshrouded log: $($_.Exception.Message)"
+      }
     }
 
     Send-Snapshot @{

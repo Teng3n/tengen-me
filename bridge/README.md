@@ -1,8 +1,8 @@
 # Enshrouded status bridge
 
-This PowerShell bridge runs on the Windows computer hosting Enshrouded. It reads the server's local Steam query endpoint and publishes only availability, player counts, player names when available, and a timestamp to `tengen.me`.
+This PowerShell bridge runs on the Windows computer hosting Enshrouded. It reads the server's local Steam query endpoint and publishes only availability, player counts, player names, and a timestamp to `tengen.me`.
 
-Enshrouded's official configuration uses UDP query port `15637` and supports up to 16 player slots. The bridge queries `127.0.0.1` by default, so no additional public management port or password is required.
+Enshrouded's official configuration uses UDP query port `15637` and supports up to 16 player slots. The bridge queries `127.0.0.1` by default, so no additional public management port or password is required. Enshrouded leaves names blank in its Steam query response, so the bridge supplements the count from the server's local log. It finds the active process and configured `logDirectory` automatically; `ENSHROUDED_LOG_DIRECTORY` is available as an override.
 
 ## Setup
 
@@ -33,4 +33,4 @@ The only allowlisted owner action is **Refresh status**, which asks the bridge t
 
 - A timeout to `127.0.0.1:15637` usually means the Enshrouded process is stopped or its configured query port differs.
 - An HTTP 401 from `tengen.me` means `TENGEN_BRIDGE_TOKEN` does not match the Cloudflare bridge secret.
-- If the player count appears but names do not, the server answered `A2S_INFO` but did not provide `A2S_PLAYER`; the bridge will still publish the accurate count.
+- If the player count appears but names do not, confirm the SYSTEM account running the monitor can read the active server's log directory. Set `ENSHROUDED_LOG_DIRECTORY` in the local config only if automatic discovery cannot find it.

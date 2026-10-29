@@ -2,6 +2,7 @@
   "ENSHROUDED_QUERY_HOST": "127.0.0.1",
   "ENSHROUDED_QUERY_PORT": 15637,
   "ENSHROUDED_SLOT_COUNT": 16,
+  "ENSHROUDED_LOG_DIRECTORY": "",
   "TENGEN_BRIDGE_URL": "https://tengen.me/api/server-status/ingest",
   "TENGEN_ACTIONS_URL": "https://tengen.me/api/server-status/actions",
   "TENGEN_BRIDGE_TOKEN": "replace-with-the-private-bridge-token"
