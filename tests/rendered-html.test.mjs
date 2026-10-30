@@ -561,6 +561,27 @@ test("admin route recognizes the approved home IPv4 address", async () => {
   assert.match(html, /Loading private systems/);
 });
 
+test("owner house tools are protected and render only for the approved home network", async () => {
+  for (const tool of [
+    { path: "/admin/desk-room-diagram", title: /Desk Room Diagram/ },
+    { path: "/admin/office-desk-scale-tool", title: /Office Desk Scale Tool/ },
+  ]) {
+    const denied = await render(tool.path);
+    assert.equal(denied.status, 404);
+    assert.equal(await denied.text(), "Not found");
+
+    const allowed = await render(tool.path, {
+      "cf-connecting-ip": "172.115.212.10",
+    }, {
+      OWNER_DB: createOwnerDb("172.115.212.10/32"),
+    });
+    assert.equal(allowed.status, 200);
+    assert.match(allowed.headers.get("cache-control") ?? "", /private, no-store/i);
+    assert.match(allowed.headers.get("content-security-policy") ?? "", /frame-ancestors 'none'/i);
+    assert.match(await allowed.text(), tool.title);
+  }
+});
+
 test("owner API fails closed without a matching home network", async () => {
   const unconfigured = await callWorker("/admin/api/dashboard");
   assert.equal(unconfigured.status, 503);
@@ -584,6 +605,10 @@ test("owner API returns private data only for the approved home IPv4", async () 
   assert.equal(payload.owner.label, "Home network");
   assert.equal(payload.services.access.state, "operational");
   assert.equal(payload.services.database.state, "operational");
+  assert.deepEqual(
+    payload.tools.slice(0, 2).map((tool) => tool.href),
+    ["/admin/desk-room-diagram", "/admin/office-desk-scale-tool"],
+  );
 });
 
 test("home-IP heartbeat requires its secret and learns the caller address", async () => {
