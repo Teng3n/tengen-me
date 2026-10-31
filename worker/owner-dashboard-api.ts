@@ -148,6 +148,7 @@ export async function handleOwnerDashboardGet(env: OwnerDashboardEnv, identity: 
         { href: "/admin/office-desk-scale-tool", label: "Office desk + Peloton scale tool", detail: "Scale layout, placement checks, and recommended clearance" },
         { href: "/admin/office-option-b-elevation", label: "Office option B wall elevation", detail: "Window-wall view of monitor option 2, mount placement, chair, and Peloton" },
         { href: "/admin/office-option-b-elevation-monitor-1", label: "Office monitor option 1 wall elevation", detail: "Window-wall view centered on the 63-inch desk run for comparison" },
+        { href: "/admin/office-monitor-option-1-seated-view", label: "Office monitor option 1 seated view", detail: "Adjustable first-person perspective with door visibility and monitor occlusion" },
         { href: "/office-room-diagram", label: "Office lighting plan", detail: "Installer and beam-coverage views" },
         { href: "/office-room-diagram-details", label: "Office lighting analysis", detail: "Detailed calculations and comparisons" },
         { href: "/master-room-diagram", label: "Primary room lighting plan", detail: "Vaulted-ceiling layout and coordinates" },

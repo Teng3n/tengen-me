@@ -24,6 +24,7 @@ export function renderMonitorOption1Elevation(elevationHtml: string) {
     [">4.8 in left in this view</text>", ">0.5 in left in this view</text>"],
     [">CHAIR–RETURN GAP · 5.05 in</text>", ">CHAIR–RETURN GAP · 16.75 in</text>"],
     ["comparisonLink.href='/admin/office-option-b-elevation-monitor-1';comparisonLink.textContent='Monitor option 1 elevation →'", "comparisonLink.href='/admin/office-option-b-elevation';comparisonLink.textContent='← Monitor option 2 elevation'"],
+    ["document.querySelector('.panel').append(comparisonLink);", "document.querySelector('.panel').append(comparisonLink);const seatedLink=document.createElement('a');seatedLink.className='back';seatedLink.href='/admin/office-monitor-option-1-seated-view';seatedLink.textContent='Seated first-person view →';seatedLink.style.display='block';seatedLink.style.marginTop='10px';document.querySelector('.panel').append(seatedLink);"],
   ];
 
   return replacements.reduce(
