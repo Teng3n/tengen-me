@@ -146,6 +146,7 @@ export async function handleOwnerDashboardGet(env: OwnerDashboardEnv, identity: 
       tools: [
         { href: "/admin/desk-room-diagram", label: "Desk room diagram", detail: "Adjustable office desk runs and remaining wall space" },
         { href: "/admin/office-desk-scale-tool", label: "Office desk + Peloton scale tool", detail: "Scale layout, placement checks, and recommended clearance" },
+        { href: "/admin/office-option-b-elevation", label: "Office option B wall elevation", detail: "Window-wall view of monitor option 2, mount placement, chair, and Peloton" },
         { href: "/office-room-diagram", label: "Office lighting plan", detail: "Installer and beam-coverage views" },
         { href: "/office-room-diagram-details", label: "Office lighting analysis", detail: "Detailed calculations and comparisons" },
         { href: "/master-room-diagram", label: "Primary room lighting plan", detail: "Vaulted-ceiling layout and coordinates" },
