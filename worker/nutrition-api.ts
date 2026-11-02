@@ -541,8 +541,10 @@ function averageDaily(entries: Array<{ date: string; measure: Measure }>, start:
 }
 
 function reduction(current: Measure, baseline: Measure) {
-  if (current.value === null || baseline.value === null || baseline.value <= 0) return null;
-  return ((baseline.value - current.value) / baseline.value) * 100;
+  const currentValue = current.upperBound ?? current.value;
+  const baselineValue = baseline.upperBound ?? baseline.value;
+  if (currentValue === null || baselineValue === null || baselineValue <= 0) return null;
+  return ((baselineValue - currentValue) / baselineValue) * 100;
 }
 
 function currentLosAngelesDate() {
@@ -599,14 +601,12 @@ export async function handleNutritionDashboardGet(
       totals: aggregateFoods(dayFoods),
     })).sort((a, b) => a.date.localeCompare(b.date));
     const sugarEntries = nutrientByDate.map((day) => ({ date: day.date, measure: day.totals.totalSugar }));
-    const rollingStart = dateShift(selectedDate, -6);
+    const rolling7Start = dateShift(selectedDate, -6);
+    const rolling30Start = dateShift(selectedDate, -29);
     const septemberStart = "2026-09-01";
     const septemberEnd = "2026-09-30";
-    const octoberStart = "2026-10-01";
-    const rolling = averageDaily(sugarEntries, rollingStart, selectedDate);
-    const sinceOctober = selectedDate >= octoberStart
-      ? averageDaily(sugarEntries, octoberStart, selectedDate)
-      : { measure: emptyMeasure(), recordedDays: 0, calendarDays: 0 };
+    const rolling7 = averageDaily(sugarEntries, rolling7Start, selectedDate);
+    const rolling30 = averageDaily(sugarEntries, rolling30Start, selectedDate);
     const september = averageDaily(sugarEntries, septemberStart, septemberEnd);
 
     const latestRecordedDate = availableDates.filter((date) => date <= currentLosAngelesDate()).at(-1) ?? selectedDate;
@@ -678,11 +678,12 @@ export async function handleNutritionDashboardGet(
       nutrients,
       foods: selectedFoods,
       sugar: {
-        rolling7: rolling,
-        sinceOctober,
+        rolling7,
+        rolling30,
         september,
-        rollingReductionPercent: reduction(rolling.measure, september.measure),
-        sinceOctoberReductionPercent: reduction(sinceOctober.measure, september.measure),
+        dailyReductionPercent: reduction(nutrients.totalSugar, september.measure),
+        rolling7ReductionPercent: reduction(rolling7.measure, september.measure),
+        rolling30ReductionPercent: reduction(rolling30.measure, september.measure),
       },
       history: historyDates.map((date) => {
         const dayNutrients = nutrientsByDate.get(date);

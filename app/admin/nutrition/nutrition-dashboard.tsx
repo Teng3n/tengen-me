@@ -63,10 +63,11 @@ type DashboardData = {
   foods: Food[];
   sugar: {
     rolling7: SugarAverage;
-    sinceOctober: SugarAverage;
+    rolling30: SugarAverage;
     september: SugarAverage;
-    rollingReductionPercent: number | null;
-    sinceOctoberReductionPercent: number | null;
+    dailyReductionPercent: number | null;
+    rolling7ReductionPercent: number | null;
+    rolling30ReductionPercent: number | null;
   };
   history: HistoryDay[];
   reliability: { confirmedFoodCount: number; plannedFoodCount: number; uncountedFoodCount: number; unknownConsumptionCount: number };
@@ -314,6 +315,13 @@ function sugarReductionStatus(reduction: number | null) {
   return "Building Toward Goal";
 }
 
+function sugarGoalTone(reduction: number | null) {
+  if (reduction === null) return "unknown";
+  if (reduction >= 50) return "goal";
+  if (reduction >= 0) return "progress";
+  return "above";
+}
+
 function SugarProgressCard({ label, measure, baseline, detail, reduction, statusBasis = "available data", unit = "g/day" }: { label: string; measure: Measure; baseline: Measure; detail: string; reduction: number | null; statusBasis?: string; unit?: string }) {
   const value = measure.value;
   const baselineValue = baseline.upperBound ?? baseline.value;
@@ -330,7 +338,8 @@ function SugarProgressCard({ label, measure, baseline, detail, reduction, status
     { kind: "target", label: `50% · ${number.format(baselineValue * 0.5)} g` },
     { kind: "baseline", label: `Baseline · ${number.format(baselineValue)} g` },
   ];
-  return <article className="nutrition-sugar-card nutrition-sugar-progress-card">
+  const tone = sugarGoalTone(reduction);
+  return <article className={`nutrition-sugar-card nutrition-sugar-progress-card nutrition-sugar-tone-${tone}`}>
     <span>{label}</span>
     <strong>{formatUpperEstimate(measure, unit)}</strong>
     {keyItems.length ? <BarKey items={keyItems} label={`${label} bar key`} /> : null}
@@ -350,7 +359,8 @@ function SugarProgressCard({ label, measure, baseline, detail, reduction, status
 function SugarReductionCard({ reduction, baseline, detail }: { reduction: number | null; baseline: Measure; detail: string }) {
   const shown = reduction === null ? 0 : Math.max(0, Math.min(100, reduction));
   const reductionLabel = reduction === null ? "Reduction unavailable" : `Current reduction: ${wholeNumber.format(reduction)}%`;
-  return <article className="nutrition-sugar-card nutrition-sugar-progress-card">
+  const tone = sugarGoalTone(reduction);
+  return <article className={`nutrition-sugar-card nutrition-sugar-progress-card nutrition-sugar-tone-${tone}`}>
     <span>Reduction versus September</span>
     <strong>{reduction === null ? "Not enough data" : reduction < 0 ? `≈${wholeNumber.format(Math.abs(reduction))}% increase` : `≈${wholeNumber.format(reduction)}%`}</strong>
     <BarKey items={[{ kind: "target", label: "50% goal" }, { kind: "secondary", label: "60% milestone" }, { kind: "milestone", label: "70% milestone" }]} label="Sugar reduction bar key" />
@@ -688,12 +698,12 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
       </section>
 
       <section className="owner-panel nutrition-sugar-section">
-        <header className="nutrition-section-heading"><div><p className="section-kicker">Sugar trends</p><h2>Total and added sugar</h2></div><span className="nutrition-quality-count">Naturally occurring and added sugar remain separate</span></header>
+        <header className="nutrition-section-heading"><div><p className="section-kicker">Sugar trends</p><h2>Total sugar</h2></div><span className="nutrition-quality-count">Daily total, R7, and R30</span></header>
         <div className="nutrition-sugar-grid">
-          <SugarProgressCard label="Daily total sugar" measure={data.nutrients.totalSugar} baseline={data.sugar.september.measure} detail="Daily variation is informational; status is based on the rolling average" reduction={data.sugar.rollingReductionPercent} statusBasis="R7" unit="g" />
-          <SugarProgressCard label="Rolling 7-day average" measure={data.sugar.rolling7.measure} baseline={data.sugar.september.measure} detail={`${data.sugar.rolling7.recordedDays} of ${data.sugar.rolling7.calendarDays} calendar days quantified`} reduction={data.sugar.rollingReductionPercent} statusBasis="R7" />
-          <SugarProgressCard label="Average since October 1" measure={data.sugar.sinceOctober.measure} baseline={data.sugar.september.measure} detail={`${data.sugar.sinceOctober.recordedDays} recorded days`} reduction={data.sugar.sinceOctoberReductionPercent} statusBasis="since October 1" />
-          <SugarReductionCard reduction={data.sugar.rollingReductionPercent} baseline={data.sugar.september.measure} detail={`Primary goal ${data.targets.sugarReduction}% · optional milestones 60% and 70%`} />
+          <SugarProgressCard label="Daily total sugar" measure={data.nutrients.totalSugar} baseline={data.sugar.september.measure} detail="Daily variation is informational; color reflects today's comparison with September" reduction={data.sugar.dailyReductionPercent} statusBasis="today" unit="g" />
+          <SugarProgressCard label="Rolling 7-day average" measure={data.sugar.rolling7.measure} baseline={data.sugar.september.measure} detail={`${data.sugar.rolling7.recordedDays} of ${data.sugar.rolling7.calendarDays} calendar days quantified`} reduction={data.sugar.rolling7ReductionPercent} statusBasis="R7" />
+          <SugarProgressCard label="Rolling 30-day average" measure={data.sugar.rolling30.measure} baseline={data.sugar.september.measure} detail={`${data.sugar.rolling30.recordedDays} of ${data.sugar.rolling30.calendarDays} calendar days quantified`} reduction={data.sugar.rolling30ReductionPercent} statusBasis="R30" />
+          <SugarReductionCard reduction={data.sugar.rolling7ReductionPercent} baseline={data.sugar.september.measure} detail={`R7 result · primary goal ${data.targets.sugarReduction}% · optional milestones 60% and 70%`} />
         </div>
         <div className="nutrition-sugar-chart-card"><header><div><p className="section-kicker">Historical sugar</p><h3>Daily total and rolling average</h3></div><div className="nutrition-range-tabs" role="group" aria-label="Sugar chart range">{([['7', '7 days'], ['14', '14 days'], ['30', '30 days'], ['october', 'Since Oct 1'], ['september', 'September']] as const).map(([value, label]) => <button key={value} className={sugarRange === value ? "active" : ""} onClick={() => setSugarRange(value)}>{label}</button>)}</div></header><SugarTrendChart data={data.history} selectedDate={data.selectedDate} baseline={data.sugar.september.measure} reductionGoal={data.targets.sugarReduction} range={sugarRange} onSelect={(date) => void load(date, false, true)} /></div>
         <div className="nutrition-sugar-secondary-grid"><SugarReferenceCard label="Added sugar" measure={data.nutrients.addedSugar} rolling={addedSugarRolling} reference={36} /><SugarReferenceCard label="Sugar alcohols" measure={data.nutrients.sugarAlcohols} rolling={sugarAlcoholRolling} /></div>

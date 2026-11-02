@@ -1003,6 +1003,11 @@ test("nutrition API survives a blank primary date header and ignores monthly sum
     assert.equal(payload.nutrients.sugarAlcohols.value, 20);
     assert.equal(payload.nutrients.saturatedFat.value, 41.5);
     assert.equal(payload.nutrients.sodium.value, 4013);
+    assert.equal(payload.sugar.rolling30.measure.value, 22);
+    assert.equal(payload.sugar.rolling30.recordedDays, 1);
+    assert.equal(payload.sugar.rolling30.calendarDays, 30);
+    assert.equal(payload.sugar.rolling30ReductionPercent, null);
+    assert.equal(payload.sugar.sinceOctober, undefined);
   } finally {
     globalThis.fetch = originalFetch;
   }
