@@ -146,6 +146,7 @@ export async function handleOwnerDashboardGet(env: OwnerDashboardEnv, identity: 
       tools: [
         { href: "/admin/desk-room-diagram", label: "Desk room diagram", detail: "Adjustable office desk runs and remaining wall space" },
         { href: "/admin/office-desk-scale-tool", label: "Office desk + Peloton scale tool", detail: "Scale layout, placement checks, and recommended clearance" },
+        { href: "/admin/office-desk-hardware-closeup", label: "Office L-desk hardware close-up", detail: "Enlarged desk, stud, bracket, VIVO mount, and PC clearance plan" },
         { href: "/admin/office-option-b-elevation", label: "Office option B wall elevation", detail: "Window-wall view of monitor option 2, mount placement, chair, and Peloton" },
         { href: "/admin/office-option-b-elevation-monitor-1", label: "Office monitor option 1 wall elevation", detail: "Window-wall view centered on the 63-inch desk run for comparison" },
         { href: "/admin/office-monitor-option-1-seated-view", label: "Office monitor option 1 seated view", detail: "Adjustable first-person perspective with door visibility and monitor occlusion" },
