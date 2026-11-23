@@ -22,6 +22,14 @@ import {
 import { handleServerRegistrySync } from "./server-registry-api";
 import { isAuthorizedBridgeRequest } from "./bridge-auth";
 import { handleNutritionDashboardGet, type NutritionEnv } from "./nutrition-api";
+import {
+  handleAdminGiftCreate,
+  handleAdminGiftsGet,
+  handleAdminGiftUpdate,
+  handleGiftReservationCreate,
+  handleGiftReservationDelete,
+  handlePublicGiftsGet,
+} from "./gifts-api";
 
 interface Env extends NutritionEnv {
   ASSETS: Fetcher;
@@ -74,6 +82,16 @@ const worker = {
       if (url.pathname === "/admin/api/nutrition" && request.method === "GET") {
         return handleNutritionDashboardGet(request, env, access.identity);
       }
+      if (url.pathname === "/admin/api/gifts" && request.method === "GET") {
+        return handleAdminGiftsGet(env);
+      }
+      if (url.pathname === "/admin/api/gifts" && request.method === "POST") {
+        return handleAdminGiftCreate(request, env, access.identity);
+      }
+      const giftMatch = url.pathname.match(/^\/admin\/api\/gifts\/([0-9a-f-]+)$/);
+      if (giftMatch && request.method === "PATCH") {
+        return handleAdminGiftUpdate(request, env, access.identity, giftMatch[1]);
+      }
       if (url.pathname === "/admin/api/actions" && request.method === "POST") {
         return handleOwnerActionCreate(request, env, access.identity);
       }
@@ -106,6 +124,18 @@ const worker = {
 
     if (url.pathname === "/api/server-status" && request.method === "GET") {
       return handleServerStatusGet(env);
+    }
+
+    if (url.pathname === "/api/gifts" && request.method === "GET") {
+      return handlePublicGiftsGet(env);
+    }
+
+    const giftReservationMatch = url.pathname.match(/^\/api\/gifts\/([0-9a-f-]+)\/reservation$/);
+    if (giftReservationMatch && request.method === "POST") {
+      return handleGiftReservationCreate(request, env, giftReservationMatch[1]);
+    }
+    if (giftReservationMatch && request.method === "DELETE") {
+      return handleGiftReservationDelete(request, env, giftReservationMatch[1]);
     }
 
     if (url.pathname === "/api/server-status/ingest" && request.method === "POST") {

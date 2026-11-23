@@ -2,14 +2,14 @@ import masterDiagramHtml from "../../master_room_diagram.html?raw";
 
 export const dynamic = "force-static";
 
-const centeredXLeft = 52.24;
-const centeredXRight = 152.24;
+const centeredXLeft = 58.96;
+const centeredXRight = 160.16;
 
 const comparisonSection = String.raw`
   <section class="drawing-card centered-alternative" aria-labelledby="centered-comparison-heading">
     <div class="drawing-header">
       <h2 id="centered-comparison-heading">A0 · Centered-on-each-ceiling-plane alternative</h2>
-      <div class="drawing-meta">Separate mock-up · Existing 40″ / 30″ layout remains unchanged</div>
+      <div class="drawing-meta">Separate mock-up · Existing 57.75″ / 30.5″ layout remains unchanged</div>
     </div>
 
     <div class="coverage-summary" aria-label="Alternative layout comparison">
@@ -30,7 +30,7 @@ const comparisonSection = String.raw`
       </article>
     </div>
 
-    <svg id="centered-comparison-svg" viewBox="0 0 280 236" role="img" aria-labelledby="centered-comparison-title centered-comparison-desc">
+    <svg id="centered-comparison-svg" viewBox="0 0 282.4 245" role="img" aria-labelledby="centered-comparison-title centered-comparison-desc">
       <title id="centered-comparison-title">Current and centered-plane master bedroom light positions</title>
       <desc id="centered-comparison-desc">A top-down room plan comparing the current outward light columns with columns centered on each separate ceiling plane.</desc>
       <defs>
@@ -38,49 +38,49 @@ const comparisonSection = String.raw`
           <path d="M 0 0 L 6 3 L 0 6 Z" fill="#33414d"></path>
         </marker>
       </defs>
-      <rect class="room-fill" x="40" y="24" width="200" height="183"></rect>
-      <rect class="ridge-beam-plan" x="141.98" y="24" width="5" height="183"></rect>
-      <line class="ridge" x1="144.48" y1="24" x2="144.48" y2="207"></line>
+      <rect class="room-fill" x="40" y="24" width="202.4" height="191.5"></rect>
+      <rect class="ridge-beam-plan" x="155.5" y="24" width="4.85" height="191.5"></rect>
+      <line class="ridge" x1="157.92" y1="24" x2="157.92" y2="215.5"></line>
 
       <g class="alt-current-layout" aria-label="Current light positions">
-        <line x1="80" y1="24" x2="80" y2="207"></line>
-        <line x1="210" y1="24" x2="210" y2="207"></line>
-        <circle cx="80" cy="46.875" r="3.6"></circle><circle cx="80" cy="92.625" r="3.6"></circle>
-        <circle cx="80" cy="138.375" r="3.6"></circle><circle cx="80" cy="184.125" r="3.6"></circle>
-        <circle cx="210" cy="46.875" r="3.6"></circle><circle cx="210" cy="92.625" r="3.6"></circle>
-        <circle cx="210" cy="138.375" r="3.6"></circle><circle cx="210" cy="184.125" r="3.6"></circle>
+        <line x1="97.75" y1="24" x2="97.75" y2="215.5"></line>
+        <line x1="211.9" y1="24" x2="211.9" y2="215.5"></line>
+        <circle cx="97.75" cy="47.9375" r="3.6"></circle><circle cx="97.75" cy="95.8125" r="3.6"></circle>
+        <circle cx="97.75" cy="143.6875" r="3.6"></circle><circle cx="97.75" cy="191.5625" r="3.6"></circle>
+        <circle cx="211.9" cy="47.9375" r="3.6"></circle><circle cx="211.9" cy="95.8125" r="3.6"></circle>
+        <circle cx="211.9" cy="143.6875" r="3.6"></circle><circle cx="211.9" cy="191.5625" r="3.6"></circle>
       </g>
       <g class="alt-centered-layout" aria-label="Centered-plane light positions">
-        <line x1="92.24" y1="24" x2="92.24" y2="207"></line>
-        <line x1="192.24" y1="24" x2="192.24" y2="207"></line>
-        <circle cx="92.24" cy="46.875" r="3.8"></circle><circle cx="92.24" cy="92.625" r="3.8"></circle>
-        <circle cx="92.24" cy="138.375" r="3.8"></circle><circle cx="92.24" cy="184.125" r="3.8"></circle>
-        <circle cx="192.24" cy="46.875" r="3.8"></circle><circle cx="192.24" cy="92.625" r="3.8"></circle>
-        <circle cx="192.24" cy="138.375" r="3.8"></circle><circle cx="192.24" cy="184.125" r="3.8"></circle>
+        <line x1="98.96" y1="24" x2="98.96" y2="215.5"></line>
+        <line x1="200.16" y1="24" x2="200.16" y2="215.5"></line>
+        <circle cx="98.96" cy="47.9375" r="3.8"></circle><circle cx="98.96" cy="95.8125" r="3.8"></circle>
+        <circle cx="98.96" cy="143.6875" r="3.8"></circle><circle cx="98.96" cy="191.5625" r="3.8"></circle>
+        <circle cx="200.16" cy="47.9375" r="3.8"></circle><circle cx="200.16" cy="95.8125" r="3.8"></circle>
+        <circle cx="200.16" cy="143.6875" r="3.8"></circle><circle cx="200.16" cy="191.5625" r="3.8"></circle>
       </g>
-      <circle class="fan-sweep" cx="144.48" cy="101" r="26"></circle>
-      <circle class="fan-hub" cx="144.48" cy="101" r="3.2"></circle>
-      <rect class="room-wall" x="40" y="24" width="200" height="183"></rect>
+      <circle class="fan-sweep" cx="157.92" cy="101" r="26"></circle>
+      <circle class="fan-hub" cx="157.92" cy="101" r="3.2"></circle>
+      <rect class="room-wall" x="40" y="24" width="202.4" height="191.5"></rect>
 
       <line class="extension" x1="40" y1="24" x2="40" y2="8"></line>
-      <line class="extension" x1="92.24" y1="24" x2="92.24" y2="8"></line>
-      <line class="extension" x1="192.24" y1="24" x2="192.24" y2="8"></line>
-      <line class="extension" x1="240" y1="24" x2="240" y2="8"></line>
-      <line class="dimension alt-dimension" x1="40" y1="13" x2="92.24" y2="13"></line>
-      <line class="dimension alt-dimension" x1="92.24" y1="13" x2="192.24" y2="13"></line>
-      <line class="dimension alt-dimension" x1="192.24" y1="13" x2="240" y2="13"></line>
-      <text class="svg-dim halo" x="66.12" y="6" text-anchor="middle">52.24″</text>
-      <text class="svg-dim halo" x="142.24" y="6" text-anchor="middle">100.00″</text>
-      <text class="svg-dim halo" x="216.12" y="6" text-anchor="middle">47.76″</text>
-      <text class="svg-wall-label halo" x="140" y="216" text-anchor="middle">OPPOSITE WALL</text>
-      <text class="svg-wall-label halo" x="24" y="115.5" text-anchor="middle" transform="rotate(-90 24 115.5)">PHOTO-LEFT WALL</text>
-      <text class="svg-wall-label halo" x="256" y="115.5" text-anchor="middle" transform="rotate(90 256 115.5)">MIRRORED-CLOSET WALL</text>
+      <line class="extension" x1="98.96" y1="24" x2="98.96" y2="8"></line>
+      <line class="extension" x1="200.16" y1="24" x2="200.16" y2="8"></line>
+      <line class="extension" x1="242.4" y1="24" x2="242.4" y2="8"></line>
+      <line class="dimension alt-dimension" x1="40" y1="13" x2="98.96" y2="13"></line>
+      <line class="dimension alt-dimension" x1="98.96" y1="13" x2="200.16" y2="13"></line>
+      <line class="dimension alt-dimension" x1="200.16" y1="13" x2="242.4" y2="13"></line>
+      <text class="svg-dim halo" x="69.48" y="6" text-anchor="middle">58.96″</text>
+      <text class="svg-dim halo" x="149.56" y="6" text-anchor="middle">101.20″</text>
+      <text class="svg-dim halo" x="221.28" y="6" text-anchor="middle">42.24″</text>
+      <text class="svg-wall-label halo" x="141.2" y="225" text-anchor="middle">OPPOSITE WALL</text>
+      <text class="svg-wall-label halo" x="24" y="119.75" text-anchor="middle" transform="rotate(-90 24 119.75)">PHOTO-LEFT WALL</text>
+      <text class="svg-wall-label halo" x="258" y="119.75" text-anchor="middle" transform="rotate(90 258 119.75)">MIRRORED-CLOSET WALL</text>
     </svg>
 
     <div class="diagram-legend" aria-label="Centered-plane placement legend">
       <h3>Legend for A0</h3>
       <div class="legend-item"><span class="swatch swatch-alt-centered"></span>Centered-on-plane alternative</div>
-      <div class="legend-item"><span class="swatch swatch-alt-current"></span>Current 40″ / 30″ positions</div>
+      <div class="legend-item"><span class="swatch swatch-alt-current"></span>Current 57.75″ / 30.5″ positions</div>
       <div class="legend-item"><span class="swatch swatch-fan"></span>52″ fan swept disk</div>
       <div class="legend-item"><span class="swatch swatch-beam"></span>Ridge beam projection</div>
     </div>
@@ -118,8 +118,8 @@ const sideWallSection = String.raw`
         <h3>Photo-left wall · 96″ high</h3>
         <svg viewBox="0 0 240 130" role="img" aria-label="Nominal main-beam coverage on the photo-left wall">
           <g id="alt-left-wall-map"></g>
-          <rect class="room-wall" x="30" y="22" width="183" height="96"></rect>
-          <text class="svg-wall-label" x="121.5" y="124" text-anchor="middle">183″ · TV WALL → OPPOSITE WALL</text>
+          <rect class="room-wall" x="30" y="22" width="191.5" height="96"></rect>
+          <text class="svg-wall-label" x="125.75" y="124" text-anchor="middle">191.5″ · TV WALL → OPPOSITE WALL</text>
           <text class="svg-small halo" x="26" y="70" text-anchor="middle" transform="rotate(-90 26 70)">96″</text>
         </svg>
       </article>
@@ -127,8 +127,8 @@ const sideWallSection = String.raw`
         <h3>Mirrored-closet wall · 108″ high</h3>
         <svg viewBox="0 0 240 130" role="img" aria-label="Nominal main-beam coverage on the mirrored-closet wall">
           <g id="alt-right-wall-map"></g>
-          <rect class="room-wall" x="30" y="10" width="183" height="108"></rect>
-          <text class="svg-wall-label" x="121.5" y="124" text-anchor="middle">183″ · TV WALL → OPPOSITE WALL</text>
+          <rect class="room-wall" x="30" y="10" width="191.5" height="108"></rect>
+          <text class="svg-wall-label" x="125.75" y="124" text-anchor="middle">191.5″ · TV WALL → OPPOSITE WALL</text>
           <text class="svg-small halo" x="26" y="64" text-anchor="middle" transform="rotate(-90 26 64)">108″</text>
         </svg>
       </article>
@@ -198,7 +198,7 @@ const centeredAnalysisScript = String.raw`
     return { x: horizontal / magnitude, y: 0, z: -1 / magnitude };
   };
   const makeLights = columns => columns.flatMap((x, columnIndex) =>
-    [22.875, 68.625, 114.375, 160.125].map((y, rowIndex) => ({
+    [23.9375, 71.8125, 119.6875, 167.5625].map((y, rowIndex) => ({
       number: columnIndex * 4 + rowIndex + 1,
       x,
       y,
@@ -206,8 +206,8 @@ const centeredAnalysisScript = String.raw`
       axis: axisForX(x)
     }))
   );
-  const centeredLights = makeLights([52.24, 152.24]);
-  const currentLights = makeLights([40, 170]);
+  const centeredLights = makeLights([58.96, 160.16]);
+  const currentLights = makeLights([57.75, 171.9]);
   const insideBeam = (light, point, angle) => {
     const dx = point.x - light.x;
     const dy = point.y - light.y;
@@ -341,27 +341,20 @@ const centeredAnalysisScript = String.raw`
 
 const centeredDiagramHtml = masterDiagramHtml
   .replace("<title>Master Room Diagram — Lighting and Fan Study</title>", "<title>Master Room Diagram — Centered Ceiling-Plane Alternative</title>")
-  .replace('revision: "02"', 'revision: "02-centered-alternative"')
+  .replace('revision: "03"', 'revision: "03-centered-alternative"')
   .replace('<h1>Master Room — Vaulted-Ceiling Lighting and Fan Study</h1>', '<h1>Master Room — Centered Ceiling-Plane Lighting Alternative</h1>')
-  .replace('Drawing revision 02 · 30 July 2026 · Eight Feit night-light wafers · All dimensions in inches · Not for construction', 'Separate centered-plane alternative · Original master-room page unchanged · Eight Feit night-light wafers · Not for construction')
-  .replace('{ number: 1, side: "left", x: 40, y: 22.875 }', `{ number: 1, side: "left", x: ${centeredXLeft}, y: 22.875 }`)
-  .replace('{ number: 2, side: "left", x: 40, y: 68.625 }', `{ number: 2, side: "left", x: ${centeredXLeft}, y: 68.625 }`)
-  .replace('{ number: 3, side: "left", x: 40, y: 114.375 }', `{ number: 3, side: "left", x: ${centeredXLeft}, y: 114.375 }`)
-  .replace('{ number: 4, side: "left", x: 40, y: 160.125 }', `{ number: 4, side: "left", x: ${centeredXLeft}, y: 160.125 }`)
-  .replace('{ number: 5, side: "right", x: 170, y: 22.875 }', `{ number: 5, side: "right", x: ${centeredXRight}, y: 22.875 }`)
-  .replace('{ number: 6, side: "right", x: 170, y: 68.625 }', `{ number: 6, side: "right", x: ${centeredXRight}, y: 68.625 }`)
-  .replace('{ number: 7, side: "right", x: 170, y: 114.375 }', `{ number: 7, side: "right", x: ${centeredXRight}, y: 114.375 }`)
-  .replace('{ number: 8, side: "right", x: 170, y: 160.125 }', `{ number: 8, side: "right", x: ${centeredXRight}, y: 160.125 }`)
+  .replace('Drawing revision 03 · 7 August 2026 · Eight Feit night-light wafers · All dimensions in inches · Not for construction', 'Separate centered-plane alternative · Based on drawing revision 03 · Eight Feit night-light wafers · Not for construction')
+  .replace('{ number: 1, side: "left", x: 57.75, y: 23.9375 }', `{ number: 1, side: "left", x: ${centeredXLeft}, y: 23.9375 }`)
+  .replace('{ number: 2, side: "left", x: 57.75, y: 71.8125 }', `{ number: 2, side: "left", x: ${centeredXLeft}, y: 71.8125 }`)
+  .replace('{ number: 3, side: "left", x: 57.75, y: 119.6875 }', `{ number: 3, side: "left", x: ${centeredXLeft}, y: 119.6875 }`)
+  .replace('{ number: 4, side: "left", x: 57.75, y: 167.5625 }', `{ number: 4, side: "left", x: ${centeredXLeft}, y: 167.5625 }`)
+  .replace('{ number: 5, side: "right", x: 171.9, y: 23.9375 }', `{ number: 5, side: "right", x: ${centeredXRight}, y: 23.9375 }`)
+  .replace('{ number: 6, side: "right", x: 171.9, y: 71.8125 }', `{ number: 6, side: "right", x: ${centeredXRight}, y: 71.8125 }`)
+  .replace('{ number: 7, side: "right", x: 171.9, y: 119.6875 }', `{ number: 7, side: "right", x: ${centeredXRight}, y: 119.6875 }`)
+  .replace('{ number: 8, side: "right", x: 171.9, y: 167.5625 }', `{ number: 8, side: "right", x: ${centeredXRight}, y: 167.5625 }`)
   .replace('<section class="drawing-card" aria-labelledby="installer-plan-heading">', '<section class="drawing-card" aria-labelledby="installer-plan-heading" hidden>')
   .replace('  <section class="drawing-card" aria-labelledby="blade-plan-heading">', comparisonSection + '\n  <section class="drawing-card" aria-labelledby="blade-plan-heading">')
   .replace('  <section class="drawing-card" aria-labelledby="tv-wall-heading">', sideWallSection + '\n  <section class="drawing-card" aria-labelledby="tv-wall-heading">')
-  .replace('[40, 170].forEach(x => {', '[52.24, 152.24].forEach(x => {')
-  .replace('horizontal: "40″ from left wall"', 'horizontal: "52.24″ from left wall"')
-  .replace('(40 / Math.cos(cfg.ceiling.leftAngleDegrees', '(52.24 / Math.cos(cfg.ceiling.leftAngleDegrees')
-  .replace('ceilingHeight(40).toFixed(1)', 'ceilingHeight(52.24).toFixed(1)')
-  .replace('horizontal: "30″ from right wall"', 'horizontal: "47.76″ from right wall"')
-  .replace('(30 / Math.cos(cfg.ceiling.rightAngleDegrees', '(47.76 / Math.cos(cfg.ceiling.rightAngleDegrees')
-  .replace('ceilingHeight(170).toFixed(1)', 'ceilingHeight(152.24).toFixed(1)')
   .replace('</head>', centeredStyles + '\n</head>')
   .replace('</body>', centeredAnalysisScript + '\n</body>');
 

@@ -19,6 +19,7 @@ const cloudflareConfig = {
       binding: "OWNER_DB",
       database_name: "tengen-me-owner",
       database_id: "8bbbf3fd-90f6-492e-9610-a091a1beaf4e",
+      migrations_dir: "../../db/migrations",
     },
     {
       binding: "HOUSEHOLD_DB",

@@ -51,8 +51,13 @@ export default function Home() {
             <div><h3>Things I&apos;m building</h3><p>Tools, experiments, and projects worth sharing.</p></div>
             <span className="arrow">↗</span>
           </Link>
+          <Link className="feature-card feature-card-wide" href="/gifts">
+            <span className="feature-index">C / GIFT IDEAS</span>
+            <div><h3>Things I&apos;d genuinely love</h3><p>A simple, current wish list with ideas from any retailer.</p></div>
+            <span className="arrow">View the list</span>
+          </Link>
           <Link className="feature-card" href="/about">
-            <span className="feature-index">C / ABOUT</span>
+            <span className="feature-index">D / ABOUT</span>
             <div><h3>Meet Tengen</h3><p>Community builder, systems tinkerer, and longtime raid leader.</p></div>
             <span className="arrow">↗</span>
           </Link>

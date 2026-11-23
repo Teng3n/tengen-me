@@ -7,13 +7,13 @@
 
   <script>
     const MASTER_ROOM_CONFIG = Object.freeze({
-      revision: "02",
-      drawingDate: "2026-07-30",
+      revision: "03",
+      drawingDate: "2026-08-07",
       units: "inches",
       room: {
-        width: 200,
-        length: 183,
-        areaSquareFeet: 254.17,
+        width: 202.4,
+        length: 191.5,
+        areaSquareFeet: 269.16,
         walls: {
           top: "TV wall",
           left: "Photo-left / door side",
@@ -22,23 +22,23 @@
         }
       },
       ceiling: {
-        peakHeight: 140,
-        leftWallHeight: 96,
-        rightWallHeight: 108,
-        leftAngleDegrees: 22.84,
-        rightAngleDegrees: 18.52,
-        status: "original 140-inch ridge estimate and original centerline slopes retained"
+        peakHeight: 139.3,
+        leftWallHeight: 97,
+        rightWallHeight: 109.2,
+        leftAngleDegrees: 20.11,
+        rightAngleDegrees: 20.14,
+        status: "updated from laser wall heights and measured ceiling-plane lengths"
       },
       ridgeBeam: {
-        centerFromLeft: 104.48,
-        width: 5,
-        leftFaceFromLeft: 101.98,
-        rightFaceFromLeft: 106.98,
-        undersideHeight: 131,
-        exposedTopHeight: 139,
-        separatelyMeasuredTopHeight: 136,
-        statedDepth: 8,
-        status: "modeled as an 8-inch-deep exposed beam hanging below the ridge; top face concealed by the ceiling"
+        centerFromLeft: 117.92,
+        width: 4.85,
+        leftFaceFromLeft: 115.50,
+        rightFaceFromLeft: 120.35,
+        undersideHeight: 129.5,
+        exposedTopHeight: 139.3,
+        separatelyMeasuredTopHeight: 139.3,
+        statedDepth: 9.8,
+        status: "derived from 123-inch and 87.4-inch ceiling-plane lengths; approximately 4.85 inches wide and 9.8 inches exposed"
       },
       fan: {
         manufacturer: "Big Ass Fans",
@@ -46,7 +46,7 @@
         diameter: 52,
         radius: 26,
         blades: 3,
-        centerX: 104.48,
+        centerX: 117.92,
         centerY: 77,
         bladePlaneHeight: 113,
         speedMinRpm: 35,
@@ -70,26 +70,26 @@
       tv: {
         wall: "TV wall",
         leftEdgeFromLeft: 112,
-        rightEdgeFromLeft: 159,
-        width: 47,
+        rightEdgeFromLeft: 161.4,
+        width: 49.4,
         bottomHeight: 47,
         topHeight: 80,
         height: 33,
-        centerX: 135.5,
+        centerX: 136.7,
         centerZ: 63.5,
         projectionFromWall: 0,
         tiltDegrees: 0,
         status: "provisional rectangle from room-edge measurements; model, projection, tilt, and viewing point not yet confirmed"
       },
       lights: [
-        { number: 1, side: "left", x: 40, y: 22.875 },
-        { number: 2, side: "left", x: 40, y: 68.625 },
-        { number: 3, side: "left", x: 40, y: 114.375 },
-        { number: 4, side: "left", x: 40, y: 160.125 },
-        { number: 5, side: "right", x: 170, y: 22.875 },
-        { number: 6, side: "right", x: 170, y: 68.625 },
-        { number: 7, side: "right", x: 170, y: 114.375 },
-        { number: 8, side: "right", x: 170, y: 160.125 }
+        { number: 1, side: "left", x: 57.75, y: 23.9375 },
+        { number: 2, side: "left", x: 57.75, y: 71.8125 },
+        { number: 3, side: "left", x: 57.75, y: 119.6875 },
+        { number: 4, side: "left", x: 57.75, y: 167.5625 },
+        { number: 5, side: "right", x: 171.9, y: 23.9375 },
+        { number: 6, side: "right", x: 171.9, y: 71.8125 },
+        { number: 7, side: "right", x: 171.9, y: 119.6875 },
+        { number: 8, side: "right", x: 171.9, y: 167.5625 }
       ]
     });
   </script>
@@ -680,7 +680,7 @@
 <main>
   <header>
     <h1>Master Room — Vaulted-Ceiling Lighting and Fan Study</h1>
-    <p class="subtitle">Drawing revision 02 · 30 July 2026 · Eight Feit night-light wafers · All dimensions in inches · Not for construction</p>
+    <p class="subtitle">Drawing revision 03 · 7 August 2026 · Eight Feit night-light wafers · All dimensions in inches · Not for construction</p>
   </header>
 
   <section aria-labelledby="measurement-summary">
@@ -689,7 +689,7 @@
       <article class="summary-card confirmed-card">
         <h3 class="confirmed">Products and known geometry</h3>
         <ul>
-          <li>Room footprint: 200″ × 183″ — approximately 254.2 sq. ft.</li>
+          <li>Room footprint: 202.4″ × 191.5″ — approximately 269.2 sq. ft.</li>
           <li>Haiku L: 52″ diameter, three blades, 35–201 RPM.</li>
           <li>Eight Feit LEDR6XT/HO/NL/5CCTCA fixtures at 1,200 lumens each.</li>
           <li>Feit downlight: 5CCT, 90+ CRI, dimmable, with 2200K night-light ring.</li>
@@ -699,16 +699,17 @@
       </article>
 
       <article class="summary-card provisional-card">
-        <h3 class="provisional">Estimated — verify before installation</h3>
+        <h3 class="provisional">Updated measured geometry</h3>
         <ul>
-          <li>Ceiling ridge remains 140″; exposed beam underside 131″; beam approximately 8″ deep × 5″ wide.</li>
-          <li>Original ceiling slopes retained: 22.84° left and 18.52° right.</li>
+          <li>Ceiling/beam top 139.3″; beam underside 129.5″; exposed beam approximately 9.8″ deep × 4.85″ wide.</li>
+          <li>Calculated ceiling slopes: 20.11° photo-left and 20.14° mirrored-closet.</li>
+          <li>Measured ceiling-plane lengths: 123″ photo-left to beam and 87.4″ mirrored-closet to beam.</li>
           <li>The ceiling planes continue to the ridge above/behind the beam; the beam top is concealed.</li>
-          <li>Beam centered approximately 104.5″ from the photo-left wall.</li>
-          <li>Fan blade plane approximately 113″ above floor.</li>
-          <li>Approximately 18″ from beam underside to blade plane, consistent with a 10″ Haiku L downrod assembly.</li>
+          <li>Beam and fan center approximately 117.92″ from the photo-left wall.</li>
+          <li>Fan blade plane measured approximately 113″ above floor.</li>
+          <li>Approximately 16.5″ from beam underside to blade plane.</li>
           <li>Fan center approximately 77″ from TV wall; earlier estimate was 94″.</li>
-          <li>TV rectangle: X 112–159″ and Z 47–80″; width/height remain provisional.</li>
+          <li>TV rectangle: X 112–161.4″ and Z 47–80″; width remains inferred from the updated wall width.</li>
           <li>Feit documents list both 100° and 110° beam angles; this page defaults to 110°.</li>
         </ul>
       </article>
@@ -744,7 +745,7 @@
       <article class="coverage-metric caution">
         <span>Installed output</span>
         <strong>9,600 lm</strong>
-        <small>Approximately 37.8 raw lumens/sq. ft.; use a compatible LED dimmer</small>
+        <small>Approximately 35.7 raw lumens/sq. ft.; use a compatible LED dimmer</small>
       </article>
     </div>
   </section>
@@ -755,89 +756,89 @@
       <div class="drawing-meta">Top-down control plan · Dimension chains run between finished wall faces and fixture centers</div>
     </div>
 
-    <svg id="installer-plan-svg" viewBox="0 0 300 250" role="img" aria-labelledby="installer-plan-title installer-plan-desc">
+    <svg id="installer-plan-svg" viewBox="0 0 300 260" role="img" aria-labelledby="installer-plan-title installer-plan-desc">
       <title id="installer-plan-title">Installer coordinate plan for the eight master-room lights</title>
-      <desc id="installer-plan-desc">A 200 by 183 inch room with two light columns. The left column is 40 inches from the left wall, the right column is 30 inches from the right wall, and the columns are 130 inches apart. Four rows are evenly spaced along the room.</desc>
+      <desc id="installer-plan-desc">A 202.4 by 191.5 inch room with two light columns. The left column is centered on its ceiling plane at 57.75 inches from the photo-left wall. The right column is 30.5 inches from the mirrored-closet wall. Four rows are evenly spaced along the room.</desc>
       <defs>
         <marker id="installer-arrow-master" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto-start-reverse">
           <path d="M 0 0 L 6 3 L 0 6 Z" fill="#33414d"></path>
         </marker>
       </defs>
 
-      <rect class="room-fill" x="50" y="38" width="200" height="183"></rect>
-      <rect class="ridge-beam-plan" x="151.98" y="38" width="5" height="183"></rect>
-      <line class="ridge" x1="154.48" y1="38" x2="154.48" y2="221"></line>
+      <rect class="room-fill" x="50" y="38" width="202.4" height="191.5"></rect>
+      <rect class="ridge-beam-plan" x="165.5" y="38" width="4.85" height="191.5"></rect>
+      <line class="ridge" x1="167.92" y1="38" x2="167.92" y2="229.5"></line>
 
-      <line class="reference" x1="90" y1="38" x2="90" y2="221"></line>
-      <line class="reference" x1="220" y1="38" x2="220" y2="221"></line>
-      <line class="reference" x1="50" y1="60.875" x2="250" y2="60.875"></line>
-      <line class="reference" x1="50" y1="106.625" x2="250" y2="106.625"></line>
-      <line class="reference" x1="50" y1="152.375" x2="250" y2="152.375"></line>
-      <line class="reference" x1="50" y1="198.125" x2="250" y2="198.125"></line>
+      <line class="reference" x1="107.75" y1="38" x2="107.75" y2="229.5"></line>
+      <line class="reference" x1="221.9" y1="38" x2="221.9" y2="229.5"></line>
+      <line class="reference" x1="50" y1="61.9375" x2="252.4" y2="61.9375"></line>
+      <line class="reference" x1="50" y1="109.8125" x2="252.4" y2="109.8125"></line>
+      <line class="reference" x1="50" y1="157.6875" x2="252.4" y2="157.6875"></line>
+      <line class="reference" x1="50" y1="205.5625" x2="252.4" y2="205.5625"></line>
 
-      <circle class="fan-sweep" cx="154.48" cy="115" r="26"></circle>
-      <circle class="fan-hub" cx="154.48" cy="115" r="3.2"></circle>
-      <text class="svg-small halo" x="154.48" y="122" text-anchor="middle">FAN CENTER (104.48,77)</text>
+      <circle class="fan-sweep" cx="167.92" cy="115" r="26"></circle>
+      <circle class="fan-hub" cx="167.92" cy="115" r="3.2"></circle>
+      <text class="svg-small halo" x="167.92" y="84" text-anchor="middle">FAN CENTER (117.92,77)</text>
 
       <g aria-label="Eight light centers">
-        <circle class="light-symbol" cx="90" cy="60.875" r="3.5"></circle><circle class="light-core" cx="90" cy="60.875" r="1.2"></circle>
-        <circle class="light-symbol" cx="90" cy="106.625" r="3.5"></circle><circle class="light-core" cx="90" cy="106.625" r="1.2"></circle>
-        <circle class="light-symbol" cx="90" cy="152.375" r="3.5"></circle><circle class="light-core" cx="90" cy="152.375" r="1.2"></circle>
-        <circle class="light-symbol" cx="90" cy="198.125" r="3.5"></circle><circle class="light-core" cx="90" cy="198.125" r="1.2"></circle>
-        <circle class="light-symbol" cx="220" cy="60.875" r="3.5"></circle><circle class="light-core" cx="220" cy="60.875" r="1.2"></circle>
-        <circle class="light-symbol" cx="220" cy="106.625" r="3.5"></circle><circle class="light-core" cx="220" cy="106.625" r="1.2"></circle>
-        <circle class="light-symbol" cx="220" cy="152.375" r="3.5"></circle><circle class="light-core" cx="220" cy="152.375" r="1.2"></circle>
-        <circle class="light-symbol" cx="220" cy="198.125" r="3.5"></circle><circle class="light-core" cx="220" cy="198.125" r="1.2"></circle>
-        <text class="svg-label halo" x="95" y="57">L1 · (40,22⅞)</text>
-        <text class="svg-label halo" x="95" y="103">L2 · (40,68⅝)</text>
-        <text class="svg-label halo" x="95" y="149">L3 · (40,114⅜)</text>
-        <text class="svg-label halo" x="95" y="195">L4 · (40,160⅛)</text>
-        <text class="svg-label halo" x="215" y="57" text-anchor="end">L5 · (170,22⅞)</text>
-        <text class="svg-label halo" x="215" y="103" text-anchor="end">L6 · (170,68⅝)</text>
-        <text class="svg-label halo" x="215" y="149" text-anchor="end">L7 · (170,114⅜)</text>
-        <text class="svg-label halo" x="215" y="195" text-anchor="end">L8 · (170,160⅛)</text>
+        <circle class="light-symbol" cx="107.75" cy="61.9375" r="3.5"></circle><circle class="light-core" cx="107.75" cy="61.9375" r="1.2"></circle>
+        <circle class="light-symbol" cx="107.75" cy="109.8125" r="3.5"></circle><circle class="light-core" cx="107.75" cy="109.8125" r="1.2"></circle>
+        <circle class="light-symbol" cx="107.75" cy="157.6875" r="3.5"></circle><circle class="light-core" cx="107.75" cy="157.6875" r="1.2"></circle>
+        <circle class="light-symbol" cx="107.75" cy="205.5625" r="3.5"></circle><circle class="light-core" cx="107.75" cy="205.5625" r="1.2"></circle>
+        <circle class="light-symbol" cx="221.9" cy="61.9375" r="3.5"></circle><circle class="light-core" cx="221.9" cy="61.9375" r="1.2"></circle>
+        <circle class="light-symbol" cx="221.9" cy="109.8125" r="3.5"></circle><circle class="light-core" cx="221.9" cy="109.8125" r="1.2"></circle>
+        <circle class="light-symbol" cx="221.9" cy="157.6875" r="3.5"></circle><circle class="light-core" cx="221.9" cy="157.6875" r="1.2"></circle>
+        <circle class="light-symbol" cx="221.9" cy="205.5625" r="3.5"></circle><circle class="light-core" cx="221.9" cy="205.5625" r="1.2"></circle>
+        <text class="svg-label halo" x="112.75" y="58">L1 · (57.75,23.94)</text>
+        <text class="svg-label halo" x="112.75" y="106">L2 · (57.75,71.81)</text>
+        <text class="svg-label halo" x="112.75" y="154">L3 · (57.75,119.69)</text>
+        <text class="svg-label halo" x="112.75" y="202">L4 · (57.75,167.56)</text>
+        <text class="svg-label halo" x="216.9" y="58" text-anchor="end">L5 · (171.9,23.94)</text>
+        <text class="svg-label halo" x="216.9" y="106" text-anchor="end">L6 · (171.9,71.81)</text>
+        <text class="svg-label halo" x="216.9" y="154" text-anchor="end">L7 · (171.9,119.69)</text>
+        <text class="svg-label halo" x="216.9" y="202" text-anchor="end">L8 · (171.9,167.56)</text>
       </g>
 
-      <rect class="room-wall" x="50" y="38" width="200" height="183"></rect>
+      <rect class="room-wall" x="50" y="38" width="202.4" height="191.5"></rect>
 
       <g aria-label="Horizontal wall-to-light and light-to-light dimension chain">
         <line class="extension" x1="50" y1="38" x2="50" y2="14"></line>
-        <line class="extension" x1="90" y1="38" x2="90" y2="14"></line>
-        <line class="extension" x1="220" y1="38" x2="220" y2="14"></line>
-        <line class="extension" x1="250" y1="38" x2="250" y2="14"></line>
-        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="50" y1="20" x2="90" y2="20"></line>
-        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="90" y1="20" x2="220" y2="20"></line>
-        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="220" y1="20" x2="250" y2="20"></line>
-        <text class="svg-dim halo" x="70" y="13" text-anchor="middle">40″</text>
-        <text class="svg-dim halo" x="155" y="13" text-anchor="middle">130″ LIGHT–LIGHT</text>
-        <text class="svg-dim halo" x="235" y="13" text-anchor="middle">30″</text>
+        <line class="extension" x1="107.75" y1="38" x2="107.75" y2="14"></line>
+        <line class="extension" x1="221.9" y1="38" x2="221.9" y2="14"></line>
+        <line class="extension" x1="252.4" y1="38" x2="252.4" y2="14"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="50" y1="20" x2="107.75" y2="20"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="107.75" y1="20" x2="221.9" y2="20"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="221.9" y1="20" x2="252.4" y2="20"></line>
+        <text class="svg-dim halo" x="78.875" y="13" text-anchor="middle">57.75″</text>
+        <text class="svg-dim halo" x="164.825" y="13" text-anchor="middle">114.15″ LIGHT–LIGHT</text>
+        <text class="svg-dim halo" x="237.15" y="13" text-anchor="middle">30.5″</text>
       </g>
 
       <g aria-label="Vertical wall-to-light and light-to-light dimension chain">
         <line class="extension" x1="50" y1="38" x2="21" y2="38"></line>
-        <line class="extension" x1="50" y1="60.875" x2="21" y2="60.875"></line>
-        <line class="extension" x1="50" y1="106.625" x2="21" y2="106.625"></line>
-        <line class="extension" x1="50" y1="152.375" x2="21" y2="152.375"></line>
-        <line class="extension" x1="50" y1="198.125" x2="21" y2="198.125"></line>
-        <line class="extension" x1="50" y1="221" x2="21" y2="221"></line>
-        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="38" x2="29" y2="60.875"></line>
-        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="60.875" x2="29" y2="106.625"></line>
-        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="106.625" x2="29" y2="152.375"></line>
-        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="152.375" x2="29" y2="198.125"></line>
-        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="198.125" x2="29" y2="221"></line>
-        <text class="svg-dim halo" x="17" y="49.4" text-anchor="middle" transform="rotate(-90 17 49.4)">22⅞″</text>
-        <text class="svg-dim halo" x="17" y="83.75" text-anchor="middle" transform="rotate(-90 17 83.75)">45¾″</text>
-        <text class="svg-dim halo" x="17" y="129.5" text-anchor="middle" transform="rotate(-90 17 129.5)">45¾″</text>
-        <text class="svg-dim halo" x="17" y="175.25" text-anchor="middle" transform="rotate(-90 17 175.25)">45¾″</text>
-        <text class="svg-dim halo" x="17" y="209.6" text-anchor="middle" transform="rotate(-90 17 209.6)">22⅞″</text>
+        <line class="extension" x1="50" y1="61.9375" x2="21" y2="61.9375"></line>
+        <line class="extension" x1="50" y1="109.8125" x2="21" y2="109.8125"></line>
+        <line class="extension" x1="50" y1="157.6875" x2="21" y2="157.6875"></line>
+        <line class="extension" x1="50" y1="205.5625" x2="21" y2="205.5625"></line>
+        <line class="extension" x1="50" y1="229.5" x2="21" y2="229.5"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="38" x2="29" y2="61.9375"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="61.9375" x2="29" y2="109.8125"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="109.8125" x2="29" y2="157.6875"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="157.6875" x2="29" y2="205.5625"></line>
+        <line class="dimension" style="marker-start:url(#installer-arrow-master);marker-end:url(#installer-arrow-master)" x1="29" y1="205.5625" x2="29" y2="229.5"></line>
+        <text class="svg-dim halo" x="17" y="49.97" text-anchor="middle" transform="rotate(-90 17 49.97)">23.94″</text>
+        <text class="svg-dim halo" x="17" y="85.88" text-anchor="middle" transform="rotate(-90 17 85.88)">47.88″</text>
+        <text class="svg-dim halo" x="17" y="133.75" text-anchor="middle" transform="rotate(-90 17 133.75)">47.88″</text>
+        <text class="svg-dim halo" x="17" y="181.63" text-anchor="middle" transform="rotate(-90 17 181.63)">47.88″</text>
+        <text class="svg-dim halo" x="17" y="217.53" text-anchor="middle" transform="rotate(-90 17 217.53)">23.94″</text>
       </g>
 
-      <text class="svg-wall-label halo" x="150" y="33" text-anchor="middle">TV WALL</text>
-      <text class="svg-wall-label halo" x="150" y="226" text-anchor="middle">OPPOSITE WALL</text>
-      <text class="svg-wall-label halo" x="55" y="129.5" text-anchor="middle" transform="rotate(-90 55 129.5)">PHOTO-LEFT WALL</text>
-      <text class="svg-wall-label halo" x="245" y="129.5" text-anchor="middle" transform="rotate(90 245 129.5)">MIRRORED-CLOSET WALL</text>
-      <text class="svg-small" x="50" y="238">ORIGIN: TV-WALL × PHOTO-LEFT INTERIOR CORNER · ROOM 200″ × 183″</text>
-      <text class="svg-small" x="50" y="244">ALL DIMENSIONS LOCATE FIXTURE CENTERS; X IS LEFT→RIGHT, Y IS TV WALL→OPPOSITE WALL</text>
+      <text class="svg-wall-label halo" x="151.2" y="33" text-anchor="middle">TV WALL</text>
+      <text class="svg-wall-label halo" x="151.2" y="234.5" text-anchor="middle">OPPOSITE WALL</text>
+      <text class="svg-wall-label halo" x="55" y="133.75" text-anchor="middle" transform="rotate(-90 55 133.75)">PHOTO-LEFT WALL</text>
+      <text class="svg-wall-label halo" x="247.4" y="133.75" text-anchor="middle" transform="rotate(90 247.4 133.75)">MIRRORED-CLOSET WALL</text>
+      <text class="svg-small" x="50" y="247">ORIGIN: TV-WALL × PHOTO-LEFT INTERIOR CORNER · ROOM 202.4″ × 191.5″</text>
+      <text class="svg-small" x="50" y="253">ALL DIMENSIONS LOCATE FIXTURE CENTERS; X IS LEFT→RIGHT, Y IS TV WALL→OPPOSITE WALL</text>
     </svg>
 
     <div class="diagram-legend" aria-label="Master-room installer plan legend">
@@ -848,7 +849,7 @@
       <div class="legend-item"><span class="swatch swatch-beam"></span>Approximately 5″-wide ridge beam projection</div>
     </div>
 
-    <p class="finding caution"><strong>Installer transfer note:</strong> These are horizontal plan dimensions. The left light row is approximately 43.4″ up its 22.84° ceiling plane from the photo-left wall, and the right row is approximately 31.6″ up its 18.52° plane from the mirrored-closet wall. Do not pull a 130″ tape across the ridge beam; establish the X positions on the floor and transfer each row vertically with a laser. The Y chain is parallel to the ridge and remains 22⅞″ / 45¾″ / 45¾″ / 45¾″ / 22⅞″ on the ceiling.</p>
+    <p class="finding caution"><strong>Installer transfer note:</strong> These are horizontal plan dimensions. The left light row is approximately 61.5″ up its 20.11° ceiling plane from the photo-left wall, and the right row is approximately 32.5″ up its 20.14° plane from the mirrored-closet wall. Establish the X positions on the floor and transfer each row vertically with a laser. The Y chain is parallel to the ridge: 23.94″ / 47.88″ / 47.88″ / 47.88″ / 23.94″.</p>
   </section>
 
   <section class="drawing-card" aria-labelledby="blade-plan-heading">
@@ -857,7 +858,7 @@
       <div class="drawing-meta">Current blade height <span id="blade-plan-height">113″</span> · Conservative 110° default beam</div>
     </div>
 
-    <svg id="blade-plan-svg" viewBox="0 0 280 236" role="img" aria-labelledby="blade-plan-title blade-plan-desc">
+    <svg id="blade-plan-svg" viewBox="0 0 280 244" role="img" aria-labelledby="blade-plan-title blade-plan-desc">
       <title id="blade-plan-title">Top-down master room plan at the fan blade plane</title>
       <desc id="blade-plan-desc">Eight proposed light locations, their nominal beam regions at fan height, the asymmetric ceiling ridge, and the 52-inch fan disk.</desc>
       <defs>
@@ -865,26 +866,26 @@
           <path d="M 0 0 L 6 3 L 0 6 Z" fill="#33414d"></path>
         </marker>
         <clipPath id="plan-room-clip">
-          <rect x="40" y="24" width="200" height="183"></rect>
+          <rect x="40" y="24" width="202.4" height="191.5"></rect>
         </clipPath>
       </defs>
-      <rect class="room-fill" x="40" y="24" width="200" height="183"></rect>
+      <rect class="room-fill" x="40" y="24" width="202.4" height="191.5"></rect>
       <g id="blade-plan-grid"></g>
-      <rect class="ridge-beam-plan" x="141.98" y="24" width="5" height="183"></rect>
-      <line class="ridge" x1="144.48" y1="24" x2="144.48" y2="207"></line>
+      <rect class="ridge-beam-plan" x="155.5" y="24" width="4.85" height="191.5"></rect>
+      <line class="ridge" x1="157.92" y1="24" x2="157.92" y2="215.5"></line>
       <g id="blade-beam-footprints" clip-path="url(#plan-room-clip)"></g>
       <g id="blade-plan-lights"></g>
       <g id="blade-plan-fan"></g>
-      <rect class="room-wall" x="40" y="24" width="200" height="183"></rect>
-      <text class="svg-wall-label" x="140" y="15" text-anchor="middle">TV WALL · 16′8″</text>
-      <text class="svg-wall-label" x="140" y="217" text-anchor="middle">OPPOSITE WALL</text>
-      <text class="svg-wall-label" x="25" y="115.5" text-anchor="middle" transform="rotate(-90 25 115.5)">PHOTO-LEFT · 8′ WALL</text>
-      <text class="svg-wall-label" x="255" y="115.5" text-anchor="middle" transform="rotate(90 255 115.5)">MIRRORED-CLOSET SIDE · 9′ WALL</text>
-      <text class="svg-small halo" x="149.5" y="31">5″ ridge beam</text>
-      <line class="extension" x1="40" y1="211" x2="40" y2="229"></line>
-      <line class="extension" x1="240" y1="211" x2="240" y2="229"></line>
-      <line class="dimension" x1="40" y1="225" x2="240" y2="225"></line>
-      <text class="svg-dim halo" x="140" y="225" text-anchor="middle">200″</text>
+      <rect class="room-wall" x="40" y="24" width="202.4" height="191.5"></rect>
+      <text class="svg-wall-label" x="141.2" y="15" text-anchor="middle">TV WALL · 202.4″</text>
+      <text class="svg-wall-label" x="141.2" y="225.5" text-anchor="middle">OPPOSITE WALL</text>
+      <text class="svg-wall-label" x="25" y="119.75" text-anchor="middle" transform="rotate(-90 25 119.75)">PHOTO-LEFT · 97″ WALL</text>
+      <text class="svg-wall-label" x="257.4" y="119.75" text-anchor="middle" transform="rotate(90 257.4 119.75)">MIRRORED-CLOSET · 109.2″ WALL</text>
+      <text class="svg-small halo" x="161" y="31">4.85″ ridge beam</text>
+      <line class="extension" x1="40" y1="219.5" x2="40" y2="238"></line>
+      <line class="extension" x1="242.4" y1="219.5" x2="242.4" y2="238"></line>
+      <line class="dimension" x1="40" y1="234" x2="242.4" y2="234"></line>
+      <text class="svg-dim halo" x="141.2" y="234" text-anchor="middle">202.4″</text>
     </svg>
 
     <div class="diagram-legend" aria-label="Fan blade-plane legend">
@@ -904,26 +905,26 @@
       <div class="drawing-meta">Calculated from fixed wafers perpendicular to each ceiling plane</div>
     </div>
 
-    <svg id="floor-plan-svg" viewBox="0 0 280 236" role="img" aria-labelledby="floor-plan-title floor-plan-desc">
+    <svg id="floor-plan-svg" viewBox="0 0 280 244" role="img" aria-labelledby="floor-plan-title floor-plan-desc">
       <title id="floor-plan-title">Top-down nominal floor lighting coverage</title>
       <desc id="floor-plan-desc">A coverage-count map of the eight Feit downlights at floor level.</desc>
       <defs>
         <clipPath id="floor-room-clip">
-          <rect x="40" y="24" width="200" height="183"></rect>
+          <rect x="40" y="24" width="202.4" height="191.5"></rect>
         </clipPath>
       </defs>
-      <rect class="room-fill" x="40" y="24" width="200" height="183"></rect>
+      <rect class="room-fill" x="40" y="24" width="202.4" height="191.5"></rect>
       <g id="floor-coverage-map" clip-path="url(#floor-room-clip)"></g>
       <g id="floor-plan-grid"></g>
-      <rect class="ridge-beam-plan" x="141.98" y="24" width="5" height="183"></rect>
-      <line class="ridge" x1="144.48" y1="24" x2="144.48" y2="207"></line>
+      <rect class="ridge-beam-plan" x="155.5" y="24" width="4.85" height="191.5"></rect>
+      <line class="ridge" x1="157.92" y1="24" x2="157.92" y2="215.5"></line>
       <g id="floor-plan-lights"></g>
       <g id="floor-plan-fan"></g>
-      <rect class="room-wall" x="40" y="24" width="200" height="183"></rect>
-      <text class="svg-wall-label" x="140" y="15" text-anchor="middle">TV WALL</text>
-      <text class="svg-wall-label" x="140" y="217" text-anchor="middle">OPPOSITE WALL</text>
-      <text class="svg-wall-label" x="25" y="115.5" text-anchor="middle" transform="rotate(-90 25 115.5)">PHOTO-LEFT</text>
-      <text class="svg-wall-label" x="255" y="115.5" text-anchor="middle" transform="rotate(90 255 115.5)">MIRRORED-CLOSET SIDE</text>
+      <rect class="room-wall" x="40" y="24" width="202.4" height="191.5"></rect>
+      <text class="svg-wall-label" x="141.2" y="15" text-anchor="middle">TV WALL</text>
+      <text class="svg-wall-label" x="141.2" y="225.5" text-anchor="middle">OPPOSITE WALL</text>
+      <text class="svg-wall-label" x="25" y="119.75" text-anchor="middle" transform="rotate(-90 25 119.75)">PHOTO-LEFT</text>
+      <text class="svg-wall-label" x="257.4" y="119.75" text-anchor="middle" transform="rotate(90 257.4 119.75)">MIRRORED-CLOSET SIDE</text>
     </svg>
 
     <div class="diagram-legend" aria-label="Floor coverage legend">
@@ -947,29 +948,29 @@
 
     <svg id="section-svg" viewBox="0 0 280 172" role="img" aria-labelledby="section-title section-desc">
       <title id="section-title">Asymmetric vaulted-ceiling cross-section</title>
-      <desc id="section-desc">The 8-foot and 9-foot side walls, exposed ridge beam, two fixed downlights, their beam axes and nominal cones, and the fan blade plane.</desc>
+      <desc id="section-desc">The measured 97-inch and 109.2-inch side walls, exposed ridge beam, two fixed downlights, their beam axes and nominal cones, and the fan blade plane.</desc>
       <defs>
         <clipPath id="section-room-clip">
-          <path d="M 40 152 L 40 56 L 144.48 12 L 240 44 L 240 152 Z"></path>
+          <path d="M 40 152 L 40 55 L 155.5 12.7 L 160.35 12.7 L 242.4 42.8 L 242.4 152 Z"></path>
         </clipPath>
       </defs>
-      <path class="room-fill" d="M 40 152 L 40 56 L 144.48 12 L 240 44 L 240 152 Z"></path>
+      <path class="room-fill" d="M 40 152 L 40 55 L 155.5 12.7 L 160.35 12.7 L 242.4 42.8 L 242.4 152 Z"></path>
       <g id="section-beams" clip-path="url(#section-room-clip)"></g>
-      <path class="wall-line" d="M 40 152 L 40 56"></path>
-      <path class="ceiling-line" d="M 40 56 L 144.48 12 L 240 44"></path>
-      <rect class="ridge-beam" x="141.98" y="13" width="5" height="8"></rect>
-      <path class="wall-line" d="M 240 44 L 240 152"></path>
-      <path class="floor-line" d="M 40 152 L 240 152"></path>
-      <line class="ridge" x1="144.48" y1="12" x2="144.48" y2="152"></line>
+      <path class="wall-line" d="M 40 152 L 40 55"></path>
+      <path class="ceiling-line" d="M 40 55 L 155.5 12.7 L 160.35 12.7 L 242.4 42.8"></path>
+      <rect class="ridge-beam" x="155.5" y="12.7" width="4.85" height="9.8"></rect>
+      <path class="wall-line" d="M 242.4 42.8 L 242.4 152"></path>
+      <path class="floor-line" d="M 40 152 L 242.4 152"></path>
+      <line class="ridge" x1="157.92" y1="12.7" x2="157.92" y2="152"></line>
       <g id="section-lights"></g>
       <g id="section-fan"></g>
-      <text class="svg-wall-label" x="32" y="104" text-anchor="middle" transform="rotate(-90 32 104)">96″ WALL</text>
-      <text class="svg-wall-label" x="248" y="98" text-anchor="middle" transform="rotate(90 248 98)">108″ WALL</text>
-      <text class="svg-dim halo" x="139" y="7" text-anchor="end">140″ CEILING RIDGE</text>
-      <text class="svg-small halo" x="151" y="18">131″ underside</text>
-      <text class="svg-label halo" x="86" y="48" text-anchor="middle">22.84°</text>
-      <text class="svg-label halo" x="193" y="33" text-anchor="middle">18.52°</text>
-      <text class="svg-small halo" x="140" y="160" text-anchor="middle">200″ room width</text>
+      <text class="svg-wall-label" x="32" y="103.5" text-anchor="middle" transform="rotate(-90 32 103.5)">97″ WALL</text>
+      <text class="svg-wall-label" x="250.4" y="97.4" text-anchor="middle" transform="rotate(90 250.4 97.4)">109.2″ WALL</text>
+      <text class="svg-dim halo" x="153" y="7" text-anchor="end">139.3″ CEILING / BEAM TOP</text>
+      <text class="svg-small halo" x="163" y="23">129.5″ underside</text>
+      <text class="svg-label halo" x="91" y="46" text-anchor="middle">20.11°</text>
+      <text class="svg-label halo" x="204" y="34" text-anchor="middle">20.14°</text>
+      <text class="svg-small halo" x="141.2" y="160" text-anchor="middle">202.4″ room width</text>
     </svg>
 
     <div class="diagram-legend" aria-label="Cross-section legend">
@@ -998,18 +999,18 @@
           <feGaussianBlur stdDeviation="5"></feGaussianBlur>
         </filter>
         <clipPath id="night-room-clip">
-          <path d="M 40 152 L 40 56 L 144.48 12 L 240 44 L 240 152 Z"></path>
+          <path d="M 40 152 L 40 55 L 155.5 12.7 L 160.35 12.7 L 242.4 42.8 L 242.4 152 Z"></path>
         </clipPath>
       </defs>
-      <rect class="night-wall" x="40" y="12" width="200" height="140"></rect>
-      <path class="night-floor" d="M 40 152 L 240 152 L 240 166 L 40 166 Z"></path>
+      <rect class="night-wall" x="40" y="12.7" width="202.4" height="139.3"></rect>
+      <path class="night-floor" d="M 40 152 L 242.4 152 L 242.4 166 L 40 166 Z"></path>
       <g id="night-glows" clip-path="url(#night-room-clip)"></g>
-      <path class="night-ceiling" d="M 40 56 L 144.48 12 L 240 44"></path>
-      <rect class="ridge-beam" x="141.98" y="13" width="5" height="8"></rect>
-      <path class="night-ceiling" d="M 40 56 L 40 152 M 240 44 L 240 152"></path>
+      <path class="night-ceiling" d="M 40 55 L 155.5 12.7 L 160.35 12.7 L 242.4 42.8"></path>
+      <rect class="ridge-beam" x="155.5" y="12.7" width="4.85" height="9.8"></rect>
+      <path class="night-ceiling" d="M 40 55 L 40 152 M 242.4 42.8 L 242.4 152"></path>
       <g id="night-rings"></g>
       <g id="night-fan"></g>
-      <text x="140" y="161" text-anchor="middle" fill="#d8d1dc" font-size="3">Conceptual warm perimeter glow — not an illuminance prediction</text>
+      <text x="141.2" y="161" text-anchor="middle" fill="#d8d1dc" font-size="3">Conceptual warm perimeter glow — not an illuminance prediction</text>
     </svg>
 
     <div class="diagram-legend" aria-label="Night-light legend">
@@ -1051,23 +1052,23 @@
       <desc id="tv-wall-desc">A front elevation of the asymmetric vaulted TV wall showing the exposed ridge beam, provisional TV rectangle, and how many nominal downlight beams reach each area.</desc>
       <defs>
         <clipPath id="tv-wall-room-clip">
-          <path d="M 40 152 L 40 56 L 144.48 12 L 240 44 L 240 152 Z"></path>
+          <path d="M 40 152 L 40 55 L 155.5 12.7 L 160.35 12.7 L 242.4 42.8 L 242.4 152 Z"></path>
         </clipPath>
       </defs>
-      <path class="room-fill" d="M 40 152 L 40 56 L 144.48 12 L 240 44 L 240 152 Z"></path>
+      <path class="room-fill" d="M 40 152 L 40 55 L 155.5 12.7 L 160.35 12.7 L 242.4 42.8 L 242.4 152 Z"></path>
       <g id="tv-wall-coverage" clip-path="url(#tv-wall-room-clip)"></g>
-      <path class="wall-line" d="M 40 152 L 40 56"></path>
-      <path class="ceiling-line" d="M 40 56 L 144.48 12 L 240 44"></path>
-      <rect class="ridge-beam" x="141.98" y="13" width="5" height="8"></rect>
-      <path class="wall-line" d="M 240 44 L 240 152"></path>
-      <path class="floor-line" d="M 40 152 L 240 152"></path>
-      <rect class="tv-screen" x="152" y="72" width="47" height="33"></rect>
-      <line class="tv-centerline" x1="175.5" y1="72" x2="175.5" y2="105"></line>
-      <line class="tv-centerline" x1="152" y1="88.5" x2="199" y2="88.5"></line>
-      <text class="svg-wall-label" x="175.5" y="88.5" text-anchor="middle">TV · 47″ × 33″</text>
-      <text class="svg-small halo" x="175.5" y="109" text-anchor="middle">bottom 47″ · top 80″</text>
-      <text class="svg-label halo" x="86" y="48" text-anchor="middle">22.84°</text>
-      <text class="svg-label halo" x="193" y="33" text-anchor="middle">18.52°</text>
+      <path class="wall-line" d="M 40 152 L 40 55"></path>
+      <path class="ceiling-line" d="M 40 55 L 155.5 12.7 L 160.35 12.7 L 242.4 42.8"></path>
+      <rect class="ridge-beam" x="155.5" y="12.7" width="4.85" height="9.8"></rect>
+      <path class="wall-line" d="M 242.4 42.8 L 242.4 152"></path>
+      <path class="floor-line" d="M 40 152 L 242.4 152"></path>
+      <rect class="tv-screen" x="152" y="72" width="49.4" height="33"></rect>
+      <line class="tv-centerline" x1="176.7" y1="72" x2="176.7" y2="105"></line>
+      <line class="tv-centerline" x1="152" y1="88.5" x2="201.4" y2="88.5"></line>
+      <text class="svg-wall-label" x="176.7" y="88.5" text-anchor="middle">TV · 49.4″ × 33″</text>
+      <text class="svg-small halo" x="176.7" y="109" text-anchor="middle">bottom 47″ · top 80″</text>
+      <text class="svg-label halo" x="91" y="46" text-anchor="middle">20.11°</text>
+      <text class="svg-label halo" x="204" y="34" text-anchor="middle">20.14°</text>
     </svg>
 
     <div class="diagram-legend" aria-label="TV-wall coverage legend">
@@ -1117,7 +1118,7 @@
     <article class="note-card">
       <h3>Items to verify before cutting</h3>
       <ul>
-        <li>Laser-check the 140″ peak and both wall heights.</li>
+        <li>Field-check the recorded 139.3″ beam top and both wall heights before cutting.</li>
         <li>Confirm the beam underside, exposed depth, width, and that its top face is concealed at the ridge.</li>
         <li>Measure from the floor to the bottom surface of one stationary fan blade.</li>
         <li>Confirm the 77″ fan-center position by projecting the hub vertically to the floor.</li>
@@ -1149,10 +1150,10 @@
     const beamControl = document.getElementById("beam-control");
     const leftSlope =
       (cfg.ceiling.peakHeight - cfg.ceiling.leftWallHeight) /
-      cfg.ridgeBeam.centerFromLeft;
+      cfg.ridgeBeam.leftFaceFromLeft;
     const rightSlope =
       (cfg.ceiling.peakHeight - cfg.ceiling.rightWallHeight) /
-      (cfg.room.width - cfg.ridgeBeam.centerFromLeft);
+      (cfg.room.width - cfg.ridgeBeam.rightFaceFromLeft);
 
     const svgElement = (name, attributes = {}, text = "") => {
       const node = document.createElementNS(NS, name);
@@ -1162,11 +1163,14 @@
     };
 
     const ceilingHeight = x => {
-      if (x <= cfg.ridgeBeam.centerFromLeft) {
+      if (x <= cfg.ridgeBeam.leftFaceFromLeft) {
         return cfg.ceiling.leftWallHeight + leftSlope * x;
       }
-      return cfg.ceiling.peakHeight -
-        rightSlope * (x - cfg.ridgeBeam.centerFromLeft);
+      if (x >= cfg.ridgeBeam.rightFaceFromLeft) {
+        return cfg.ceiling.peakHeight -
+          rightSlope * (x - cfg.ridgeBeam.rightFaceFromLeft);
+      }
+      return cfg.ceiling.peakHeight;
     };
 
     const roomHeadHeight = x => (
@@ -1443,7 +1447,7 @@
           y: apex[1] - 7,
           "text-anchor": "middle",
           class: "svg-small halo"
-        }, light.side === "left" ? "L2 · 40″ row" : "L6 · 30″ from right"));
+        }, light.side === "left" ? "L2 · 57.75″ row" : "L6 · 30.5″ from right"));
       });
 
       const fanLeft = sectionPoint(cfg.fan.centerX - cfg.fan.radius, fanZ);
@@ -1482,7 +1486,7 @@
       ringsGroup.replaceChildren();
       fanGroup.replaceChildren();
 
-      [40, 170].forEach(x => {
+      [cfg.lights[0].x, cfg.lights[4].x].forEach(x => {
         const point = sectionPoint(x, ceilingHeight(x));
         glowGroup.appendChild(svgElement("circle", {
           cx: point[0], cy: point[1], r: 24, class: "night-glow"
@@ -1593,23 +1597,30 @@
     const renderCoordinateTable = (crossingLights, fanZ, fullBeamAngle) => {
       const body = document.getElementById("coordinate-table-body");
       body.replaceChildren();
+      const rowDistances = cfg.lights
+        .filter(light => light.side === "left")
+        .map(light => `${light.y.toFixed(2)}″`)
+        .join(" · ");
+      const leftX = cfg.lights.find(light => light.side === "left").x;
+      const rightX = cfg.lights.find(light => light.side === "right").x;
+      const rightOffset = cfg.room.width - rightX;
       const groups = [
         {
           numbers: "L1–L4",
           side: `Photo-left / ${cfg.ceiling.leftAngleDegrees.toFixed(2)}°`,
-          horizontal: "40″ from left wall",
-          alongSlope: `${(40 / Math.cos(cfg.ceiling.leftAngleDegrees * Math.PI / 180)).toFixed(1)}″`,
-          y: "22.9″ · 68.6″ · 114.4″ · 160.1″",
-          elevation: `${ceilingHeight(40).toFixed(1)}″`,
+          horizontal: `${leftX.toFixed(2)}″ from left wall`,
+          alongSlope: `${(leftX / Math.cos(cfg.ceiling.leftAngleDegrees * Math.PI / 180)).toFixed(1)}″`,
+          y: rowDistances,
+          elevation: `${ceilingHeight(leftX).toFixed(1)}″`,
           count: [1, 2, 3, 4].filter(number => crossingLights.has(number)).length
         },
         {
           numbers: "L5–L8",
           side: `Mirrored-closet / ${cfg.ceiling.rightAngleDegrees.toFixed(2)}°`,
-          horizontal: "30″ from right wall",
-          alongSlope: `${(30 / Math.cos(cfg.ceiling.rightAngleDegrees * Math.PI / 180)).toFixed(1)}″`,
-          y: "22.9″ · 68.6″ · 114.4″ · 160.1″",
-          elevation: `${ceilingHeight(170).toFixed(1)}″`,
+          horizontal: `${rightOffset.toFixed(1)}″ from right wall`,
+          alongSlope: `${(rightOffset / Math.cos(cfg.ceiling.rightAngleDegrees * Math.PI / 180)).toFixed(1)}″`,
+          y: rowDistances,
+          elevation: `${ceilingHeight(rightX).toFixed(1)}″`,
           count: [5, 6, 7, 8].filter(number => crossingLights.has(number)).length
         }
       ];

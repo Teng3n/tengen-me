@@ -1,0 +1,4 @@
+-- Intentionally empty. This migration number was used while the private owner
+-- database was being prepared. The final public schema, including
+-- billed_electric_cost, is declared idempotently in migration 0002; household
+-- bill values remain private production data.

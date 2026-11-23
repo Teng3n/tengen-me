@@ -44,6 +44,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
         <nav className="primary-nav" aria-label="Primary navigation">
           <Link href="/servers">Servers</Link>
           <Link href="/projects">Projects</Link>
+          <Link href="/gifts">Gifts</Link>
           <Link href="/about">About</Link>
         </nav>
         <a className="login-link" href="/admin"><span className="status-dot" /> Owner login</a>

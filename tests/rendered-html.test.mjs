@@ -344,35 +344,29 @@ test("about and projects pages render their presentation details", async () => {
   assert.doesNotMatch(projectsHtml, /Vitality Guild Tools/);
 });
 
-test("unlinked office diagram serves the expanded four-view fixture study", async () => {
+test("unlinked office diagram serves the confirmed RLS6 fixture study", async () => {
   const response = await render("/office-room-diagram");
   assert.equal(response.status, 200);
   assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i);
 
   const html = await response.text();
-  assert.match(html, /Revision 10/);
+  assert.match(html, /Revision 12/);
   assert.match(html, /pitchPositionsDegrees: \{ 1: 27, 2: 18, 3: 18, 4: 18 \}/);
-  assert.match(html, /29\.1″ overall height/);
-  assert.match(html, /HLBSL609FS5/);
-  assert.match(html, /A1-HLBSL/);
-  assert.match(html, /A2-HLBSL/);
+  assert.match(html, /RLS6159FS1EWHDMR/);
   assert.match(html, /A1-RLS6/);
   assert.match(html, /A2-RLS6/);
-  assert.match(html, /B-HLBSL/);
   assert.match(html, /B-RLS6/);
-  assert.match(html, /C-HLBSL/);
   assert.match(html, /C-RLS6/);
-  assert.match(html, /D-HLBSL/);
   assert.match(html, /D-RLS6/);
+  assert.doesNotMatch(html, /HLBSL/i);
+  assert.doesNotMatch(html, /29\.1″|93\.6″|100\.7″/);
   assert.match(html, /id="installer-plan-heading"/);
   assert.match(html, /68″ LIGHT–LIGHT/);
   assert.match(html, /80\.6″ LIGHT–LIGHT/);
   assert.match(html, /34\.3″ from each side wall/);
-  assert.equal((html.match(/data-diagram-legend=/g) ?? []).length, 10);
+  assert.equal((html.match(/data-diagram-legend=/g) ?? []).length, 5);
   for (const diagram of [
-    "A1-HLBSL", "A2-HLBSL", "A1-RLS6", "A2-RLS6",
-    "B-HLBSL", "B-RLS6", "C-HLBSL", "C-RLS6",
-    "D-HLBSL", "D-RLS6",
+    "A1-RLS6", "A2-RLS6", "B-RLS6", "C-RLS6", "D-RLS6",
   ]) {
     assert.match(html, new RegExp(`data-diagram-legend="${diagram}"`));
   }
@@ -382,7 +376,7 @@ test("unlinked office diagram serves the expanded four-view fixture study", asyn
   assert.doesNotMatch(html, /<section class="legend main-page-only"/);
   assert.match(html, /href="\/office-room-diagram-details"/);
   assert.match(html, /mounting plane flush and parallel to the Bathroom wall/);
-  assert.match(html, /How the corrected fan drop changes the wafer-light result/);
+  assert.match(html, /Confirmed RLS6 result at the 95\.6″ fan blade plane/);
   assert.doesNotMatch(html, /MONITOR — PROVISIONAL/);
   assert.doesNotMatch(html, /Desktop projection above floor/);
   assert.doesNotMatch(html, /80″ run · starts at X=25″/);
@@ -397,8 +391,8 @@ test("office diagram detailed analysis is served on its own hidden route", async
   const html = await response.text();
   assert.match(html, /<body class="details-page">/);
   assert.match(html, /Office Room — Detailed Lighting Analysis/);
-  assert.match(html, /E · How the corrected fan drop/);
-  assert.match(html, /F · Fixture comparison/);
+  assert.match(html, /E · Confirmed RLS6 result/);
+  assert.doesNotMatch(html, /Fixture comparison|sensitivity/i);
 });
 
 test("unlinked master room diagram serves the vaulted-ceiling lighting study", async () => {
@@ -418,12 +412,12 @@ test("unlinked master room diagram serves the vaulted-ceiling lighting study", a
   assert.match(html, /id="tv-wall-heading"/);
   assert.match(html, /id="installer-plan-heading"/);
   assert.match(html, /id="analysis-heading"/);
-  assert.match(html, /22\.84/);
-  assert.match(html, /18\.52/);
-  assert.match(html, /exposed beam underside 131/);
+  assert.match(html, /20\.11/);
+  assert.match(html, /20\.14/);
+  assert.match(html, /beam underside 129\.5/);
   assert.match(html, /beam top is concealed/i);
-  assert.match(html, /130″ LIGHT–LIGHT/);
-  assert.match(html, /22⅞″/);
+  assert.match(html, /114\.15″ LIGHT–LIGHT/);
+  assert.match(html, /57\.75,23\.94/);
   assert.match(html, /Low likelihood/);
   assert.match(html, /reflects only the wall behind the bed/i);
   assert.doesNotMatch(html, /href=["']\/master-room-diagram["']/i);
@@ -439,94 +433,60 @@ test("separate centered-plane master room mock-up compares fan, floor, and side-
   assert.match(html, /Centered Ceiling-Plane Lighting Alternative/);
   assert.match(html, /id="centered-comparison-heading"/);
   assert.match(html, /id="sidewall-heading"/);
-  assert.match(html, /x: 52\.24/);
-  assert.match(html, /x: 152\.24/);
-  assert.match(html, /100\.00″/);
-  assert.match(html, /Current 40″ \/ 30″ positions/);
+  assert.match(html, /x: 58\.96/);
+  assert.match(html, /x: 160\.16/);
+  assert.match(html, /101\.20″/);
+  assert.match(html, /Current 57\.75″ \/ 30\.5″ positions/);
   assert.match(html, /Centered-layout warning/);
   assert.match(html, /Side-wall result/);
   assert.match(html, /aria-labelledby="installer-plan-heading" hidden/);
   assert.doesNotMatch(html, /href=["']\/master-room-diagram-centered["']/i);
 });
 
-test("office diagram geometry reflects the corrected fan drop", () => {
+test("office diagram geometry reflects the confirmed blade plane and RLS6 aim", () => {
   const config = diagramConfig();
   const slope = (config.ceiling.highHeight - config.ceiling.lowHeight) / config.ceiling.slopeAcross;
   const fanCeiling = config.ceiling.highHeight - slope * config.fan.center.x;
-  const axisLength = Math.hypot(slope, 1);
-  const waferAxis = { x: -slope / axisLength, y: 0, z: -1 / axisLength };
   const slopeAngle = Math.atan(slope) * 180 / Math.PI;
   const rlsAxis = (light) => {
     const angle = (
-      config.baselineLights.pitchPositionsDegrees[light.number] - slopeAngle
+      config.lights.pitchPositionsDegrees[light.number] - slopeAngle
     ) * Math.PI / 180;
     return { x: Math.sin(angle), y: 0, z: -Math.cos(angle) };
   };
 
   assert.equal(fanCeiling, 122.7);
-  assert.equal(fanCeiling - config.fan.analysisDropFromCeiling, 93.6);
-  assert.equal(fanCeiling - config.fan.previousAssumedBladeDrop, 100.7);
+  assert.equal(config.fan.bladePlaneHeight, 95.6);
+  assert.ok(Math.abs(fanCeiling - config.fan.bladePlaneHeight - 27.1) < 1e-9);
 
-  const oldWaferOverlap = sampledFanCoverage(
+  const confirmedRlsOverlap = sampledFanCoverage(
     config,
-    config.fan.previousAssumedBladeDrop,
+    fanCeiling - config.fan.bladePlaneHeight,
     config.lights,
-    waferAxis,
-  );
-  const correctedWaferOverlap = sampledFanCoverage(
-    config,
-    config.fan.analysisDropFromCeiling,
-    config.lights,
-    waferAxis,
-  );
-  const correctedRlsOverlap = sampledFanCoverage(
-    config,
-    config.fan.analysisDropFromCeiling,
-    config.baselineLights,
     rlsAxis,
   );
 
-  assert.ok(oldWaferOverlap > 18 && oldWaferOverlap < 20);
-  assert.ok(correctedWaferOverlap > 66 && correctedWaferOverlap < 68);
-  assert.equal(correctedRlsOverlap, 0);
+  assert.equal(confirmedRlsOverlap, 0);
 
-  const waferFloor = sampledRoomCoverage(config, config.lights, waferAxis);
-  const rlsFloor = sampledRoomCoverage(config, config.baselineLights, rlsAxis);
-  assert.equal(waferFloor.mainPercent, 100);
-  assert.equal(waferFloor.fieldPercent, 100);
+  const rlsFloor = sampledRoomCoverage(config, config.lights, rlsAxis);
   assert.ok(rlsFloor.mainPercent > 98 && rlsFloor.mainPercent < 99);
   assert.equal(rlsFloor.fieldPercent, 100);
 
-  const waferWindowWall = sampledWindowWallCoverage(
-    config, config.lights, waferAxis,
-  );
   const rlsWindowWall = sampledWindowWallCoverage(
-    config, config.baselineLights, rlsAxis,
+    config, config.lights, rlsAxis,
   );
-  assert.ok(waferWindowWall.mainPercent > 65 && waferWindowWall.mainPercent < 67);
-  assert.ok(waferWindowWall.fieldPercent > 88 && waferWindowWall.fieldPercent < 90);
   assert.ok(rlsWindowWall.mainPercent > 11 && rlsWindowWall.mainPercent < 12);
   assert.ok(rlsWindowWall.fieldPercent > 59 && rlsWindowWall.fieldPercent < 61);
 
-  const waferBathroomWall = sampledBathroomWallCoverage(
-    config, config.lights, waferAxis,
-  );
   const rlsBathroomWall = sampledBathroomWallCoverage(
-    config, config.baselineLights, rlsAxis,
+    config, config.lights, rlsAxis,
   );
-  assert.ok(waferBathroomWall.mainPercent > 82 && waferBathroomWall.mainPercent < 84);
-  assert.ok(waferBathroomWall.fieldPercent > 94 && waferBathroomWall.fieldPercent < 96);
   assert.ok(rlsBathroomWall.mainPercent > 25 && rlsBathroomWall.mainPercent < 26);
   assert.ok(rlsBathroomWall.fieldPercent > 50 && rlsBathroomWall.fieldPercent < 52);
 
-  const waferMonitor = sampledMonitorCoverage(
-    config, config.lights, waferAxis,
-  );
   const rlsMonitor = sampledMonitorCoverage(
-    config, config.baselineLights, rlsAxis,
+    config, config.lights, rlsAxis,
   );
-  assert.equal(waferMonitor.mainPercent, 100);
-  assert.equal(waferMonitor.fieldPercent, 100);
   assert.ok(rlsMonitor.mainPercent > 13 && rlsMonitor.mainPercent < 14);
   assert.equal(rlsMonitor.fieldPercent, 100);
 });

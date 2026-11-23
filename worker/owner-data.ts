@@ -65,7 +65,11 @@ export async function recordStatusHistory(db: OwnerDatabase | undefined, snapsho
       snapshot.observedAt,
       snapshot.receivedAt,
     ),
-    db.prepare("DELETE FROM server_status_history WHERE datetime(received_at) < datetime('now', '-30 days')"),
+    db.prepare(
+      `DELETE FROM server_status_history
+       WHERE server_slug = ?
+         AND received_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-30 days')`,
+    ).bind(snapshot.serverSlug),
     db.prepare("DELETE FROM owner_audit_log WHERE created_at < datetime('now', '-90 days')"),
     db.prepare("UPDATE owner_actions SET status = 'expired', completed_at = CURRENT_TIMESTAMP, result = 'Host did not collect the action in time' WHERE status = 'queued' AND requested_at < datetime('now', '-10 minutes')"),
   ]);

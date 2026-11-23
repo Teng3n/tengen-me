@@ -34,6 +34,8 @@ yarn-error.log*
 
 # vercel
 .vercel
+/output/
+/tmp/
 
 # typescript
 next-env.d.ts
