@@ -1,0 +1,16 @@
+{
+  "name": "blizzard-firefox-dry-run",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "install:browser": "playwright install firefox",
+    "setup": "node run.mjs setup",
+    "dry-run": "node run.mjs dry-run",
+    "test-shirt": "node run.mjs test-shirt",
+    "test": "node --test test/*.check.mjs",
+    "test:browser": "node browser-smoke.mjs"
+  },
+  "dependencies": { "playwright": "1.63.0" }
+}

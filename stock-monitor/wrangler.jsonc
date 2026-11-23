@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "blizzard-forever-stock-monitor",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-14",
+  "workers_dev": true,
+  "durable_objects": {
+    "bindings": [{ "name": "REMINDERS", "class_name": "StockReminders" }, { "name": "CHECKER", "class_name": "StockChecker" }]
+  },
+  "migrations": [{ "tag": "v1-reminders", "new_sqlite_classes": ["StockReminders"] }, { "tag": "v2-checker", "new_sqlite_classes": ["StockChecker"] }],
+  "vars": {
+    "PUSH_PROVIDER": "telegram"
+  },
+  "triggers": {
+    "crons": ["*/2 * * * *"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "blizzard-forever-stock-monitor",
+      "database_id": "bfec4043-dbf0-424b-8f65-e10853f75937",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "manifest_version": 2,
+  "name": "Forever Edition — Direct Alert Helper",
+  "version": "0.2.4",
+  "description": "Receives hosted stock signals and opens one checkout tab once. Never submits payment.",
+  "browser_specific_settings": { "gecko": { "id": "forever-queue-helper@tengen.me", "strict_min_version": "115.0" } },
+  "permissions": ["storage", "tabs", "https://blizzard-forever-stock-monitor.teng3n.workers.dev/*"],
+  "background": { "scripts": ["policy.js", "direct-policy.js", "direct-background.js"], "persistent": true },
+  "browser_action": { "default_title": "Forever Edition Direct Helper" },
+  "content_security_policy": "script-src 'self'; object-src 'none'; connect-src wss://blizzard-forever-stock-monitor.teng3n.workers.dev"
+}

@@ -1,0 +1,8 @@
+node_modules/
+.dev.vars
+.env
+.helper.env
+.wrangler/
+dist/
+coverage/
+*.pdf

@@ -1,0 +1,26 @@
+{
+  "name": "blizzard-forever-stock-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "wrangler dev --config ./wrangler.jsonc --test-scheduled",
+    "deploy": "wrangler deploy --config ./wrangler.jsonc",
+    "build": "wrangler deploy --config ./wrangler.jsonc --dry-run --outdir dist",
+    "setup:notifications": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Prepare-Notifications.ps1",
+    "setup:healthchecks": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Prepare-Healthchecks.ps1",
+    "db:create": "wrangler d1 create blizzard-forever-stock-monitor",
+    "db:migrate:local": "wrangler d1 migrations apply blizzard-forever-stock-monitor --local --config ./wrangler.jsonc",
+    "db:migrate:remote": "wrangler d1 migrations apply blizzard-forever-stock-monitor --remote --config ./wrangler.jsonc",
+    "logs": "wrangler tail --config ./wrangler.jsonc"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20260914.1",
+    "typescript": "7.0.2",
+    "vitest": "5.0.0",
+    "wrangler": "4.131.2"
+  }
+}
