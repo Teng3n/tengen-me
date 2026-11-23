@@ -511,7 +511,7 @@ async function loadElectricityAnalytics(
   );
   const previousBillKwh = previousStoredBill?.delivered_kwh || fallbackCycleTotals.at(-1)!.kwh;
   const previousBillDays = previousStoredBill
-    ? Math.max(1, inclusiveDays(previousStoredBill.period_start, previousStoredBill.period_end))
+    ? Math.max(1, inclusiveDays(previousStoredBill.period_start, previousStoredBill.period_end) - 1)
     : inclusiveDays(fallbackCycleTotals.at(-1)!.start, fallbackCycleTotals.at(-1)!.end);
   const previousYearBillKwh = previousYearStoredBill?.delivered_kwh
     || previousYearFallbackCycle?.kwh
@@ -736,14 +736,18 @@ async function loadElectricityAnalytics(
       daysRemaining,
       totalDays,
       usageToDateKwh: round(storedCurrentBill ? cycleKwh : usageToDateKwh),
-      averageDailyKwh: round(cycleKwh / Math.max(1, storedCurrentBill ? totalDays : daysElapsed)),
+      averageDailyKwh: round(
+        storedCurrentBill
+          ? cycleKwh / totalDays
+          : usageToDateKwh / Math.max(1, daysElapsed),
+      ),
       projectedKwh: round(cycleKwh),
       previousBillKwh: round(previousBillKwh),
       previousBillAverageDailyKwh: round(previousBillKwh / previousBillDays),
       previousYearBillKwh: round(previousYearBillKwh),
       projectedVsPreviousBillPercent: round(projectionVsPreviousBillPercent, 1),
       projectedVsPreviousYearPercent: round(((cycleKwh / previousYearBillKwh) - 1) * 100, 1),
-      usageToDateVsPreviousBillPercent: round(((cycleKwh / previousBillKwh) - 1) * 100, 1),
+      usageToDateVsPreviousBillPercent: round((((storedCurrentBill ? cycleKwh : usageToDateKwh) / previousBillKwh) - 1) * 100, 1),
       risk,
       riskLabel: storedCurrentBill ? "Final bill" : risk === "high" ? "Likely much higher" : risk === "elevated" ? "Trending higher" : "Near recent range",
     },
