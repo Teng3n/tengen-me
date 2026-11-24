@@ -172,11 +172,11 @@ export function GiftList() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={gift.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
                 </a>
-              ) : null}
+              ) : <div className="gift-card-image-placeholder">Image coming soon</div>}
               <div className="gift-card-copy">
                 <h3>{gift.title}</h3>
-                <p className="gift-price">{gift.priceCents === null ? "Price varies" : priceFormatter.format(gift.priceCents / 100)}</p>
                 {gift.note ? <p className="gift-note">{gift.note}</p> : null}
+                <p className="gift-price">{gift.priceCents === null ? "Price varies" : priceFormatter.format(gift.priceCents / 100)}</p>
               </div>
               <div className="gift-card-actions">
                 <a href={gift.url} target="_blank" rel="noreferrer">View at retailer</a>

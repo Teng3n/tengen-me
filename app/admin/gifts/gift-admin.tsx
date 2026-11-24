@@ -352,11 +352,11 @@ export function GiftAdmin() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={gift.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
                 </a>
-              ) : <div className="gift-admin-image-placeholder">No image selected</div>}
+              ) : <div className="gift-card-image-placeholder">No image selected</div>}
               <div className="gift-card-copy">
                 <h3>{gift.title}</h3>
-                <p className="gift-price">{gift.price ? priceFormatter.format(Number(gift.price)) : "Price varies"}</p>
                 {gift.note ? <p className="gift-note">{gift.note}</p> : null}
+                <p className="gift-price">{gift.price ? priceFormatter.format(Number(gift.price)) : "Price varies"}</p>
               </div>
               <div className="gift-card-actions">
                 <button type="button" onClick={() => { setEditorKey(gift.id); setError(null); setNotice(null); }}>Edit</button>
