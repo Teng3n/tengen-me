@@ -118,8 +118,8 @@ function parseGiftInput(value: unknown): GiftInput | { error: string } {
   if (url.protocol !== "https:" && url.protocol !== "http:") return { error: "Retailer links must use HTTP or HTTPS" };
   if (priceCents === undefined) return { error: "Price must be blank or a positive dollar amount" };
   if (imageUrl === undefined) return { error: "Image must be blank or a valid HTTP or HTTPS link" };
-  if (!Number.isInteger(body.priority) || Number(body.priority) < 1 || Number(body.priority) > 3) {
-    return { error: "Priority must be nice-to-have, would-love, or most-wanted" };
+  if (!Number.isInteger(body.priority) || Number(body.priority) < 1 || Number(body.priority) > 5) {
+    return { error: "Priority must be a whole number from 1 to 5" };
   }
   if (note.length > 500) return { error: "Notes must be 500 characters or fewer" };
   if (typeof body.active !== "boolean") return { error: "Visibility is required" };
@@ -150,7 +150,7 @@ export async function handlePublicGiftsGet(env: GiftApiEnv) {
        FROM gift_ideas AS gifts
        LEFT JOIN gift_reservations AS reservations ON reservations.gift_id = gifts.id
        WHERE gifts.active = 1
-       ORDER BY gifts.priority DESC, gifts.created_at DESC`,
+       ORDER BY gifts.priority ASC, gifts.created_at DESC`,
     ).all<PublicGiftRow>();
     return json({ gifts: result.results.map(serializePublicGift) });
   } catch {
@@ -214,7 +214,7 @@ export async function handleAdminGiftsGet(env: GiftApiEnv) {
     const result = await env.OWNER_DB.prepare(
       `SELECT id, title, url, image_url, price_cents, priority, note, active, created_at, updated_at
        FROM gift_ideas
-       ORDER BY active DESC, priority DESC, created_at DESC`,
+       ORDER BY active DESC, priority ASC, created_at DESC`,
     ).all<GiftRow>();
     return json({ gifts: result.results.map(serializeGift) });
   } catch {

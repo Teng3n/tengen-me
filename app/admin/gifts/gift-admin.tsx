@@ -48,10 +48,27 @@ const emptyGift: EditableGift = {
   url: "",
   imageUrl: "",
   price: "",
-  priority: 2,
+  priority: 3,
   note: "",
   active: true,
 };
+
+const priorityOptions = [1, 2, 3, 4, 5] as const;
+const priceFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+
+function priorityLabel(priority: number) {
+  if (priority === 1) return "Priority 1 — highest";
+  if (priority === 5) return "Priority 5 — lowest";
+  return `Priority ${priority}`;
+}
+
+function retailerName(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "Retailer";
+  }
+}
 
 function toDraft(gift: Gift): GiftDraft {
   return {
@@ -174,11 +191,30 @@ function ProductLookup({ lookupKey, draft, state, onChange, onInspect }: {
   );
 }
 
+function GiftEditorFields({ lookupKey, draft, state, onChange, onInspect }: {
+  lookupKey: string;
+  draft: EditableGift;
+  state?: LookupState;
+  onChange: (change: Partial<EditableGift>) => void;
+  onInspect: () => void;
+}) {
+  return (
+    <div className="gift-editor-form">
+      <label className="gift-field gift-field-wide"><span>Gift name</span><input required minLength={2} maxLength={120} value={draft.title} onChange={(event) => onChange({ title: event.target.value })} placeholder="e.g. Audeze Maxwell 2 headset" /></label>
+      <ProductLookup lookupKey={lookupKey} draft={draft} state={state} onChange={onChange} onInspect={onInspect} />
+      <label className="gift-field"><span>Price</span><div className="gift-price-input"><b>$</b><input inputMode="decimal" min="0" step="0.01" type="number" value={draft.price} onChange={(event) => onChange({ price: event.target.value })} placeholder="0.00" /></div></label>
+      <label className="gift-field"><span>Priority</span><select value={draft.priority} onChange={(event) => onChange({ priority: Number(event.target.value) })}>{priorityOptions.map((priority) => <option value={priority} key={priority}>{priorityLabel(priority)}</option>)}</select></label>
+      <label className="gift-field gift-field-wide"><span>Notes</span><textarea maxLength={500} value={draft.note} onChange={(event) => onChange({ note: event.target.value })} placeholder="Color, size, model, or anything else that matters" /></label>
+    </div>
+  );
+}
+
 export function GiftAdmin() {
   const [gifts, setGifts] = useState<GiftDraft[]>([]);
   const [newGift, setNewGift] = useState<EditableGift>(emptyGift);
   const [lookups, setLookups] = useState<Record<string, LookupState>>({});
   const [loading, setLoading] = useState(true);
+  const [editorKey, setEditorKey] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -245,6 +281,7 @@ export function GiftAdmin() {
       setLookups((current) => ({ ...current, new: {} }));
       setNotice("Gift idea added to the list.");
       await loadGifts();
+      setEditorKey(null);
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Gift idea could not be added");
     } finally {
@@ -262,6 +299,7 @@ export function GiftAdmin() {
       if (!response.ok) throw new Error(body.error || "Gift idea could not be saved");
       setNotice(`${gift.title} saved.`);
       await loadGifts();
+      setEditorKey(null);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Gift idea could not be saved");
     } finally {
@@ -269,47 +307,101 @@ export function GiftAdmin() {
     }
   }
 
+  const editingGift = editorKey && editorKey !== "new"
+    ? gifts.find((gift) => gift.id === editorKey)
+    : undefined;
+
+  function closeEditor() {
+    if (editorKey === "new") {
+      setNewGift(emptyGift);
+      setLookups((current) => ({ ...current, new: {} }));
+    } else if (editorKey) {
+      void loadGifts();
+    }
+    setEditorKey(null);
+    setError(null);
+  }
+
   return (
     <div className="gift-admin">
       <nav className="gift-admin-bar" aria-label="Gift registry links"><a href="/admin">Owner dashboard</a><a href="/gifts" target="_blank" rel="noreferrer">Open public list</a></nav>
 
-      <section className="gift-admin-create" aria-labelledby="gift-create-heading">
-        <div className="gift-admin-section-heading"><div><p className="section-kicker">New idea</p><h2 id="gift-create-heading">Add from any retailer.</h2></div><p>Paste a product link, pull its details, then choose the right image and price.</p></div>
-        <form onSubmit={createGift} className="gift-editor-form">
-          <label className="gift-field gift-field-wide"><span>Gift name</span><input required minLength={2} maxLength={120} value={newGift.title} onChange={(event) => setNewGift({ ...newGift, title: event.target.value })} placeholder="e.g. Audeze Maxwell 2 headset" /></label>
-          <ProductLookup lookupKey="new" draft={newGift} state={lookups.new} onChange={(change) => setNewGift((current) => ({ ...current, ...change }))} onInspect={() => void inspectLink("new", newGift)} />
-          <label className="gift-field"><span>Price</span><div className="gift-price-input"><b>$</b><input inputMode="decimal" min="0" step="0.01" type="number" value={newGift.price} onChange={(event) => setNewGift({ ...newGift, price: event.target.value })} placeholder="0.00" /></div></label>
-          <label className="gift-field"><span>Priority</span><select value={newGift.priority} onChange={(event) => setNewGift({ ...newGift, priority: Number(event.target.value) })}><option value={3}>Most wanted</option><option value={2}>Would love</option><option value={1}>Nice to have</option></select></label>
-          <label className="gift-field gift-field-wide"><span>Notes</span><textarea maxLength={500} value={newGift.note} onChange={(event) => setNewGift({ ...newGift, note: event.target.value })} placeholder="Color, size, model, or anything else that matters" /></label>
-          <button className="gift-admin-primary" type="submit" disabled={pendingId === "new"}>{pendingId === "new" ? "Adding…" : "Add gift idea"}</button>
-        </form>
-      </section>
-
-      <div className="gift-admin-feedback" aria-live="polite">{error ? <p className="gift-inline-error" role="alert">{error}</p> : null}{notice ? <p className="gift-inline-success">{notice}</p> : null}</div>
-
       <section className="gift-admin-existing" aria-labelledby="gift-existing-heading">
-        <div className="gift-admin-section-heading"><div><p className="section-kicker">Current list</p><h2 id="gift-existing-heading">Edit what shoppers see.</h2></div><p>Reservations stay hidden here so the surprise remains intact.</p></div>
+        <div className="gift-admin-section-heading">
+          <div><p className="section-kicker">Gift editor</p><h2 id="gift-existing-heading">Your current list.</h2></div>
+          <div className="gift-admin-heading-actions">
+            <p>Reservations stay hidden here so the surprise remains intact.</p>
+            <button type="button" onClick={() => { setNewGift(emptyGift); setEditorKey("new"); setError(null); setNotice(null); }}>Add New</button>
+          </div>
+        </div>
+
+        <div className="gift-admin-feedback" aria-live="polite">{error ? <p className="gift-inline-error" role="alert">{error}</p> : null}{notice ? <p className="gift-inline-success">{notice}</p> : null}</div>
         {loading ? <div className="gift-loading"><span /> Reading gift ideas…</div> : null}
-        {!loading && !gifts.length ? <div className="gift-empty-state"><p>No gift ideas yet.</p></div> : null}
-        <div className="gift-admin-list">
+        {!loading && !gifts.length ? <div className="gift-empty-state"><p>No gift ideas yet.</p><button type="button" onClick={() => setEditorKey("new")}>Add the first one</button></div> : null}
+
+        <div className="gift-admin-card-grid">
           {gifts.map((gift) => (
-            <article className={!gift.active ? "gift-editor-hidden" : undefined} key={gift.id}>
-              <div className="gift-editor-title-row"><strong>{gift.title || "Untitled gift"}</strong><span>{gift.active ? "Published" : "Hidden"}</span></div>
-              <div className="gift-editor-form">
-                <label className="gift-field gift-field-wide"><span>Gift name</span><input required minLength={2} maxLength={120} value={gift.title} onChange={(event) => updateDraft(gift.id, { title: event.target.value })} /></label>
-                <ProductLookup lookupKey={gift.id} draft={gift} state={lookups[gift.id]} onChange={(change) => updateDraft(gift.id, change)} onInspect={() => void inspectLink(gift.id, gift)} />
-                <label className="gift-field"><span>Price</span><div className="gift-price-input"><b>$</b><input inputMode="decimal" min="0" step="0.01" type="number" value={gift.price} onChange={(event) => updateDraft(gift.id, { price: event.target.value })} placeholder="0.00" /></div></label>
-                <label className="gift-field"><span>Priority</span><select value={gift.priority} onChange={(event) => updateDraft(gift.id, { priority: Number(event.target.value) })}><option value={3}>Most wanted</option><option value={2}>Would love</option><option value={1}>Nice to have</option></select></label>
-                <label className="gift-field gift-field-wide"><span>Notes</span><textarea maxLength={500} value={gift.note} onChange={(event) => updateDraft(gift.id, { note: event.target.value })} /></label>
+            <article className={`gift-card gift-admin-card${!gift.active ? " gift-admin-card-hidden" : ""}`} key={gift.id}>
+              <div className="gift-card-topline">
+                <span className={`gift-priority gift-priority-${gift.priority}`}>Priority {gift.priority}</span>
+                <span>{gift.active ? retailerName(gift.url) : `Hidden · ${retailerName(gift.url)}`}</span>
               </div>
-              <div className="gift-editor-footer">
-                <label className="gift-visibility-toggle"><input type="checkbox" checked={gift.active} onChange={(event) => updateDraft(gift.id, { active: event.target.checked })} /><span>Show on /gifts</span></label>
-                <div><a href={gift.url} target="_blank" rel="noreferrer">Check retailer link</a><button type="button" onClick={() => void saveGift(gift)} disabled={pendingId === gift.id}>{pendingId === gift.id ? "Saving…" : "Save changes"}</button></div>
+              {gift.imageUrl ? (
+                <a className="gift-card-image" href={gift.url} target="_blank" rel="noreferrer" aria-label={`View ${gift.title} at the retailer`}>
+                  {/* Retailer image hosts are arbitrary, so they cannot use a fixed Next Image allowlist. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={gift.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                </a>
+              ) : <div className="gift-admin-image-placeholder">No image selected</div>}
+              <div className="gift-card-copy">
+                <h3>{gift.title}</h3>
+                <p className="gift-price">{gift.price ? priceFormatter.format(Number(gift.price)) : "Price varies"}</p>
+                {gift.note ? <p className="gift-note">{gift.note}</p> : null}
+              </div>
+              <div className="gift-card-actions">
+                <button type="button" onClick={() => { setEditorKey(gift.id); setError(null); setNotice(null); }}>Edit</button>
+                <a href={gift.url} target="_blank" rel="noreferrer">View at retailer</a>
               </div>
             </article>
           ))}
         </div>
       </section>
+
+      {editorKey === "new" ? (
+        <div className="gift-admin-modal" role="presentation">
+          <section className="gift-admin-dialog" role="dialog" aria-modal="true" aria-labelledby="gift-create-heading">
+            <div className="gift-admin-dialog-heading">
+              <div><p className="section-kicker">New gift</p><h2 id="gift-create-heading">Add from any retailer.</h2></div>
+              <button type="button" onClick={closeEditor} aria-label="Close gift editor">Close</button>
+            </div>
+            <form onSubmit={createGift}>
+              <GiftEditorFields lookupKey="new" draft={newGift} state={lookups.new} onChange={(change) => setNewGift((current) => ({ ...current, ...change }))} onInspect={() => void inspectLink("new", newGift)} />
+              <div className="gift-editor-footer">
+                <label className="gift-visibility-toggle"><input type="checkbox" checked={newGift.active} onChange={(event) => setNewGift((current) => ({ ...current, active: event.target.checked }))} /><span>Show on /gifts</span></label>
+                <div><button className="gift-editor-cancel" type="button" onClick={closeEditor}>Cancel</button><button type="submit" disabled={pendingId === "new"}>{pendingId === "new" ? "Adding…" : "Add gift idea"}</button></div>
+              </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
+
+      {editingGift ? (
+        <div className="gift-admin-modal" role="presentation">
+          <section className="gift-admin-dialog" role="dialog" aria-modal="true" aria-labelledby="gift-edit-heading">
+            <div className="gift-admin-dialog-heading">
+              <div><p className="section-kicker">Edit gift</p><h2 id="gift-edit-heading">{editingGift.title}</h2></div>
+              <button type="button" onClick={closeEditor} aria-label="Close gift editor">Close</button>
+            </div>
+            <form onSubmit={(event) => { event.preventDefault(); void saveGift(editingGift); }}>
+              <GiftEditorFields lookupKey={editingGift.id} draft={editingGift} state={lookups[editingGift.id]} onChange={(change) => updateDraft(editingGift.id, change)} onInspect={() => void inspectLink(editingGift.id, editingGift)} />
+              <div className="gift-editor-footer">
+                <label className="gift-visibility-toggle"><input type="checkbox" checked={editingGift.active} onChange={(event) => updateDraft(editingGift.id, { active: event.target.checked })} /><span>Show on /gifts</span></label>
+                <div><a href={editingGift.url} target="_blank" rel="noreferrer">Check retailer link</a><button className="gift-editor-cancel" type="button" onClick={closeEditor}>Cancel</button><button type="submit" disabled={pendingId === editingGift.id}>{pendingId === editingGift.id ? "Saving…" : "Save changes"}</button></div>
+              </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }

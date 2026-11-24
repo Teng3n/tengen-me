@@ -81,6 +81,14 @@ test("gift registry page and protected editor render", async () => {
   const deniedResponse = await callWorker("/admin/gifts", { headers: { accept: "text/html" } });
   assert.equal(deniedResponse.status, 200);
   assert.match(await deniedResponse.text(), /Gift editing is limited to the home network/);
+
+  const allowedResponse = await callWorker("/admin/gifts", {
+    headers: { accept: "text/html", "cf-connecting-ip": "172.115.212.10" },
+  }, { OWNER_DB: createGiftDb() });
+  assert.equal(allowedResponse.status, 200);
+  const allowedHtml = await allowedResponse.text();
+  assert.match(allowedHtml, /Add New/);
+  assert.match(allowedHtml, /Your current list/);
 });
 
 test("public gift reservations are anonymous and can be released only with their browser token", async () => {
@@ -136,6 +144,38 @@ test("gift mutations reject cross-origin requests", async () => {
     headers: { origin: "https://attacker.example" },
   }, { OWNER_DB: createGiftDb() });
   assert.equal(response.status, 403);
+});
+
+test("gift editor accepts priorities one through five and rejects values outside the scale", async () => {
+  const gift = {
+    title: "Priority test gift",
+    url: "https://retailer.example.com/gift",
+    imageUrl: null,
+    priceCents: 2500,
+    priority: 5,
+    note: "",
+    active: true,
+  };
+  const accepted = await callWorker("/admin/api/gifts", {
+    method: "POST",
+    headers: {
+      "cf-connecting-ip": "172.115.212.10",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(gift),
+  }, { OWNER_DB: createGiftDb() });
+  assert.equal(accepted.status, 201);
+
+  const rejected = await callWorker("/admin/api/gifts", {
+    method: "POST",
+    headers: {
+      "cf-connecting-ip": "172.115.212.10",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ ...gift, priority: 6 }),
+  }, { OWNER_DB: createGiftDb() });
+  assert.equal(rejected.status, 400);
+  assert.match((await rejected.json()).error, /1 to 5/);
 });
 
 test("owner can inspect structured retailer metadata and choose among suggestions", async () => {

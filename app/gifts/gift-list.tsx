@@ -16,12 +16,6 @@ type Gift = {
 
 const reservationStorageKey = "tengen-gift-reservations-v1";
 const priceFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
-const priorityLabels: Record<number, string> = {
-  3: "Most wanted",
-  2: "Would love",
-  1: "Nice to have",
-};
-
 function retailerName(url: string) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -169,7 +163,7 @@ export function GiftList() {
           return (
             <article className={`gift-card${gift.reserved ? " gift-card-reserved" : ""}`} key={gift.id}>
               <div className="gift-card-topline">
-                <span className={`gift-priority gift-priority-${gift.priority}`}>{priorityLabels[gift.priority]}</span>
+                <span className={`gift-priority gift-priority-${gift.priority}`}>Priority {gift.priority}</span>
                 <span>{retailerName(gift.url)}</span>
               </div>
               {gift.imageUrl ? (
