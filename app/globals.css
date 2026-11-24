@@ -702,12 +702,14 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* Gift registry */
-.gift-heading, .gift-admin-heading { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 70px; align-items: end; }
+.gift-heading { display: block; }
+.gift-admin-heading { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 70px; align-items: end; }
 .gift-heading h1, .gift-admin-heading h1 { max-width: 760px; white-space: normal; }
 .gift-heading > p:last-child, .gift-admin-heading > p:last-child { margin: 0; }
 .gift-registry { padding-top: 62px; }
 .gift-list-intro, .gift-admin-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-bottom: 28px; }
 .gift-list-intro .section-kicker, .gift-admin-section-heading .section-kicker { margin-bottom: 10px; }
+.gift-list-intro > .section-kicker { margin: 0; }
 .gift-list-intro h2, .gift-admin-section-heading h2 { margin: 0; font-size: clamp(28px, 3vw, 40px); letter-spacing: -.05em; }
 .gift-list-intro > span { flex: 0 0 auto; padding: 9px 12px; border: 1px solid var(--line); color: var(--muted); font-family: var(--font-geist-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
 .gift-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
@@ -738,7 +740,6 @@ a { color: inherit; text-decoration: none; }
 .gift-confirmation > div { display: flex; gap: 8px; margin-top: 12px; }
 .gift-confirmation button, .gift-empty-state button { min-height: 42px; padding: 0 14px; border: 1px solid var(--line-strong); background: transparent; color: var(--ink); font: inherit; font-size: 12px; cursor: pointer; }
 .gift-confirmation button:first-child { background: var(--ink); color: var(--button-ink); border-color: var(--ink); }
-.gift-privacy-note { margin: 24px 0 0; color: var(--dim); font-size: 12px; line-height: 1.6; }
 .gift-loading, .gift-empty-state { min-height: 180px; display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 28px; border: 1px dashed var(--line-strong); color: var(--muted); font-size: 14px; }
 .gift-loading span { width: 10px; height: 10px; border-radius: 50%; background: var(--red-bright); box-shadow: 0 0 0 7px var(--soft-red); animation: owner-pulse 1.4s ease-in-out infinite alternate; }
 .gift-empty-state { flex-direction: column; padding: 28px; text-align: center; }

@@ -75,8 +75,10 @@ test("gift registry page and protected editor render", async () => {
   const publicResponse = await callWorker("/gifts", { headers: { accept: "text/html" } });
   assert.equal(publicResponse.status, 200);
   const publicHtml = await publicResponse.text();
-  assert.match(publicHtml, /A few things I&#x27;d genuinely love/);
-  assert.match(publicHtml, /reserve it/i);
+  assert.match(publicHtml, /A few gift ideas/);
+  assert.doesNotMatch(publicHtml, /Pick from any retailer/i);
+  assert.doesNotMatch(publicHtml, /Choose something that feels right/i);
+  assert.doesNotMatch(publicHtml, /Reservations are anonymous/i);
 
   const deniedResponse = await callWorker("/admin/gifts", { headers: { accept: "text/html" } });
   assert.equal(deniedResponse.status, 200);

@@ -148,10 +148,7 @@ export function GiftList() {
   return (
     <section className="gift-registry" aria-labelledby="gift-list-heading">
       <div className="gift-list-intro">
-        <div>
-          <p className="section-kicker">The list</p>
-          <h2 id="gift-list-heading">Choose something that feels right.</h2>
-        </div>
+        <p className="section-kicker" id="gift-list-heading">The list</p>
         <span>{availableCount} of {gifts.length} available</span>
       </div>
 
@@ -205,7 +202,6 @@ export function GiftList() {
           );
         })}
       </div>
-      <p className="gift-privacy-note">Reservations are anonymous. This browser keeps a private token so you can release your own reservation later.</p>
     </section>
   );
 }
