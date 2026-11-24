@@ -24,6 +24,7 @@ import { isAuthorizedBridgeRequest } from "./bridge-auth";
 import { handleNutritionDashboardGet, type NutritionEnv } from "./nutrition-api";
 import {
   handleAdminGiftCreate,
+  handleAdminGiftLinkInspect,
   handleAdminGiftsGet,
   handleAdminGiftUpdate,
   handleGiftReservationCreate,
@@ -46,6 +47,7 @@ interface Env extends NutritionEnv {
   ENSHROUDED_BRIDGE_TOKEN?: string;
   PALWORLD_BRIDGE_TOKEN?: string;
   HOME_ACCESS_UPDATE_TOKEN?: string;
+  PRODUCT_METADATA_FETCHER?: typeof fetch;
 }
 
 interface ExecutionContext {
@@ -87,6 +89,9 @@ const worker = {
       }
       if (url.pathname === "/admin/api/gifts" && request.method === "POST") {
         return handleAdminGiftCreate(request, env, access.identity);
+      }
+      if (url.pathname === "/admin/api/gifts/inspect-link" && request.method === "POST") {
+        return handleAdminGiftLinkInspect(request, env);
       }
       const giftMatch = url.pathname.match(/^\/admin\/api\/gifts\/([0-9a-f-]+)$/);
       if (giftMatch && request.method === "PATCH") {

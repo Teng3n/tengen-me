@@ -6,6 +6,7 @@ type Gift = {
   id: string;
   title: string;
   url: string;
+  imageUrl: string | null;
   priceCents: number | null;
   priority: number;
   note: string;
@@ -171,6 +172,13 @@ export function GiftList() {
                 <span className={`gift-priority gift-priority-${gift.priority}`}>{priorityLabels[gift.priority]}</span>
                 <span>{retailerName(gift.url)}</span>
               </div>
+              {gift.imageUrl ? (
+                <a className="gift-card-image" href={gift.url} target="_blank" rel="noreferrer" aria-label={`View ${gift.title} at the retailer`}>
+                  {/* Retailer image hosts are arbitrary, so they cannot use a fixed Next Image allowlist. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={gift.imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" />
+                </a>
+              ) : null}
               <div className="gift-card-copy">
                 <h3>{gift.title}</h3>
                 <p className="gift-price">{gift.priceCents === null ? "Price varies" : priceFormatter.format(gift.priceCents / 100)}</p>

@@ -20,6 +20,7 @@ function createGiftDb() {
     id: "11111111-1111-4111-8111-111111111111",
     title: "A very good gift",
     url: "https://example.com/gift",
+    image_url: "https://images.example.com/gift.jpg",
     price_cents: 12999,
     priority: 3,
     note: "Black, please.",
@@ -88,7 +89,9 @@ test("public gift reservations are anonymous and can be released only with their
 
   const initial = await callWorker("/api/gifts", {}, { OWNER_DB: db });
   assert.equal(initial.status, 200);
-  assert.equal((await initial.json()).gifts[0].reserved, false);
+  const initialGift = (await initial.json()).gifts[0];
+  assert.equal(initialGift.reserved, false);
+  assert.equal(initialGift.imageUrl, "https://images.example.com/gift.jpg");
 
   const reserved = await callWorker(`/api/gifts/${giftId}/reservation`, { method: "POST" }, { OWNER_DB: db });
   assert.equal(reserved.status, 201);
@@ -133,4 +136,93 @@ test("gift mutations reject cross-origin requests", async () => {
     headers: { origin: "https://attacker.example" },
   }, { OWNER_DB: createGiftDb() });
   assert.equal(response.status, 403);
+});
+
+test("owner can inspect structured retailer metadata and choose among suggestions", async () => {
+  const productHtml = `<!doctype html><html><head>
+    <meta property="og:title" content="Maxwell 2 ANC Wireless Gaming Headset">
+    <meta property="og:image" content="/images/maxwell-front.jpg">
+    <script type="application/ld+json">${JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: "Maxwell 2 ANC Wireless Gaming Headset",
+      image: [
+        "https://cdn.audeze.example/maxwell-side.jpg",
+        "https://cdn.audeze.example/maxwell-case.jpg",
+      ],
+      offers: [
+        { "@type": "Offer", name: "PlayStation", price: "349.00", priceCurrency: "USD" },
+        { "@type": "Offer", name: "Xbox", price: "399.00", priceCurrency: "USD" },
+      ],
+    })}</script>
+  </head><body></body></html>`;
+  const metadataFetcher = async () => new Response(productHtml, {
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
+
+  const response = await callWorker("/admin/api/gifts/inspect-link", {
+    method: "POST",
+    headers: {
+      "cf-connecting-ip": "172.115.212.10",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      url: "https://www.audeze.com/products/maxwell-2-anc-wireless-gaming-headset?variant=43222579118158",
+    }),
+  }, { OWNER_DB: createGiftDb(), PRODUCT_METADATA_FETCHER: metadataFetcher });
+
+  assert.equal(response.status, 200);
+  const { inspection } = await response.json();
+  assert.equal(inspection.retailer, "audeze.com");
+  assert.equal(inspection.titles[0].value, "Maxwell 2 ANC Wireless Gaming Headset");
+  assert.equal(inspection.images.length, 3);
+  assert.deepEqual(inspection.prices.map((price) => price.priceCents), [34900, 39900]);
+});
+
+test("product inspection rejects local and IP-literal destinations", async () => {
+  let fetched = false;
+  const metadataFetcher = async () => {
+    fetched = true;
+    return new Response("<html></html>", { headers: { "content-type": "text/html" } });
+  };
+  const response = await callWorker("/admin/api/gifts/inspect-link", {
+    method: "POST",
+    headers: {
+      "cf-connecting-ip": "172.115.212.10",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ url: "http://127.0.0.1/admin" }),
+  }, { OWNER_DB: createGiftDb(), PRODUCT_METADATA_FETCHER: metadataFetcher });
+
+  assert.equal(response.status, 422);
+  assert.equal(fetched, false);
+  assert.match((await response.json()).error, /cannot be inspected/i);
+});
+
+test("product inspection recognizes Amazon-style gallery images and displayed prices", async () => {
+  const productHtml = `<!doctype html><html><head><title>Amazon.com: Cooling earpads : Electronics</title></head><body>
+    <h1><span id="productTitle">WC Freeze Maxwell 2 Cooling Earpads</span></h1>
+    <script>const gallery = {"hiRes":"https://m.media-amazon.com/images/I/front._AC_SL1500_.jpg","large":"https://m.media-amazon.com/images/I/side._AC_.jpg"};</script>
+    <div id="corePrice_feature_div"><span class="a-price"><span class="a-offscreen">$30.95</span></span></div>
+    <span class="a-offscreen">$29.95</span>
+  </body></html>`;
+  const response = await callWorker("/admin/api/gifts/inspect-link", {
+    method: "POST",
+    headers: {
+      "cf-connecting-ip": "172.115.212.10",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      url: "https://www.amazon.com/WC-Freeze-Maxwell-Cooling-Replacement/dp/B0GV4YPPFW?th=1",
+    }),
+  }, {
+    OWNER_DB: createGiftDb(),
+    PRODUCT_METADATA_FETCHER: async () => new Response(productHtml, { headers: { "content-type": "text/html" } }),
+  });
+
+  assert.equal(response.status, 200);
+  const { inspection } = await response.json();
+  assert.equal(inspection.titles[0].value, "WC Freeze Maxwell 2 Cooling Earpads");
+  assert.equal(inspection.images.length, 2);
+  assert.deepEqual(inspection.prices.map((price) => price.priceCents), [3095, 2995]);
 });

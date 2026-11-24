@@ -1,15 +1,18 @@
 import type { OwnerDatabase } from "./owner-data";
 import type { OwnerIdentity } from "./owner-network-auth";
 import { writeAudit } from "./owner-data";
+import { inspectProductPage } from "./product-inspector";
 
 export interface GiftApiEnv {
   OWNER_DB?: OwnerDatabase;
+  PRODUCT_METADATA_FETCHER?: typeof fetch;
 }
 
 type GiftRow = {
   id: string;
   title: string;
   url: string;
+  image_url: string | null;
   price_cents: number | null;
   priority: number;
   note: string;
@@ -25,6 +28,7 @@ type PublicGiftRow = Omit<GiftRow, "active" | "updated_at"> & {
 type GiftInput = {
   title: string;
   url: string;
+  imageUrl: string | null;
   priceCents: number | null;
   priority: number;
   note: string;
@@ -52,6 +56,7 @@ function serializeGift(row: GiftRow) {
     id: row.id,
     title: row.title,
     url: row.url,
+    imageUrl: row.image_url,
     priceCents: row.price_cents,
     priority: row.priority,
     note: row.note,
@@ -66,6 +71,7 @@ function serializePublicGift(row: PublicGiftRow) {
     id: row.id,
     title: row.title,
     url: row.url,
+    imageUrl: row.image_url,
     priceCents: row.price_cents,
     priority: row.priority,
     note: row.note,
@@ -81,12 +87,25 @@ function parsePriceCents(value: unknown) {
     : undefined;
 }
 
+function parseOptionalWebUrl(value: unknown) {
+  if (value === null || value === "") return null;
+  if (typeof value !== "string" || value.length > 2_048) return undefined;
+  try {
+    const url = new URL(value.trim());
+    if ((url.protocol !== "https:" && url.protocol !== "http:") || url.username || url.password) return undefined;
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
+
 function parseGiftInput(value: unknown): GiftInput | { error: string } {
   if (!value || typeof value !== "object") return { error: "Gift details are required" };
   const body = value as Record<string, unknown>;
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const note = typeof body.note === "string" ? body.note.trim() : "";
   const priceCents = parsePriceCents(body.priceCents);
+  const imageUrl = parseOptionalWebUrl(body.imageUrl);
 
   if (title.length < 2 || title.length > 120) return { error: "Title must be between 2 and 120 characters" };
   if (typeof body.url !== "string" || body.url.length > 2_048) return { error: "A valid retailer link is required" };
@@ -98,6 +117,7 @@ function parseGiftInput(value: unknown): GiftInput | { error: string } {
   }
   if (url.protocol !== "https:" && url.protocol !== "http:") return { error: "Retailer links must use HTTP or HTTPS" };
   if (priceCents === undefined) return { error: "Price must be blank or a positive dollar amount" };
+  if (imageUrl === undefined) return { error: "Image must be blank or a valid HTTP or HTTPS link" };
   if (!Number.isInteger(body.priority) || Number(body.priority) < 1 || Number(body.priority) > 3) {
     return { error: "Priority must be nice-to-have, would-love, or most-wanted" };
   }
@@ -107,6 +127,7 @@ function parseGiftInput(value: unknown): GiftInput | { error: string } {
   return {
     title,
     url: url.toString(),
+    imageUrl,
     priceCents,
     priority: Number(body.priority),
     note,
@@ -123,7 +144,7 @@ export async function handlePublicGiftsGet(env: GiftApiEnv) {
   if (!env.OWNER_DB) return json({ error: "Gift ideas are unavailable" }, 503);
   try {
     const result = await env.OWNER_DB.prepare(
-      `SELECT gifts.id, gifts.title, gifts.url, gifts.price_cents, gifts.priority,
+      `SELECT gifts.id, gifts.title, gifts.url, gifts.image_url, gifts.price_cents, gifts.priority,
         gifts.note, gifts.created_at,
         CASE WHEN reservations.gift_id IS NULL THEN 0 ELSE 1 END AS reserved
        FROM gift_ideas AS gifts
@@ -191,7 +212,7 @@ export async function handleAdminGiftsGet(env: GiftApiEnv) {
   if (!env.OWNER_DB) return json({ error: "Gift storage is unavailable" }, 503);
   try {
     const result = await env.OWNER_DB.prepare(
-      `SELECT id, title, url, price_cents, priority, note, active, created_at, updated_at
+      `SELECT id, title, url, image_url, price_cents, priority, note, active, created_at, updated_at
        FROM gift_ideas
        ORDER BY active DESC, priority DESC, created_at DESC`,
     ).all<GiftRow>();
@@ -218,16 +239,16 @@ export async function handleAdminGiftCreate(request: Request, env: GiftApiEnv, i
     await env.OWNER_DB.batch([
       env.OWNER_DB.prepare(
         `INSERT INTO gift_ideas
-         (id, title, url, price_cents, priority, note, active, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-      ).bind(id, input.title, input.url, input.priceCents, input.priority, input.note, input.active ? 1 : 0),
+         (id, title, url, image_url, price_cents, priority, note, active, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      ).bind(id, input.title, input.url, input.imageUrl, input.priceCents, input.priority, input.note, input.active ? 1 : 0),
       env.OWNER_DB.prepare(
         `INSERT INTO owner_audit_log (actor, event_type, target, outcome, detail, created_at)
          VALUES (?, 'gift.created', ?, 'completed', ?, CURRENT_TIMESTAMP)`,
       ).bind(identity.label, id, input.title),
     ]);
     const gift = await env.OWNER_DB.prepare(
-      `SELECT id, title, url, price_cents, priority, note, active, created_at, updated_at
+      `SELECT id, title, url, image_url, price_cents, priority, note, active, created_at, updated_at
        FROM gift_ideas WHERE id = ?`,
     ).bind(id).first<GiftRow>();
     return gift ? json({ gift: serializeGift(gift) }, 201) : json({ ok: true, id }, 201);
@@ -255,11 +276,12 @@ export async function handleAdminGiftUpdate(
 
   try {
     const result = await env.OWNER_DB.prepare(
-      `UPDATE gift_ideas SET title = ?, url = ?, price_cents = ?, priority = ?, note = ?,
+      `UPDATE gift_ideas SET title = ?, url = ?, image_url = ?, price_cents = ?, priority = ?, note = ?,
        active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
     ).bind(
       input.title,
       input.url,
+      input.imageUrl,
       input.priceCents,
       input.priority,
       input.note,
@@ -271,5 +293,25 @@ export async function handleAdminGiftUpdate(
     return json({ ok: true, id: giftId });
   } catch {
     return json({ error: "Gift idea could not be updated" }, 503);
+  }
+}
+
+export async function handleAdminGiftLinkInspect(request: Request, env: GiftApiEnv) {
+  if (!isSameOrigin(request)) return json({ error: "Cross-origin requests are not allowed" }, 403);
+  let body: { url?: unknown };
+  try {
+    body = await request.json() as { url?: unknown };
+  } catch {
+    return json({ error: "Invalid JSON" }, 400);
+  }
+  if (typeof body.url !== "string" || !body.url.trim() || body.url.length > 2_048) {
+    return json({ error: "Enter a retailer link first" }, 400);
+  }
+  try {
+    const inspection = await inspectProductPage(body.url, env.PRODUCT_METADATA_FETCHER ?? fetch);
+    return json({ inspection });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The product page could not be inspected";
+    return json({ error: `${message}. You can still enter the details manually.` }, 422);
   }
 }
