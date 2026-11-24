@@ -14,6 +14,8 @@ type Gift = {
   createdAt: string;
 };
 
+type GiftSort = "priority-high" | "priority-low" | "price-low" | "price-high";
+
 const reservationStorageKey = "tengen-gift-reservations-v1";
 const priceFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 function retailerName(url: string) {
@@ -53,6 +55,7 @@ export function GiftList() {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState<GiftSort>("priority-high");
 
   const loadGifts = useCallback(async () => {
     setError(null);
@@ -77,6 +80,15 @@ export function GiftList() {
   }, []);
 
   const availableCount = useMemo(() => gifts.filter((gift) => !gift.reserved).length, [gifts]);
+  const sortedGifts = useMemo(() => [...gifts].sort((a, b) => {
+    if (sortOrder === "priority-high") return a.priority - b.priority;
+    if (sortOrder === "priority-low") return b.priority - a.priority;
+    if (a.priceCents === null) return b.priceCents === null ? 0 : 1;
+    if (b.priceCents === null) return -1;
+    return sortOrder === "price-low"
+      ? a.priceCents - b.priceCents
+      : b.priceCents - a.priceCents;
+  }), [gifts, sortOrder]);
 
   async function reserveGift(giftId: string) {
     setPendingId(giftId);
@@ -149,13 +161,24 @@ export function GiftList() {
     <section className="gift-registry" aria-labelledby="gift-list-heading">
       <div className="gift-list-intro">
         <p className="section-kicker" id="gift-list-heading">The list</p>
-        <span>{availableCount} of {gifts.length} available</span>
+        <div className="gift-list-controls">
+          <span className="gift-availability">{availableCount} of {gifts.length} available</span>
+          <label className="gift-sort-control">
+            <span>Sort</span>
+            <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as GiftSort)}>
+              <option value="priority-high">Priority (highest first)</option>
+              <option value="priority-low">Priority (lowest first)</option>
+              <option value="price-low">Price (low to high)</option>
+              <option value="price-high">Price (high to low)</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       {error ? <p className="gift-inline-error" role="alert">{error}</p> : null}
 
       <div className="gift-grid">
-        {gifts.map((gift) => {
+        {sortedGifts.map((gift) => {
           const ownReservation = gift.reserved && Boolean(tokens[gift.id]);
           return (
             <article className={`gift-card${gift.reserved ? " gift-card-reserved" : ""}`} key={gift.id}>
