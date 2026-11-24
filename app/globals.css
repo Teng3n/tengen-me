@@ -702,12 +702,14 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* Gift registry */
-.gift-heading { display: block; padding-bottom: 40px; }
+.gift-page { padding-top: 36px; }
+.gift-heading { display: block; padding-bottom: 20px; }
 .gift-admin-heading { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 70px; align-items: end; }
 .gift-heading h1, .gift-admin-heading h1 { max-width: 760px; white-space: normal; }
 .gift-heading > p:last-child, .gift-admin-heading > p:last-child { margin: 0; }
-.gift-registry { padding-top: 34px; }
+.gift-registry { padding-top: 16px; }
 .gift-list-intro, .gift-admin-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-bottom: 28px; }
+.gift-list-intro { margin-bottom: 16px; }
 .gift-list-intro .section-kicker, .gift-admin-section-heading .section-kicker { margin-bottom: 10px; }
 .gift-list-intro > .section-kicker { margin: 0; }
 .gift-list-intro h2, .gift-admin-section-heading h2 { margin: 0; font-size: clamp(28px, 3vw, 40px); letter-spacing: -.05em; }
@@ -842,8 +844,10 @@ a { color: inherit; text-decoration: none; }
 
 @media (max-width: 620px) {
   .gift-grid, .gift-admin-card-grid { grid-template-columns: 1fr; }
-  .gift-heading { padding-bottom: 32px; }
-  .gift-registry { padding-top: 26px; }
+  .gift-page { padding-top: 24px; }
+  .gift-heading { padding-bottom: 18px; }
+  .gift-registry { padding-top: 14px; }
+  .gift-list-intro { margin-bottom: 14px; }
   .gift-list-intro, .gift-admin-section-heading { align-items: flex-start; flex-direction: column; gap: 18px; }
   .gift-list-controls { width: 100%; flex-wrap: wrap; }
   .gift-sort-control { flex: 1 1 230px; }
