@@ -324,7 +324,7 @@ export function GiftAdmin() {
 
   return (
     <div className="gift-admin">
-      <nav className="gift-admin-bar" aria-label="Gift registry links"><a href="/admin">Owner dashboard</a><a href="/gifts" target="_blank" rel="noreferrer">Open public list</a></nav>
+      <nav className="gift-admin-bar" aria-label="Owner sections"><a href="/admin">Owner dashboard</a><a className="gift-admin-bar-active" href="/admin/gifts" aria-current="page">Gifts</a><a href="/gifts" target="_blank" rel="noreferrer">Open public list</a></nav>
 
       <section className="gift-admin-existing" aria-labelledby="gift-existing-heading">
         <div className="gift-admin-section-heading">

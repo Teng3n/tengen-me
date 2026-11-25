@@ -1394,6 +1394,7 @@ export function OwnerDashboard({ ownerLabel }: { ownerLabel: string }) {
           <a className="owner-admin-tab-active" href="/admin">Overview</a>
           <a href="/admin/electricity">Electrical bill outlook</a>
           <a href="/admin/nutrition">Nutrition</a>
+          <a href="/admin/gifts">Gifts</a>
         </nav>
       </div>
 
@@ -1518,6 +1519,7 @@ export function OwnerElectricityOutlook({ ownerLabel }: { ownerLabel: string }) 
           <a href="/admin">Overview</a>
           <a className="owner-admin-tab-active" href="/admin/electricity">Electrical bill outlook</a>
           <a href="/admin/nutrition">Nutrition</a>
+          <a href="/admin/gifts">Gifts</a>
         </nav>
       </div>
       {data.electricity ? <ElectricityPanel analytics={data.electricity} /> : (

@@ -91,6 +91,7 @@ test("gift registry page and protected editor render", async () => {
   const allowedHtml = await allowedResponse.text();
   assert.match(allowedHtml, /Add New/);
   assert.match(allowedHtml, /Your current list/);
+  assert.match(allowedHtml, /href="\/admin\/gifts"[^>]*aria-current="page"/);
 });
 
 test("public gift reservations are anonymous and can be released only with their browser token", async () => {

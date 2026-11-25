@@ -634,6 +634,7 @@ export function NutritionDashboard({ ownerLabel }: { ownerLabel: string }) {
           <a href="/admin">Overview</a>
           <a href="/admin/electricity">Electrical bill outlook</a>
           <a className="owner-admin-tab-active" href="/admin/nutrition">Nutrition</a>
+          <a href="/admin/gifts">Gifts</a>
         </nav>
       </div>
 
