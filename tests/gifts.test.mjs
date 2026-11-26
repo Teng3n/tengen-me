@@ -29,6 +29,7 @@ function createGiftDb() {
     updated_at: "2026-11-22 12:00:00",
   };
   let reservationHash = null;
+  let giftExists = true;
 
   return {
     prepare(query) {
@@ -39,14 +40,15 @@ function createGiftDb() {
           if (query.includes("FROM owner_network_access")) {
             return { ipv4_cidr: "172.115.212.10/32", last_seen_at: new Date().toISOString() };
           }
-          if (query.includes("SELECT id FROM gift_ideas")) return gift.active ? { id: gift.id } : null;
+          if (query.includes("SELECT title FROM gift_ideas")) return giftExists ? { title: gift.title } : null;
+          if (query.includes("SELECT id FROM gift_ideas")) return giftExists && gift.active ? { id: gift.id } : null;
           return null;
         },
         async all() {
           if (query.includes("FROM gift_ideas AS gifts")) {
-            return { success: true, results: [{ ...gift, reserved: reservationHash ? 1 : 0 }] };
+            return { success: true, results: giftExists ? [{ ...gift, reserved: reservationHash ? 1 : 0 }] : [] };
           }
-          if (query.includes("FROM gift_ideas")) return { success: true, results: [gift] };
+          if (query.includes("FROM gift_ideas")) return { success: true, results: giftExists ? [gift] : [] };
           return { success: true, results: [] };
         },
         async run() {
@@ -56,9 +58,19 @@ function createGiftDb() {
             return { success: true, meta: { changes: 1 } };
           }
           if (query.includes("DELETE FROM gift_reservations")) {
+            if (bindings.length === 1 && bindings[0] === gift.id) {
+              const existed = Boolean(reservationHash);
+              reservationHash = null;
+              return { success: true, meta: { changes: existed ? 1 : 0 } };
+            }
             const matches = reservationHash && bindings[1] === reservationHash;
             if (matches) reservationHash = null;
             return { success: true, meta: { changes: matches ? 1 : 0 } };
+          }
+          if (query.includes("DELETE FROM gift_ideas")) {
+            const existed = giftExists && bindings[0] === gift.id;
+            if (existed) giftExists = false;
+            return { success: true, meta: { changes: existed ? 1 : 0 } };
           }
           return { success: true, meta: { changes: 1 } };
         },
@@ -66,7 +78,7 @@ function createGiftDb() {
       return statement;
     },
     async batch(statements) {
-      return statements.map(() => ({ success: true, meta: { changes: 1 } }));
+      return Promise.all(statements.map((statement) => statement.run()));
     },
   };
 }
@@ -147,6 +159,31 @@ test("gift mutations reject cross-origin requests", async () => {
     headers: { origin: "https://attacker.example" },
   }, { OWNER_DB: createGiftDb() });
   assert.equal(response.status, 403);
+});
+
+test("owner can permanently delete a gift and its reservation", async () => {
+  const db = createGiftDb();
+  const giftId = "11111111-1111-4111-8111-111111111111";
+
+  const reserved = await callWorker(`/api/gifts/${giftId}/reservation`, { method: "POST" }, { OWNER_DB: db });
+  assert.equal(reserved.status, 201);
+
+  const deleted = await callWorker(`/admin/api/gifts/${giftId}`, {
+    method: "DELETE",
+    headers: { "cf-connecting-ip": "172.115.212.10" },
+  }, { OWNER_DB: db });
+  assert.equal(deleted.status, 200);
+
+  const adminList = await callWorker("/admin/api/gifts", {
+    headers: { "cf-connecting-ip": "172.115.212.10" },
+  }, { OWNER_DB: db });
+  assert.deepEqual((await adminList.json()).gifts, []);
+
+  const deletedAgain = await callWorker(`/admin/api/gifts/${giftId}`, {
+    method: "DELETE",
+    headers: { "cf-connecting-ip": "172.115.212.10" },
+  }, { OWNER_DB: db });
+  assert.equal(deletedAgain.status, 404);
 });
 
 test("gift editor accepts priorities one through five and rejects values outside the scale", async () => {

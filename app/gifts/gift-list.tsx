@@ -55,7 +55,7 @@ export function GiftList() {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sortOrder, setSortOrder] = useState<GiftSort>("priority-high");
+  const [sortOrder, setSortOrder] = useState<GiftSort>("price-low");
 
   const loadGifts = useCallback(async () => {
     setError(null);

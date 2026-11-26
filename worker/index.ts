@@ -24,6 +24,7 @@ import { isAuthorizedBridgeRequest } from "./bridge-auth";
 import { handleNutritionDashboardGet, type NutritionEnv } from "./nutrition-api";
 import {
   handleAdminGiftCreate,
+  handleAdminGiftDelete,
   handleAdminGiftLinkInspect,
   handleAdminGiftsGet,
   handleAdminGiftUpdate,
@@ -96,6 +97,9 @@ const worker = {
       const giftMatch = url.pathname.match(/^\/admin\/api\/gifts\/([0-9a-f-]+)$/);
       if (giftMatch && request.method === "PATCH") {
         return handleAdminGiftUpdate(request, env, access.identity, giftMatch[1]);
+      }
+      if (giftMatch && request.method === "DELETE") {
+        return handleAdminGiftDelete(request, env, access.identity, giftMatch[1]);
       }
       if (url.pathname === "/admin/api/actions" && request.method === "POST") {
         return handleOwnerActionCreate(request, env, access.identity);

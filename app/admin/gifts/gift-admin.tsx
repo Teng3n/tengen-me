@@ -215,6 +215,7 @@ export function GiftAdmin() {
   const [lookups, setLookups] = useState<Record<string, LookupState>>({});
   const [loading, setLoading] = useState(true);
   const [editorKey, setEditorKey] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -307,6 +308,25 @@ export function GiftAdmin() {
     }
   }
 
+  async function deleteGift(gift: GiftDraft) {
+    setPendingId(gift.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch(`/admin/api/gifts/${gift.id}`, { method: "DELETE" });
+      const body = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(body.error || "Gift idea could not be deleted");
+      setNotice(`${gift.title} deleted.`);
+      setDeleteConfirmId(null);
+      setEditorKey(null);
+      await loadGifts();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Gift idea could not be deleted");
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   const editingGift = editorKey && editorKey !== "new"
     ? gifts.find((gift) => gift.id === editorKey)
     : undefined;
@@ -319,6 +339,7 @@ export function GiftAdmin() {
       void loadGifts();
     }
     setEditorKey(null);
+    setDeleteConfirmId(null);
     setError(null);
   }
 
@@ -359,7 +380,7 @@ export function GiftAdmin() {
                 <p className="gift-price">{gift.price ? priceFormatter.format(Number(gift.price)) : "Price varies"}</p>
               </div>
               <div className="gift-card-actions">
-                <button type="button" onClick={() => { setEditorKey(gift.id); setError(null); setNotice(null); }}>Edit</button>
+                <button type="button" onClick={() => { setEditorKey(gift.id); setDeleteConfirmId(null); setError(null); setNotice(null); }}>Edit</button>
                 <a href={gift.url} target="_blank" rel="noreferrer">View at retailer</a>
               </div>
             </article>
@@ -396,8 +417,14 @@ export function GiftAdmin() {
               <GiftEditorFields lookupKey={editingGift.id} draft={editingGift} state={lookups[editingGift.id]} onChange={(change) => updateDraft(editingGift.id, change)} onInspect={() => void inspectLink(editingGift.id, editingGift)} />
               <div className="gift-editor-footer">
                 <label className="gift-visibility-toggle"><input type="checkbox" checked={editingGift.active} onChange={(event) => updateDraft(editingGift.id, { active: event.target.checked })} /><span>Show on /gifts</span></label>
-                <div><a href={editingGift.url} target="_blank" rel="noreferrer">Check retailer link</a><button className="gift-editor-cancel" type="button" onClick={closeEditor}>Cancel</button><button type="submit" disabled={pendingId === editingGift.id}>{pendingId === editingGift.id ? "Saving…" : "Save changes"}</button></div>
+                <div><button className="gift-editor-delete" type="button" onClick={() => setDeleteConfirmId(editingGift.id)}>Delete gift</button><a href={editingGift.url} target="_blank" rel="noreferrer">Check retailer link</a><button className="gift-editor-cancel" type="button" onClick={closeEditor}>Cancel</button><button type="submit" disabled={pendingId === editingGift.id}>{pendingId === editingGift.id ? "Saving…" : "Save changes"}</button></div>
               </div>
+              {deleteConfirmId === editingGift.id ? (
+                <section className="gift-delete-confirmation" role="alertdialog" aria-labelledby="gift-delete-heading" aria-describedby="gift-delete-description">
+                  <div><strong id="gift-delete-heading">Delete this gift permanently?</strong><p id="gift-delete-description">This removes {editingGift.title} and any reservation attached to it. This cannot be undone.</p></div>
+                  <div><button type="button" onClick={() => setDeleteConfirmId(null)} disabled={pendingId === editingGift.id}>Keep gift</button><button className="gift-delete-permanent" type="button" onClick={() => void deleteGift(editingGift)} disabled={pendingId === editingGift.id}>{pendingId === editingGift.id ? "Deleting…" : "Delete permanently"}</button></div>
+                </section>
+              ) : null}
             </form>
           </section>
         </div>

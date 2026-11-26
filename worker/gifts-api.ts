@@ -296,6 +296,35 @@ export async function handleAdminGiftUpdate(
   }
 }
 
+export async function handleAdminGiftDelete(
+  request: Request,
+  env: GiftApiEnv,
+  identity: OwnerIdentity,
+  giftId: string,
+) {
+  if (!isSameOrigin(request)) return json({ error: "Cross-origin requests are not allowed" }, 403);
+  if (!env.OWNER_DB) return json({ error: "Gift storage is unavailable" }, 503);
+
+  try {
+    const gift = await env.OWNER_DB.prepare(
+      "SELECT title FROM gift_ideas WHERE id = ?",
+    ).bind(giftId).first<{ title: string }>();
+    if (!gift) return json({ error: "Gift not found" }, 404);
+
+    await env.OWNER_DB.batch([
+      env.OWNER_DB.prepare("DELETE FROM gift_reservations WHERE gift_id = ?").bind(giftId),
+      env.OWNER_DB.prepare("DELETE FROM gift_ideas WHERE id = ?").bind(giftId),
+      env.OWNER_DB.prepare(
+        `INSERT INTO owner_audit_log (actor, event_type, target, outcome, detail, created_at)
+         VALUES (?, 'gift.deleted', ?, 'completed', ?, CURRENT_TIMESTAMP)`,
+      ).bind(identity.label, giftId, gift.title),
+    ]);
+    return json({ ok: true, id: giftId });
+  } catch {
+    return json({ error: "Gift idea could not be deleted" }, 503);
+  }
+}
+
 export async function handleAdminGiftLinkInspect(request: Request, env: GiftApiEnv) {
   if (!isSameOrigin(request)) return json({ error: "Cross-origin requests are not allowed" }, 403);
   let body: { url?: unknown };

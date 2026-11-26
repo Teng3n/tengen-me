@@ -837,6 +837,14 @@ a { color: inherit; text-decoration: none; }
 .gift-editor-footer a { min-height: 48px; display: inline-flex; align-items: center; padding: 0 14px; border: 1px solid var(--line); color: var(--muted); font-size: 12px; }
 .gift-editor-footer a:hover { border-color: var(--line-strong); color: var(--ink); }
 .gift-editor-footer .gift-editor-cancel { border-color: var(--line); background: transparent; color: var(--muted); }
+.gift-editor-footer .gift-editor-delete { border-color: var(--line-strong); background: transparent; color: var(--red-bright); }
+.gift-delete-confirmation { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 16px; padding: 16px; border: 1px solid var(--red-bright); background: var(--surface-2); }
+.gift-delete-confirmation strong { font-size: 14px; }
+.gift-delete-confirmation p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.gift-delete-confirmation > div:last-child { flex: 0 0 auto; display: flex; gap: 8px; }
+.gift-delete-confirmation button { min-height: 42px; padding: 0 14px; border: 1px solid var(--line); background: transparent; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+.gift-delete-confirmation .gift-delete-permanent { border-color: var(--red-bright); background: var(--red); color: var(--on-red); font-weight: 650; }
+.gift-delete-confirmation button:disabled { cursor: wait; opacity: .6; }
 
 @media (max-width: 900px) {
   .gift-heading, .gift-admin-heading { grid-template-columns: 1fr; gap: 28px; }
@@ -872,6 +880,8 @@ a { color: inherit; text-decoration: none; }
   .gift-editor-footer { align-items: stretch; flex-direction: column; }
   .gift-editor-footer > div { display: grid; grid-template-columns: 1fr 1fr; }
   .gift-editor-footer a, .gift-editor-footer button { justify-content: center; text-align: center; }
+  .gift-delete-confirmation { align-items: stretch; flex-direction: column; }
+  .gift-delete-confirmation > div:last-child { display: grid; grid-template-columns: 1fr 1fr; }
   .gift-admin-bar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .gift-admin-bar a { justify-content: center; text-align: center; }
 }
