@@ -5,7 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 type Theme = "dark" | "light";
 
-export function SiteShell({ children }: { children: ReactNode }) {
+export function SiteShell({ children, minimal = false }: { children: ReactNode; minimal?: boolean }) {
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
@@ -23,24 +23,37 @@ export function SiteShell({ children }: { children: ReactNode }) {
     setTheme(nextTheme);
   }
 
+  const wordmark = (
+    <div className="wordmark">
+      <button
+        className="wordmark-block theme-toggle"
+        type="button"
+        onClick={toggleTheme}
+        aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+        aria-pressed={theme === "dark"}
+        title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      >
+        T
+      </button>
+      <Link className="wordmark-home" href="/" aria-label="tengen.me home">
+        tengen<em>.me</em>
+      </Link>
+    </div>
+  );
+
+  if (minimal) {
+    return (
+      <div className="site-frame gift-site-frame">
+        <div className="gift-brandbar">{wordmark}</div>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="site-frame">
       <header className="site-header">
-        <div className="wordmark">
-          <button
-            className="wordmark-block theme-toggle"
-            type="button"
-            onClick={toggleTheme}
-            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            aria-pressed={theme === "dark"}
-            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-          >
-            T
-          </button>
-          <Link className="wordmark-home" href="/" aria-label="tengen.me home">
-            tengen<em>.me</em>
-          </Link>
-        </div>
+        {wordmark}
         <nav className="primary-nav" aria-label="Primary navigation">
           <Link href="/servers">Servers</Link>
           <Link href="/projects">Projects</Link>

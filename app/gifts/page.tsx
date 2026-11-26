@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function GiftsPage() {
   return (
-    <SiteShell>
+    <SiteShell minimal>
       <main className="inner-page gift-page section-shell">
         <header className="page-heading gift-heading">
           <div>

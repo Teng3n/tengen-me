@@ -88,6 +88,11 @@ test("gift registry page and protected editor render", async () => {
   assert.equal(publicResponse.status, 200);
   const publicHtml = await publicResponse.text();
   assert.match(publicHtml, /A few gift ideas/);
+  assert.match(publicHtml, /tengen<em>\.me<\/em>/);
+  assert.doesNotMatch(publicHtml, /Primary navigation/i);
+  assert.doesNotMatch(publicHtml, /Owner login/i);
+  assert.doesNotMatch(publicHtml, /System status/i);
+  assert.doesNotMatch(publicHtml, /© 2026 Tengen/i);
   assert.doesNotMatch(publicHtml, /Pick from any retailer/i);
   assert.doesNotMatch(publicHtml, /Choose something that feels right/i);
   assert.doesNotMatch(publicHtml, /Reservations are anonymous/i);
